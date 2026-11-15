@@ -364,7 +364,13 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(() => {
     try {
       const saved = localStorage.getItem('lankaproperty_admin_audit_logs');
-      return saved ? JSON.parse(saved) : INITIAL_AUDIT_LOGS;
+      const parsed: AuditLogEntry[] = saved ? JSON.parse(saved) : INITIAL_AUDIT_LOGS;
+      // #8 Auto-Purge Audit Logs older than 60 days (mirrors pg_cron rule)
+      const sixtyDaysAgoMs = Date.now() - 60 * 24 * 60 * 60 * 1000;
+      return parsed.filter((entry) => {
+        const ts = new Date(entry.timestamp).getTime();
+        return isNaN(ts) || ts >= sixtyDaysAgoMs;
+      });
     } catch {
       return INITIAL_AUDIT_LOGS;
     }

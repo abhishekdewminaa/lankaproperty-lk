@@ -383,41 +383,60 @@ class PropertyService {
     return found ? { ...found } : null;
   }
 
+  /**
+   * #7 Auto-Pruner for Sold / Archived Properties:
+   * When an Owner, Agent, or SuperAdmin changes a listing status to 'sold' or 'archived',
+   * automatically delete secondary gallery images (2..N) and floorPlans, keeping ONLY
+   * images[0] (hero_image thumbnail) for historical price reference. Reclaims 90%+ storage.
+   */
+  private pruneSoldPropertyMedia(record: AdminPropertyRecord): AdminPropertyRecord {
+    const isSoldOrArchived = record.status === 'sold' || record.publicationStatus === 'archived';
+    if (!isSoldOrArchived) return record;
+
+    const heroThumbnail = Array.isArray(record.images) && record.images.length > 0 ? [record.images[0]] : [];
+    return {
+      ...record,
+      images: heroThumbnail,
+      floorPlans: [],
+    };
+  }
+
   saveProperty(record: AdminPropertyRecord): { success: boolean; property: AdminPropertyRecord; isNew: boolean } {
     const existingIndex = this.records.findIndex((p) => p.id === record.id);
     const isNew = existingIndex === -1;
 
     let savedRecord: AdminPropertyRecord;
     const uniqueSlug = this.ensureUniqueSlug(record.slug || record.title, record.id);
+    const sanitizedRecord = this.pruneSoldPropertyMedia(record);
 
     if (isNew) {
-      const districtPrefix = (record.location.district || 'SRI').slice(0, 3).toUpperCase();
+      const districtPrefix = (sanitizedRecord.location.district || 'SRI').slice(0, 3).toUpperCase();
       const generatedRef =
-        record.listingRef || `LP-${districtPrefix}-2026-${Date.now().toString().slice(-4)}`;
+        sanitizedRecord.listingRef || `LP-${districtPrefix}-2026-${Date.now().toString().slice(-4)}`;
 
       savedRecord = {
-        ...record,
+        ...sanitizedRecord,
         slug: uniqueSlug,
         listingRef: generatedRef,
-        publishedDate: record.publishedDate || new Date().toISOString().split('T')[0],
+        publishedDate: sanitizedRecord.publishedDate || new Date().toISOString().split('T')[0],
         recordVersion: 1,
-        viewCount: record.viewCount || 0,
-        inquiryCount: record.inquiryCount || 0,
-        saveCount: record.saveCount || 0,
+        viewCount: sanitizedRecord.viewCount || 0,
+        inquiryCount: sanitizedRecord.inquiryCount || 0,
+        saveCount: sanitizedRecord.saveCount || 0,
         lastModifiedAt: new Date().toLocaleString(),
       };
 
       this.records = [savedRecord, ...this.records];
     } else {
       const current = this.records[existingIndex];
-      savedRecord = {
+      savedRecord = this.pruneSoldPropertyMedia({
         ...current,
-        ...record,
+        ...sanitizedRecord,
         slug: uniqueSlug,
-        listingRef: current.listingRef || record.listingRef, // Preserve existing reference
+        listingRef: current.listingRef || sanitizedRecord.listingRef, // Preserve existing reference
         recordVersion: (current.recordVersion || 1) + 1,
         lastModifiedAt: new Date().toLocaleString(),
-      };
+      });
       this.records[existingIndex] = savedRecord;
     }
 
@@ -429,14 +448,14 @@ class PropertyService {
     const index = this.records.findIndex((p) => p.id === id);
     if (index === -1) return null;
 
-    const updated = {
+    const updated = this.pruneSoldPropertyMedia({
       ...this.records[index],
       publicationStatus: status,
       rejectionReason: reason,
       publishedAt: status === 'published' ? new Date().toISOString() : this.records[index].publishedAt,
       lastModifiedAt: new Date().toLocaleString(),
       recordVersion: (this.records[index].recordVersion || 1) + 1,
-    };
+    });
 
     this.records[index] = updated;
     this.notify();
@@ -567,12 +586,12 @@ class PropertyService {
     this.records = this.records.map((p) => {
       if (ids.includes(p.id)) {
         successCount++;
-        return {
+        return this.pruneSoldPropertyMedia({
           ...p,
           ...updates,
           recordVersion: (p.recordVersion || 1) + 1,
           lastModifiedAt: new Date().toLocaleString(),
-        };
+        });
       }
       return p;
     });

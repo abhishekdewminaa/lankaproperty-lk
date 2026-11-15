@@ -124,8 +124,58 @@ const SEED_WANTED_LEADS: WantedPropertyLead[] = [
 ];
 
 class WantedPropertyService {
+  /**
+   * #8 Auto-Purge Expired Wanted Leads & Match Proposals (> 90 days old)
+   * Mirrors the PostgreSQL pg_cron weekly cleanup job to keep storage lean.
+   */
+  purgeExpiredRecords(retentionDays = 90): { purgedLeads: number; purgedProposals: number } {
+    const cutoffMs = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+    let purgedLeads = 0;
+    let purgedProposals = 0;
+
+    try {
+      const rawLeads = localStorage.getItem(STORAGE_KEY);
+      if (rawLeads) {
+        const leads: WantedPropertyLead[] = JSON.parse(rawLeads);
+        const keptLeads = leads.filter((l) => {
+          const createdMs = new Date(l.createdAt).getTime();
+          const isClosedOrArchived = l.status === 'fulfilled' || l.status === 'archived';
+          if (isClosedOrArchived && !isNaN(createdMs) && createdMs < cutoffMs) {
+            purgedLeads++;
+            return false;
+          }
+          return true;
+        });
+        if (purgedLeads > 0) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(keptLeads));
+        }
+      }
+
+      const rawProposals = localStorage.getItem(PROPOSALS_KEY);
+      if (rawProposals) {
+        const proposals: MatchProposal[] = JSON.parse(rawProposals);
+        const keptProposals = proposals.filter((p) => {
+          const submittedMs = new Date(p.submittedAt).getTime();
+          if (!isNaN(submittedMs) && submittedMs < cutoffMs) {
+            purgedProposals++;
+            return false;
+          }
+          return true;
+        });
+        if (purgedProposals > 0) {
+          localStorage.setItem(PROPOSALS_KEY, JSON.stringify(keptProposals));
+        }
+      }
+    } catch {
+      // Ignore storage access errors
+    }
+
+    return { purgedLeads, purgedProposals };
+  }
+
   private getStoredLeads(): WantedPropertyLead[] {
     try {
+      this.purgeExpiredRecords(90);
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_WANTED_LEADS));
