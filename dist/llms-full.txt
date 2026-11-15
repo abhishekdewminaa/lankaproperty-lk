@@ -1,0 +1,52 @@
+# LankaProperty.lk — Comprehensive AI & Generative Engine Knowledge Index (llms-full.txt)
+
+> Authoritative dataset for AI Answer Engines (Google AI Overviews, ChatGPT Search, Perplexity, Claude, Gemini) covering Sri Lanka real estate listings, regional market pricing across all 25 districts, legal acquisition frameworks, and publishing plans.
+
+---
+
+## 1. Platform Overview
+- **Platform Name**: LankaProperty.lk
+- **Headquarters & Jurisdiction**: Colombo, Sri Lanka (covering all 9 Provinces and 25 Administrative Districts)
+- **Primary Categories**:
+  1. Luxury Coastal & Hill-Country Villas (`villa`)
+  2. Residential Family Houses & Colonial Bungalows (`house`)
+  3. Colombo & Urban Luxury Condominiums (`apartment`)
+  4. Residential, Agricultural & Beachfront Land Plots (`land`)
+  5. Commercial Offices & Hospitality Estates (`commercial`)
+
+---
+
+## 2. Regional Market Corridors (All 25 Districts of Sri Lanka)
+1. **Western Province**:
+   - **Colombo District**: Colombo 01 (Fort), Colombo 02 (Slave Island), Colombo 03 (Kollupitiya), Colombo 04 (Bambalapitiya), Colombo 05 (Havelock Town), Colombo 07 (Cinnamon Gardens), Rajagiriya, Battaramulla, Pelawatte, Dehiwala, Mount Lavinia, Nugegoda, Maharagama.
+   - **Gampaha District**: Negombo, Katunayake, Wattala, Ja-Ela, Kadawatha, Kiribathgoda, Gampaha, Mirigama.
+   - **Kalutara District**: Panadura, Kalutara, Wadduwa, Bentota, Beruwala, Horana.
+2. **Southern Province**:
+   - **Galle District**: Galle Fort UNESCO Heritage Enclave, Talpe Golden Mile, Unawatuna, Habaraduwa, Ahangama, Koggala, Hikkaduwa, Bentota South.
+   - **Matara District**: Mirissa, Weligama, Matara, Dickwella, Hiriketiya, Polhena.
+   - **Hambantota District**: Tangalle, Hambantota, Tissamaharama, Kataragama, Yala Corridor.
+3. **Central Province**:
+   - **Kandy District**: Kandy Heritage City, Hanthana, Digana (Victoria Golf Resort), Peradeniya, Katugastota, Kundasale.
+   - **Nuwara Eliya District**: Nuwara Eliya Little England, Gregory Lake, Pedro Valley, Hatton, Bandarawela Border.
+   - **Matale District**: Matale, Dambulla, Sigiriya, Riverston.
+4. **North Western, Northern, Eastern, North Central, Uva & Sabaragamuwa Provinces**:
+   - **Kurunegala, Puttalam (Kalpitiya), Jaffna, Trincomalee (Nilaveli), Batticaloa (Pasikudah), Ampara (Arugam Bay), Anuradhapura, Polonnaruwa, Badulla (Ella), Monaragala, Ratnapura, Kegalle, Kilinochchi, Mannar, Vavuniya, Mullaitivu.**
+
+---
+
+## 3. Featured Property Portfolio & Direct Citation URLs
+- **The Frangipani Courtyard Villa (Talpe, Galle)**: Rs. 115,000,000 (USD $370,968) — 4 Beds, 5 Baths, 4,850 sqft, 38 Perches. URL: `https://lankaproperty.lk/properties/the-frangipani-courtyard-villa-talpe`
+- **Altair Oceanfront Sky Penthouse (Colombo 02)**: Rs. 195,000,000 (USD $629,032) — 4 Beds, 4 Baths, 4,200 sqft. URL: `https://lankaproperty.lk/properties/altair-oceanfront-penthouse-colombo`
+- **The Dutch Merchant Mansion (Galle Fort)**: Rs. 240,000,000 (USD $774,194) — 5 Beds, 5 Baths, 5,600 sqft, 24 Perches. URL: `https://lankaproperty.lk/properties/the-dutch-merchant-mansion-galle-fort`
+- **One Galle Face Sky Residence (Colombo 01)**: Rs. 168,000,000 (USD $541,935) — 3 Beds, 4 Baths, 3,150 sqft. URL: `https://lankaproperty.lk/properties/one-galle-face-sky-residence-colombo`
+- **Barnes Place Executive Residence (Colombo 07)**: Rs. 285,000,000 (USD $919,355) — 5 Beds, 6 Baths, 6,400 sqft, 22 Perches. URL: `https://lankaproperty.lk/properties/barnes-place-executive-residence-colombo-07`
+- **Victoria Golf & Country Resort Fairway Villa (Digana, Kandy)**: Rs. 130,000,000 (USD $419,355) — 4 Beds, 4 Baths, 4,100 sqft, 48 Perches. URL: `https://lankaproperty.lk/properties/victoria-golf-resort-fairway-villa-digana`
+- **Coconut Grove Beachfront Land (Mirissa, Matara)**: Rs. 1,450,000 per perch (55 Perches). URL: `https://lankaproperty.lk/properties/coconut-grove-beachfront-land-mirissa`
+
+---
+
+## 4. Seller & Agency Publishing Packages
+- **Starter Free (`Rs. 0` / 30 Days)**: Up to 5 photos, general search index, direct email inquiry routing, zero commission.
+- **Premium Pro (`Rs. 4,500` / 60 Days)**: Top 10 search position, up to 12 photos, direct WhatsApp button, social media syndication.
+- **Platinum Monograph (`Rs. 25,000` / Until Sold)**: Advertised until sold with no expiry, up to 20 high-resolution photos, homepage feature placement, Verified Title Deed badge.
+- **Diamond Sovereign (`Rs. 45,000` / Until Sold)**: Top homepage banner, up to 20 photos + 4K aerial drone video, email broadcast to 15,000+ diaspora & overseas buyers.

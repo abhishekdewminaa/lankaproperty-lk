@@ -1,0 +1,39 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(self), payment=()" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
+      ]
+    },
+    {
+      "source": "/(admin|auth|owner|agent)(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive, nosnippet" }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/ai/parse-property",
+      "destination": "/api/ai/parse-property"
+    },
+    {
+      "source": "/api/inquiries",
+      "destination": "/api/inquiries"
+    },
+    {
+      "source": "/((?!api/.*|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|site\\.webmanifest|\\.well-known/.*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

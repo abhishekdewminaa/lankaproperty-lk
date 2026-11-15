@@ -1,0 +1,23 @@
+# Hostinger Root .htaccess
+# Supports Hostinger Shared/Cloud Hosting "Git Auto-Deploy" directly into public_html/
+# Automatically serves the pre-built production bundle inside /dist
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Block direct access to sensitive source/config files if cloned into public_html
+  RewriteRule ^(server|src|api|docs|node_modules|\.git)/ - [F,L]
+  RewriteRule ^(package(-lock)?\.json|tsconfig\.json|vite\.config\.ts|server\.ts|\.env.*)$ - [F,L]
+
+  # If request is already targeting /dist, let dist/.htaccess handle it
+  RewriteCond %{REQUEST_URI} ^/dist/
+  RewriteRule ^ - [L]
+
+  # If the requested file exists inside /dist, serve it from /dist
+  RewriteCond %{DOCUMENT_ROOT}/dist/$1 -f
+  RewriteRule ^(.*)$ dist/$1 [L]
+
+  # Otherwise route all SPA paths to dist/index.html
+  RewriteRule ^ dist/index.html [L]
+</IfModule>

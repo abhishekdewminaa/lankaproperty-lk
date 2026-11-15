@@ -1,0 +1,72 @@
+# LankaProperty.lk — Crawler & AI Search Indexing Directive (SEO + GEO + AIO)
+# Official Property Marketplace covering all 25 Districts of Sri Lanka
+
+User-agent: *
+Allow: /
+Allow: /properties
+Allow: /developments
+Allow: /advertising-packages
+Allow: /list-property
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /sitemap.xml
+Disallow: /admin
+Disallow: /admin/
+Disallow: /auth
+Disallow: /owner/
+Disallow: /agent/
+Disallow: /api/
+
+# Google Search & Google AI Overviews
+User-agent: Googlebot
+Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /owner/
+Disallow: /agent/
+
+User-agent: Google-Extended
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /admin
+
+# OpenAI SearchGPT & ChatGPT Search
+User-agent: OAI-SearchBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /admin
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /admin
+
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /admin
+
+# Perplexity AI Search
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /admin
+
+# Anthropic Claude Search
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /admin
+
+# Bing & Copilot Search
+User-agent: Bingbot
+Allow: /
+Disallow: /admin
+
+Sitemap: https://lankaproperty.lk/sitemap.xml
