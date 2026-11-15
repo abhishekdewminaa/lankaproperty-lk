@@ -217,8 +217,70 @@ VACUUM ANALYZE public.match_proposals;
 
 ---
 
-## 7. Scaling Past 10,000 Properties (Still $0)
+## 7. 10 Additional High-Impact Strategies to Cut Supabase Costs to $0
 
-If your platform expands to 50,000 listings with 500,000 photos:
-1. **Photo Offloading**: Connect Cloudflare R2 (10 GB free tier with zero egress fees) or ImageKit / Cloudinary (25 GB free monthly bandwidth).
-2. **Database Sizing**: At 50,000 compressed JSONB rows, your database will still be under **120 MB**, comfortably inside Supabase's 500 MB free tier.
+Since you are already paying for **Hostinger** web hosting, you can offload the heaviest storage, bandwidth, and caching workloads away from Supabase onto Hostinger and free edge networks:
+
+### 1. Store Property Photos on Hostinger Instead of Supabase Storage (Save 100% of Storage & Egress)
+* **Why**: Supabase Free Tier only gives **1 GB storage** and **5 GB bandwidth/month**, whereas your **Hostinger plan gives 50 GB – 200 GB NVMe SSD storage and Unlimited/Unmetered bandwidth**.
+* **How**: Upload compressed `.webp` property photos to a `/uploads/properties/` folder on your Hostinger server (or Cloudflare R2's free 10 GB tier) and save only the URL string (`https://lankaproperty.lk/uploads/properties/villa-01.webp`) inside Supabase's `properties.images` JSONB column.
+* **Savings**: Reduces Supabase Storage usage to **0 MB** and cuts Supabase Bandwidth Egress by **95%**.
+
+### 2. Column Projection — Never Run `SELECT *` on Listing Grids
+* **Why**: A single property row's `description`, `images` array, `floorPlans`, and `editorialStory` can be 12 KB of text. Fetching `SELECT *` for 50 properties sends **600 KB per page load**, burning through Supabase REST Egress.
+* **How**: On search & card pages (`/properties` and Homepage), only select the 9 card columns:
+  ```ts
+  supabase
+    .from('properties')
+    .select('id, slug, title, purpose, type, price_lkr, price_unit, district, city, hero_image, bedrooms, bathrooms, land_perches, building_sqft, is_featured, is_trending')
+    .eq('status', 'active')
+    .range(0, 11);
+  ```
+* **Savings**: Shrinks API payload per page load from **600 KB → 18 KB** (**97% less database bandwidth**).
+
+### 3. Batch `view_count` Increments Locally (Stop Write-Amplification & Disk Bloat)
+* **Why**: In PostgreSQL (MVCC architecture), every `UPDATE properties SET view_count = view_count + 1` creates a brand-new dead tuple copy of the entire row on disk! 10,000 page views = 10,000 dead row copies (~120 MB of disk bloat).
+* **How**:
+  - Track views in session/local storage so a user refreshing a page 5 times only triggers 1 count.
+  - Or store counters in a tiny separate two-column table `property_counters (property_id UUID PRIMARY KEY, view_count INT)` instead of updating the wide `properties` row.
+* **Savings**: Prevents **85% of PostgreSQL table bloat** and CPU spikes.
+
+### 4. Replace Supabase Realtime WebSockets with Direct WhatsApp / REST Polling
+* **Why**: Supabase Free Tier caps **concurrent Realtime WebSocket connections at 200** and charges per million Realtime messages on paid tiers. Real estate buyers do not need sub-second chat sockets.
+* **How**: Disable Realtime on `properties`, `wanted_properties`, and `inquiries` tables (`ALTER PUBLICATION supabase_realtime DROP TABLE public.properties;`). Route buyer leads via standard `INSERT` + direct WhatsApp click-to-chat.
+* **Savings**: **0 Realtime connection charges** and zero idle socket drain.
+
+### 5. Wrap `(select auth.uid())` in RLS Policies for 10x Lower CPU Usage
+* **Why**: According to Supabase Postgres Best Practices, writing `USING (auth.uid() = seller_id)` forces PostgreSQL to re-evaluate `auth.uid()` on **every single row** scanned.
+* **How**: Wrap `auth.uid()` in a scalar subquery so PostgreSQL caches the result once per query (`InitPlan`):
+  ```sql
+  CREATE POLICY "Sellers manage own listings"
+  ON public.properties FOR ALL
+  USING ((select auth.uid()) = seller_id);
+  ```
+* **Savings**: Reduces Postgres CPU usage on authenticated queries by **up to 90%**, avoiding compute upgrades.
+
+### 6. Cache Homepage & Featured JSON Snapshot on Hostinger / Browser `localStorage` (5-Min TTL)
+* **Why**: 80% of visitors hit the Homepage (`Featured Properties`, `Trending Properties`, `25 DistrictsCounts`). Querying Supabase on every homepage visit wastes thousands of identical API calls.
+* **How**: Cache the homepage payload in `localStorage` with a 5-minute timestamp (`lp_home_cache_v1`) or generate a static `/api/homepage-cache.json` file on Hostinger every 10 minutes.
+* **Savings**: Eliminates **80% of repetitive database read requests**.
+
+### 7. Auto-Archive Expired `Wanted` Requests & Sold Listings (`pg_cron`)
+* **Why**: Old sold listings and expired "Wanted" buyer requests sit in your database forever, increasing index size.
+* **How**: Schedule a weekly `pg_cron` job inside Supabase to purge or compress sold/expired records older than 90 days, and delete their secondary gallery images while keeping only 1 thumbnail.
+  ```sql
+  -- Delete match proposals older than 90 days
+  DELETE FROM public.match_proposals WHERE created_at < NOW() - INTERVAL '90 days';
+  ```
+
+### 8. Use Google OAuth + Email Magic Links Instead of Paid SMS OTP
+* **Why**: Third-party SMS OTP gateways (Twilio/MessageBird) in Sri Lanka (`+94`) cost **$0.04 to $0.08 per SMS**—1,000 logins would cost **$50–$80/month**.
+* **How**: Use Supabase's **free Email Auth + Google OAuth** (50,000 Monthly Active Users free) and verify Sri Lankan phone numbers via a zero-cost WhatsApp verification link.
+
+### 9. Prevent Supabase Free Project Auto-Pause (7-Day Inactivity Rule)
+* **Why**: Supabase pauses Free Tier databases after 7 days of low activity unless you upgrade to the $25/mo Pro plan.
+* **How**: Our GitHub Actions workflow (or a free cron on Hostinger hPanel) can ping your Supabase REST health endpoint once every 3 days (`GET https://<project>.supabase.co/rest/v1/properties?select=id&limit=1`), keeping the Free Tier instance awake 24/7/365 at **$0 cost**.
+
+### 10. Use Supavisor Transaction Pooler (Port `6543`) for Any Server-Side Calls
+* **Why**: Direct Postgres connections (Port `5432`) consume ~10 MB of RAM each and max out at 60 connections on the Free Tier.
+* **How**: Always use the **Transaction Pooler connection string (Port `6543` with `?pgbouncer=true`)** for any backend or serverless API routes so thousands of concurrent visitors share a tiny pool of database connections.
