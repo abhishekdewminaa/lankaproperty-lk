@@ -116,9 +116,30 @@ export function HomePage() {
     };
   }, [featuredProperties]);
 
+  const [trendingFilter, setTrendingFilter] = useState<'all' | 'house' | 'apartment' | 'land' | 'commercial'>('all');
+  const [trendingLayout, setTrendingLayout] = useState<PropertyCardVariant>('compact');
+
   const trendingProperties = useMemo(() => {
     return propertyService.getTrendingProperties(6);
   }, [storeVersion]);
+
+  const filteredTrendingProperties = useMemo(() => {
+    if (trendingFilter === 'all') return trendingProperties;
+    if (trendingFilter === 'land') {
+      return trendingProperties.filter((p) => p.type === 'land' || p.purpose === 'land');
+    }
+    return trendingProperties.filter((p) => p.type === trendingFilter);
+  }, [trendingProperties, trendingFilter]);
+
+  const trendingCounts = useMemo(() => {
+    return {
+      all: trendingProperties.length,
+      house: trendingProperties.filter((p) => p.type === 'house').length,
+      apartment: trendingProperties.filter((p) => p.type === 'apartment').length,
+      land: trendingProperties.filter((p) => p.type === 'land' || p.purpose === 'land').length,
+      commercial: trendingProperties.filter((p) => p.type === 'commercial').length,
+    };
+  }, [trendingProperties]);
 
   // Request HTML5 Geolocation
   const requestUserGeolocation = () => {
@@ -1411,7 +1432,7 @@ export function HomePage() {
           ========================================================================= */}
       <section id="trending-properties" className="bg-white py-14 sm:py-20 border-b border-[#DDE5DF]">
         <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#DDE5DF] mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#DDE5DF] mb-6">
             <div>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-[#103D2C] tracking-tight">
                 Trending Properties in Sri Lanka This Week
@@ -1429,29 +1450,107 @@ export function HomePage() {
             </div>
           </div>
 
-          <div
-            className={`grid grid-cols-1 md:grid-cols-2 ${
-              trendingProperties.length === 2 || trendingProperties.length === 4
-                ? 'lg:grid-cols-2'
-                : 'lg:grid-cols-3'
-            } gap-6 sm:gap-8`}
-          >
-            {trendingProperties.map((property, idx) => (
-              <div key={property.id} className="relative group flex flex-col">
-                <PropertyCard property={property} priority={idx < 3} />
-                {property.trendingVelocityText && (
-                  <div className="mt-2 px-3 py-1.5 bg-[#FAFBF9] border border-[#DDE5DF] rounded-[2px] flex items-center justify-between text-[11px]">
-                    <span className="font-extrabold text-[#C93636] uppercase tracking-wider">
-                      Velocity Signal
-                    </span>
-                    <span className="font-semibold text-[#18251E]">
-                      {property.trendingVelocityText}
-                    </span>
-                  </div>
-                )}
+          {/* Filter Tabs & Card Layout Switcher */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+            <div className="flex flex-wrap items-center gap-1.5 bg-[#FAFBF9] p-1 rounded-[2px] border border-[#DDE5DF] shadow-2xs">
+              {[
+                { key: 'all', label: `All (${trendingCounts.all})` },
+                { key: 'house', label: `Houses & Villas (${trendingCounts.house})` },
+                { key: 'apartment', label: `Condominiums (${trendingCounts.apartment})` },
+                { key: 'land', label: `Land (${trendingCounts.land})` },
+                { key: 'commercial', label: `Commercial (${trendingCounts.commercial})` },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setTrendingFilter(tab.key as any)}
+                  className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
+                    trendingFilter === tab.key
+                      ? 'bg-[#103D2C] text-white'
+                      : 'text-[#5F6B63] hover:text-[#103D2C] hover:bg-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 self-start lg:self-auto">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#5F6B63]">
+                Card Layout:
+              </span>
+              <div className="flex flex-wrap items-center gap-1 bg-[#FAFBF9] p-1 rounded-[2px] border border-[#DDE5DF] shadow-2xs">
+                {[
+                  { key: 'grid', label: 'Grid' },
+                  { key: 'gallery', label: 'Gallery' },
+                  { key: 'magazine', label: 'Magazine' },
+                  { key: 'compact', label: 'Compact' },
+                  { key: 'editorial', label: 'Editorial' },
+                  { key: 'ledger', label: 'Ledger' },
+                ].map((layout) => (
+                  <button
+                    key={layout.key}
+                    type="button"
+                    onClick={() => setTrendingLayout(layout.key as PropertyCardVariant)}
+                    className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
+                      trendingLayout === layout.key
+                        ? 'bg-[#176B45] text-white'
+                        : 'text-[#5F6B63] hover:text-[#103D2C] hover:bg-white'
+                    }`}
+                  >
+                    {layout.label}
+                  </button>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
+
+          {filteredTrendingProperties.length > 0 ? (
+            <div
+              className={
+                trendingLayout === 'compact'
+                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5'
+                  : trendingLayout === 'grid' || trendingLayout === 'gallery' || trendingLayout === 'magazine'
+                  ? `grid grid-cols-1 md:grid-cols-2 ${
+                      filteredTrendingProperties.length === 2 || filteredTrendingProperties.length === 4
+                        ? 'lg:grid-cols-2'
+                        : 'lg:grid-cols-3'
+                    } gap-6 sm:gap-8`
+                  : trendingLayout === 'editorial'
+                  ? 'flex flex-col gap-6'
+                  : 'flex flex-col gap-4'
+              }
+            >
+              {filteredTrendingProperties.map((property, idx) => (
+                <div key={property.id} className="relative group flex flex-col">
+                  <PropertyCard property={property} variant={trendingLayout} priority={idx < 3} />
+                  {property.trendingVelocityText && (
+                    <div className="mt-2 px-3 py-1.5 bg-[#FAFBF9] border border-[#DDE5DF] rounded-[2px] flex items-center justify-between text-[11px]">
+                      <span className="font-extrabold text-[#C93636] uppercase tracking-wider">
+                        Velocity Signal
+                      </span>
+                      <span className="font-semibold text-[#18251E] truncate ml-2">
+                        {property.trendingVelocityText}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[#FAFBF9] border border-[#DDE5DF] rounded-[2px] p-10 text-center space-y-3">
+              <p className="text-sm font-semibold text-[#18251E]">
+                No trending listings currently match this category filter.
+              </p>
+              <button
+                type="button"
+                onClick={() => setTrendingFilter('all')}
+                className="px-4 py-2 bg-[#103D2C] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] hover:bg-[#176B45] transition-colors cursor-pointer"
+              >
+                Show All Trending Properties
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
