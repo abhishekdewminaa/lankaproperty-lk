@@ -150,9 +150,6 @@ export function WantedPropertiesPage() {
         <div className="max-w-7xl mx-auto space-y-4">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2 max-w-3xl">
-              <span className="text-xs uppercase font-extrabold tracking-widest text-[#66C296] block">
-                Direct Buyer Demand Registry
-              </span>
               <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
                 Sri Lanka Wanted Property Board
               </h1>

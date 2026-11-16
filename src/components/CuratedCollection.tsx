@@ -146,10 +146,7 @@ export function CuratedCollection({ properties }: CuratedCollectionProps) {
       >
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#176B45]">
-              02 / CURATED COLLECTION
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-[#18251E] mt-1.5 tracking-tight">
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-[#18251E] tracking-tight">
               Exceptional Homes & Land
             </h2>
             <p className="text-sm sm:text-base text-[#5F6B63] mt-1 max-w-xl leading-relaxed">

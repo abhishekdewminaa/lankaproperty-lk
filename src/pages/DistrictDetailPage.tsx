@@ -144,14 +144,6 @@ export function DistrictDetailPage({ districtSlug }: DistrictDetailPageProps) {
         <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12 space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
             <div className="space-y-2 max-w-3xl">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-[#103D2C] text-white rounded-[2px]">
-                  {districtData.province}
-                </span>
-                <span className="text-xs font-bold text-[#176B45] uppercase tracking-wider">
-                  CADASTRAL CORRIDOR · SRI LANKA
-                </span>
-              </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#103D2C] tracking-tight">
                 {districtData.district} District Real Estate
               </h1>

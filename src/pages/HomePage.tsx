@@ -930,9 +930,6 @@ export function HomePage() {
         <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#DDE5DF] mb-8">
             <div>
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-[#103D2C] text-white text-[10px] font-extrabold uppercase tracking-widest rounded-[2px] mb-2">
-                FEATURED SHOWCASE
-              </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-[#103D2C] tracking-tight">
                 Featured Properties & Flagship Estates
               </h2>
@@ -1310,9 +1307,6 @@ export function HomePage() {
         <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#DDE5DF] mb-8">
             <div>
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-[#C93636] text-white text-[10px] font-extrabold uppercase tracking-widest rounded-[2px] mb-2">
-                MARKET VELOCITY
-              </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-[#103D2C] tracking-tight">
                 Trending Properties in Sri Lanka This Week
               </h2>
@@ -1608,10 +1602,6 @@ export function HomePage() {
           {/* Section Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4 pb-4 border-b border-[#DDE5DF]">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#E8F3EC] text-[#103D2C] text-[10px] font-black uppercase tracking-widest rounded-[2px] border border-[#176B45]/30 mb-2">
-                <span>▪</span>
-                <span>For Property Owners & Certified Brokers</span>
-              </div>
               <h2 className="text-2xl sm:text-4xl font-extrabold text-[#103D2C] tracking-tight">
                 List Your Property on LankaProperty.lk
               </h2>

@@ -100,10 +100,7 @@ export function SignatureStory({ property }: SignatureStoryProps) {
       {/* Header Eyebrow & Title */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10 pb-4 border-b border-[#DDE5DF]">
         <div>
-          <span className="text-xs uppercase font-extrabold tracking-widest text-[#176B45]">
-            Signature Editorial Showcase
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#18251E] mt-1 tracking-tight">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#18251E] tracking-tight">
             {property.title}
           </h2>
           <p className="text-sm text-[#5F6B63] mt-1">

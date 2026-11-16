@@ -49,9 +49,6 @@ export function SavedPage() {
       <div className="bg-[#F5F8F5] border-b border-[#DDE5DF] py-10 sm:py-12">
         <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-16">
           <div className="max-w-2xl space-y-2">
-            <span className="text-xs uppercase font-bold tracking-widest text-[#176B45]">
-              Saved & Compare
-            </span>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-[#18251E] tracking-tight">
               Your Curated Portfolio
             </h1>

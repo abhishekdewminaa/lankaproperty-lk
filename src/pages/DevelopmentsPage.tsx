@@ -63,10 +63,6 @@ export function DevelopmentsPage() {
       <section className="bg-white border-b border-[#DDE5DF] py-14 lg:py-18">
         <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12">
           <div className="max-w-4xl space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#E8F3EC] text-[#103D2C] text-[11px] font-black uppercase tracking-widest rounded-[2px] border border-[#176B45]/30">
-              <span>▪</span>
-              <span>Architectural Masterplans & Premier Developments · 2026</span>
-            </div>
             <h1 className="text-3xl sm:text-5xl font-extrabold text-[#103D2C] tracking-tight leading-tight">
               Premier Projects & Architectural Enclaves in Sri Lanka
             </h1>
