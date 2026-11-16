@@ -108,7 +108,7 @@ export function BrandLogo({ variant = 'light', size = 'md', isCompact = false }:
       {/* Bold 900-Weight Wordmark */}
       <span
         className={`${
-          size === 'sm' ? 'text-xl sm:text-2xl' : 'text-xl sm:text-2xl xl:text-[26px]'
+          size === 'sm' ? 'text-base sm:text-lg' : 'text-base sm:text-lg xl:text-[20px]'
         } font-black tracking-tight leading-none ${
           isDarkBg ? 'text-white' : 'text-[#103D2C]'
         }`}
@@ -116,7 +116,7 @@ export function BrandLogo({ variant = 'light', size = 'md', isCompact = false }:
         Lanka
         <span className={isDarkBg ? 'text-white' : 'text-[#176B45]'}>Property</span>
         <span
-          className={`text-xs sm:text-[13px] font-extrabold uppercase tracking-wider ml-1 ${
+          className={`text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider ml-1 ${
             isDarkBg ? 'text-white' : 'text-[#103D2C]/85'
           }`}
         >
