@@ -509,9 +509,7 @@ export function Header({ isHomePage = false }: HeaderProps) {
           <div className="relative ml-auto w-full max-w-xs sm:max-w-sm bg-white h-full shadow-2xl flex flex-col justify-between p-6 z-10">
             <div>
               <div className="flex items-center justify-between pb-6 border-b border-[#DDE5DF]">
-                <span className="text-xl font-bold text-[#103D2C]">
-                  Lanka<span className="text-[#176B45]">Property</span>.lk
-                </span>
+                <BrandLogo variant="light" size="sm" />
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-2 text-[#5F6B63] hover:text-[#18251E] rounded-[2px] focus-visible:outline-2 focus-visible:outline-[#176B45] cursor-pointer"

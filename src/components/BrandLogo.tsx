@@ -113,15 +113,7 @@ export function BrandLogo({ variant = 'light', size = 'md', isCompact = false }:
           isDarkBg ? 'text-white' : 'text-[#103D2C]'
         }`}
       >
-        Lanka
-        <span className={isDarkBg ? 'text-white' : 'text-[#176B45]'}>Property</span>
-        <span
-          className={`text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider ml-1 ${
-            isDarkBg ? 'text-white' : 'text-[#103D2C]/85'
-          }`}
-        >
-          .lk
-        </span>
+        Lanka<span className={isDarkBg ? 'text-white' : 'text-[#176B45]'}>Property</span>
       </span>
     </motion.span>
   );
