@@ -500,19 +500,26 @@ export function HomePage() {
           authoritative headline, micro-trust indicators, and sleek search bar
           ========================================================================= */}
       <section className="relative w-full bg-[#0B2519] text-white min-h-[640px] lg:min-h-[700px] flex flex-col justify-between overflow-hidden">
-        {/* Full-Bleed Atmospheric Background Photo (Dusk estate, NOT repeating villa!) */}
-        <div className="absolute inset-0 z-0">
-          <img
+        {/* Full-Bleed Atmospheric Background Photo with Continuous Slow Ken Burns Drift */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <motion.img
             src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=2000&q=80"
             alt="Sri Lanka Architectural Estate at Dusk"
-            className="w-full h-full object-cover object-center opacity-45 scale-100"
+            animate={{ scale: [1, 1.07, 1] }}
+            transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-full h-full object-cover object-center opacity-45"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0B2519] via-[#0B2519]/40 to-black/60" />
         </div>
 
         {/* Hero Headline & Trust Signals */}
         <div className="relative z-10 max-w-[1360px] w-full mx-auto px-5 md:px-8 lg:px-12 pt-24 sm:pt-28 lg:pt-32 pb-8">
-          <div className="max-w-3xl space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: 'easeOut' }}
+            className="max-w-3xl space-y-4"
+          >
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-[58px] font-extrabold text-white tracking-tight leading-[1.08]">
               Sri Lanka's Premier Freehold Residences, Sky Penthouses & Coastal Estates.
@@ -530,7 +537,7 @@ export function HomePage() {
               <span>· DIASPORA IIA DIRECT REPATRIATION</span>
               <span>· ZERO BUYER COMMISSION</span>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Floating Horizontal Architectural Search Command Bar */}
