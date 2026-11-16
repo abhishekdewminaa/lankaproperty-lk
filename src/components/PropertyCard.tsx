@@ -54,7 +54,7 @@ export function PropertyCard({ property, priority = false }: PropertyCardProps) 
   return (
     <article
       onClick={handleCardClick}
-      className="group flex flex-col bg-white border border-[#DDE5DF] hover:border-[#103D2C] hover:shadow-[0_12px_30px_rgba(16,61,44,0.08)] transition-all duration-200 rounded-[2px] overflow-hidden cursor-pointer"
+      className="group flex flex-col bg-white border border-[#DDE5DF] shadow-[0_8px_24px_rgba(16,61,44,0.08),0_2px_6px_rgba(0,0,0,0.04)] hover:border-[#103D2C] hover:shadow-[0_18px_40px_rgba(16,61,44,0.14),0_4px_12px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-200 rounded-[2px] overflow-hidden cursor-pointer"
     >
       {/* Pure, Unobstructed 16:10 Architectural Photography */}
       <div className="relative aspect-16/10 w-full overflow-hidden bg-[#F5F8F5]">
