@@ -662,10 +662,10 @@ export function HomePage() {
                     </span>
                   </button>
 
-                  {/* Primary Orange Search Button */}
+                  {/* Primary Red Search Button */}
                   <button
                     type="submit"
-                    className="h-12 px-6 bg-[#FA541C] hover:bg-[#D4380D] text-white text-xs font-extrabold uppercase tracking-wider rounded-r-[2px] transition-colors cursor-pointer flex items-center justify-center whitespace-nowrap shadow-xs"
+                    className="h-12 px-6 bg-[#C93636] hover:bg-[#A62626] text-white text-xs font-extrabold uppercase tracking-wider rounded-r-[2px] transition-colors cursor-pointer flex items-center justify-center whitespace-nowrap shadow-xs"
                   >
                     Search
                   </button>
