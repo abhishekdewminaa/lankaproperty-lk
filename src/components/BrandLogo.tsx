@@ -11,13 +11,13 @@ export function BrandLogo({ variant = 'light', size = 'md' }: BrandLogoProps) {
   const isDarkBg = variant === 'dark';
 
   return (
-    <span className="inline-flex items-center gap-2 select-none">
+    <span className="inline-flex items-center gap-2.5 select-none">
       {/* Vector Architectural Roof, Rising Sun & Tropical Palm Emblem */}
       <svg
         viewBox="0 0 42 32"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className={size === 'sm' ? 'w-7 h-5 shrink-0' : 'w-8 h-6 xl:w-9 xl:h-7 shrink-0'}
+        className={size === 'sm' ? 'w-8 h-6 shrink-0' : 'w-9 h-7 sm:w-10 sm:h-8 xl:w-11 xl:h-9 shrink-0'}
         aria-hidden="true"
       >
         {/* Warm Tropical Sun */}
@@ -52,16 +52,16 @@ export function BrandLogo({ variant = 'light', size = 'md' }: BrandLogoProps) {
       {/* Bold 900-Weight Wordmark */}
       <span
         className={`${
-          size === 'sm' ? 'text-lg sm:text-xl' : 'text-lg sm:text-xl xl:text-2xl'
+          size === 'sm' ? 'text-xl sm:text-2xl' : 'text-xl sm:text-2xl xl:text-[26px]'
         } font-black tracking-tight leading-none ${
           isDarkBg ? 'text-white' : 'text-[#103D2C]'
         }`}
       >
         Lanka
-        <span className={isDarkBg ? 'text-[#9FE3B8]' : 'text-[#176B45]'}>Property</span>
+        <span className={isDarkBg ? 'text-white' : 'text-[#176B45]'}>Property</span>
         <span
-          className={`text-[11px] sm:text-xs font-extrabold uppercase tracking-wider ml-1 ${
-            isDarkBg ? 'text-white/90' : 'text-[#103D2C]/80'
+          className={`text-xs sm:text-[13px] font-extrabold uppercase tracking-wider ml-1 ${
+            isDarkBg ? 'text-white' : 'text-[#103D2C]/85'
           }`}
         >
           .lk
