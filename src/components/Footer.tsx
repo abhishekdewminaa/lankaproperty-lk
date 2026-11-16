@@ -1,5 +1,6 @@
 import { useRouter } from '../hooks/useRouter';
-import { ArrowUpRight, Home } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 export function Footer() {
   const { navigate } = useRouter();
@@ -10,10 +11,9 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 pb-14 border-b border-[#176B45]/30">
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
-            <span className="text-2xl font-bold tracking-tight text-white block">
-              Lanka<span className="text-[#E8F3EC]">Property</span>
-              <span className="text-xs uppercase tracking-wider text-[#A3B8AD] ml-1.5">.lk</span>
-            </span>
+            <div>
+              <BrandLogo variant="dark" />
+            </div>
             <p className="text-sm text-[#A3B8AD] leading-relaxed max-w-sm">
               Sri Lanka’s architectural property marketplace. Curated houses, luxury coastal villas, prime residential land, and premier master-planned developments.
             </p>

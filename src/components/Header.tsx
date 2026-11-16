@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Heart, Menu, X, ArrowUpRight, Home, Globe, Scale } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 import { useRouter } from '../hooks/useRouter';
 import { useSavedProperties } from '../hooks/useSavedProperties';
 import { useCurrency, CurrencyCode, CURRENCIES } from '../context/CurrencyContext';
@@ -151,21 +152,7 @@ export function Header({ isHomePage = false }: HeaderProps) {
             onClick={() => handleNav('/')}
             className="flex items-center text-left focus-visible:outline-2 focus-visible:outline-[#176B45] rounded-[2px] cursor-pointer shrink-0 mr-3 xl:mr-5 2xl:mr-8"
           >
-            <span
-              className={`text-lg sm:text-xl xl:text-2xl font-extrabold tracking-tight ${
-                isHomePage ? 'text-white' : 'text-[#103D2C]'
-              }`}
-            >
-              Lanka
-              <span className={isHomePage ? 'text-[#9FE3B8]' : 'text-[#176B45]'}>Property</span>
-              <span
-                className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider ml-1.5 ${
-                  isHomePage ? 'text-white/75' : 'text-[#5F6B63]'
-                }`}
-              >
-                .lk
-              </span>
-            </span>
+            <BrandLogo variant={isHomePage ? 'dark' : 'light'} />
           </button>
 
           {/* Centre: Navigation Links (Desktop - all full section words preserved) */}
