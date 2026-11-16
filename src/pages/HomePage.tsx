@@ -950,7 +950,13 @@ export function HomePage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 ${
+              featuredProperties.length === 2 || featuredProperties.length === 4
+                ? 'lg:grid-cols-2'
+                : 'lg:grid-cols-3'
+            } gap-6 sm:gap-8`}
+          >
             {featuredProperties.map((property, idx) => (
               <PropertyCard key={property.id} property={property} priority={idx < 3} />
             ))}
@@ -1323,7 +1329,13 @@ export function HomePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 ${
+              trendingProperties.length === 2 || trendingProperties.length === 4
+                ? 'lg:grid-cols-2'
+                : 'lg:grid-cols-3'
+            } gap-6 sm:gap-8`}
+          >
             {trendingProperties.map((property, idx) => (
               <div key={property.id} className="relative group flex flex-col">
                 <PropertyCard property={property} priority={idx < 3} />
