@@ -5,7 +5,7 @@ import { useSavedProperties } from '../hooks/useSavedProperties';
 import { useCurrency } from '../context/CurrencyContext';
 import { useCompare } from '../context/CompareContext';
 
-export type PropertyCardVariant = 'grid' | 'editorial' | 'ledger';
+export type PropertyCardVariant = 'grid' | 'editorial' | 'ledger' | 'gallery' | 'compact' | 'magazine';
 
 interface PropertyCardProps {
   property: Property;
@@ -220,6 +220,163 @@ export function PropertyCard({ property, priority = false, variant = 'grid' }: P
           <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 lg:border-l border-[#DDE5DF] lg:pl-6 shrink-0">
             {renderValuation()}
             {renderActionButtons(false)}
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  // LAYOUT 4: GALLERY OVERLAY SHOWCASE (Full-bleed architectural photography with bottom scrim)
+  if (variant === 'gallery') {
+    return (
+      <article
+        onClick={handleCardClick}
+        className={`${cardShellClass} relative aspect-4/3 flex flex-col justify-end`}
+      >
+        <img
+          src={heroSrc}
+          alt={property.title}
+          loading={priority ? 'eager' : 'lazy'}
+          referrerPolicy="no-referrer"
+          onError={() => setImageError(true)}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0B2519]/95 via-[#0B2519]/45 to-transparent" />
+
+        <div className="relative z-10 p-5 sm:p-6 text-white space-y-2.5">
+          <div className="flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-widest text-[#9FE3B8]">
+            <span className="truncate">
+              {property.location.city}, {property.location.district} · {getTenureLabel(property.type)}
+            </span>
+            {property.isFeatured && <span className="shrink-0 text-white">Featured</span>}
+          </div>
+
+          <h3 className="text-lg sm:text-xl font-extrabold text-white leading-snug line-clamp-1 tracking-tight">
+            {property.title}
+          </h3>
+
+          {specItems.length > 0 && (
+            <div className="flex items-center flex-wrap gap-y-1 text-[12px] text-white/85">
+              {specItems.map((spec, idx) => (
+                <span key={spec.label} className="flex items-center">
+                  {idx > 0 && <span className="mx-2 text-white/30">|</span>}
+                  <strong className="font-bold text-white tabular-nums mr-1">{spec.value}</strong>
+                  <span>{spec.label}</span>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="pt-3 border-t border-white/20 flex items-center justify-between gap-3">
+            <div className="text-[18px] sm:text-[19px] font-extrabold text-white tabular-nums truncate">
+              {property.priceLkr > 0 ? formatPrice(property.priceLkr, false) : 'Price on request'}
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0 text-[10px] font-bold uppercase tracking-wider">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addToCompare(property);
+                }}
+                className={`px-2.5 py-1 rounded-[2px] border transition-colors cursor-pointer ${
+                  compared
+                    ? 'bg-white text-[#103D2C] border-white'
+                    : 'bg-white/15 text-white border-white/30 hover:bg-white/25'
+                }`}
+              >
+                {compared ? 'Comparing' : 'Compare'}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleSave(property.id);
+                }}
+                className={`px-2.5 py-1 rounded-[2px] border transition-colors cursor-pointer ${
+                  saved
+                    ? 'bg-[#C93636] text-white border-[#C93636]'
+                    : 'bg-white/15 text-white border-white/30 hover:bg-white/25'
+                }`}
+              >
+                {saved ? 'Saved' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  // LAYOUT 5: COMPACT 4-COLUMN PORTFOLIO TILE (High-density investor scan)
+  if (variant === 'compact') {
+    return (
+      <article onClick={handleCardClick} className={`${cardShellClass} flex flex-col`}>
+        {renderPhoto('aspect-3/2 w-full')}
+
+        <div className="p-4 flex flex-col flex-1 justify-between gap-3 bg-white">
+          <div className="space-y-1.5">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[#5F6B63] truncate">
+              {property.location.city}, {property.location.district}
+            </div>
+            <h3 className="text-[15px] font-bold text-[#18251E] group-hover:text-[#103D2C] transition-colors line-clamp-1 leading-snug">
+              {property.title}
+            </h3>
+            {specItems.length > 0 && (
+              <div className="text-[11.5px] text-[#5F6B63] truncate">
+                {specItems.slice(0, 3).map((s) => `${s.value} ${s.label}`).join(' · ')}
+              </div>
+            )}
+          </div>
+
+          <div className="pt-2.5 border-t border-[#DDE5DF] flex items-center justify-between gap-2">
+            <div className="text-[15px] font-extrabold text-[#103D2C] tabular-nums truncate">
+              {property.priceLkr > 0 ? formatPrice(property.priceLkr, false) : 'POA'}
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleSave(property.id);
+              }}
+              className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-[2px] border cursor-pointer shrink-0 ${
+                saved
+                  ? 'bg-[#C93636] text-white border-[#C93636]'
+                  : 'bg-[#FAFBF9] text-[#5F6B63] border-[#DDE5DF] hover:border-[#103D2C]'
+              }`}
+            >
+              {saved ? 'Saved' : 'Save'}
+            </button>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  // LAYOUT 6: ARCHITECTURAL MONOGRAPH / MAGAZINE CARD (Header-first with left emerald accent)
+  if (variant === 'magazine') {
+    return (
+      <article onClick={handleCardClick} className={`${cardShellClass} flex flex-col border-l-4 border-l-[#103D2C]`}>
+        <div className="p-5 sm:p-6 pb-4 bg-[#FAFBF9] border-b border-[#DDE5DF] space-y-1.5">
+          {renderEyebrow()}
+          <h3 className="text-[19px] sm:text-[21px] font-extrabold text-[#103D2C] group-hover:text-[#176B45] transition-colors line-clamp-1 leading-snug tracking-tight">
+            {property.title}
+          </h3>
+        </div>
+
+        {renderPhoto('aspect-16/9 w-full')}
+
+        <div className="p-5 sm:p-6 flex flex-col flex-1 justify-between gap-4 bg-white">
+          <div className="space-y-2.5">
+            <p className="text-xs text-[#5F6B63] leading-relaxed line-clamp-2">
+              {property.description}
+            </p>
+            {renderSpecs()}
+          </div>
+
+          <div className="pt-3.5 border-t border-[#DDE5DF] flex items-center justify-between gap-3">
+            {renderValuation()}
+            {renderActionButtons(true)}
           </div>
         </div>
       </article>

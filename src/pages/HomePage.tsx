@@ -995,13 +995,16 @@ export function HomePage() {
             </div>
 
             {/* Card Layout Switcher */}
-            <div className="flex items-center gap-2 self-start lg:self-auto">
+            <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
               <span className="text-[10px] font-bold uppercase tracking-widest text-[#5F6B63]">
                 Card Layout:
               </span>
-              <div className="flex items-center gap-1 bg-white p-1 rounded-[2px] border border-[#DDE5DF] shadow-2xs">
+              <div className="flex flex-wrap items-center gap-1 bg-white p-1 rounded-[2px] border border-[#DDE5DF] shadow-2xs">
                 {[
                   { key: 'grid', label: 'Grid' },
+                  { key: 'gallery', label: 'Gallery' },
+                  { key: 'magazine', label: 'Magazine' },
+                  { key: 'compact', label: 'Compact' },
                   { key: 'editorial', label: 'Editorial' },
                   { key: 'ledger', label: 'Ledger' },
                 ].map((layout) => (
@@ -1009,7 +1012,7 @@ export function HomePage() {
                     key={layout.key}
                     type="button"
                     onClick={() => setFeaturedLayout(layout.key as PropertyCardVariant)}
-                    className={`px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
+                    className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
                       featuredLayout === layout.key
                         ? 'bg-[#176B45] text-white'
                         : 'text-[#5F6B63] hover:text-[#103D2C] hover:bg-[#FAFBF9]'
@@ -1025,7 +1028,9 @@ export function HomePage() {
           {filteredFeaturedProperties.length > 0 ? (
             <div
               className={
-                featuredLayout === 'grid'
+                featuredLayout === 'compact'
+                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5'
+                  : featuredLayout === 'grid' || featuredLayout === 'gallery' || featuredLayout === 'magazine'
                   ? `grid grid-cols-1 md:grid-cols-2 ${
                       filteredFeaturedProperties.length === 2 || filteredFeaturedProperties.length === 4
                         ? 'lg:grid-cols-2'
