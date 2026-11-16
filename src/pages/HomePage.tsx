@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { useRouter } from '../hooks/useRouter';
 import { propertyService } from '../services/propertyService';
 import { homepageConfigService } from '../services/homepageConfigService';
@@ -1004,13 +1005,20 @@ export function HomePage() {
                   key={tab.key}
                   type="button"
                   onClick={() => setFeaturedFilter(tab.key as any)}
-                  className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
+                  className={`relative px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
                     featuredFilter === tab.key
-                      ? 'bg-[#103D2C] text-white'
+                      ? 'text-white'
                       : 'text-[#5F6B63] hover:text-[#103D2C] hover:bg-[#FAFBF9]'
                   }`}
                 >
-                  {tab.label}
+                  {featuredFilter === tab.key && (
+                    <motion.span
+                      layoutId="featured-filter-pill"
+                      transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                      className="absolute inset-0 bg-[#103D2C] rounded-[2px]"
+                    />
+                  )}
+                  <span className="relative z-10">{tab.label}</span>
                 </button>
               ))}
             </div>
@@ -1033,13 +1041,20 @@ export function HomePage() {
                     key={layout.key}
                     type="button"
                     onClick={() => setFeaturedLayout(layout.key as PropertyCardVariant)}
-                    className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
+                    className={`relative px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
                       featuredLayout === layout.key
-                        ? 'bg-[#176B45] text-white'
+                        ? 'text-white'
                         : 'text-[#5F6B63] hover:text-[#103D2C] hover:bg-[#FAFBF9]'
                     }`}
                   >
-                    {layout.label}
+                    {featuredLayout === layout.key && (
+                      <motion.span
+                        layoutId="featured-layout-pill"
+                        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                        className="absolute inset-0 bg-[#176B45] rounded-[2px]"
+                      />
+                    )}
+                    <span className="relative z-10">{layout.label}</span>
                   </button>
                 ))}
               </div>
@@ -1063,12 +1078,19 @@ export function HomePage() {
               }
             >
               {filteredFeaturedProperties.map((property, idx) => (
-                <PropertyCard
-                  key={property.id}
-                  property={property}
-                  variant={featuredLayout}
-                  priority={idx < 3}
-                />
+                <motion.div
+                  key={`${property.id}-${featuredLayout}`}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.08 }}
+                  transition={{ duration: 0.25, delay: Math.min(idx * 0.04, 0.2), ease: 'easeOut' }}
+                >
+                  <PropertyCard
+                    property={property}
+                    variant={featuredLayout}
+                    priority={idx < 3}
+                  />
+                </motion.div>
               ))}
             </div>
           ) : (
@@ -1464,13 +1486,20 @@ export function HomePage() {
                   key={tab.key}
                   type="button"
                   onClick={() => setTrendingFilter(tab.key as any)}
-                  className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
+                  className={`relative px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
                     trendingFilter === tab.key
-                      ? 'bg-[#103D2C] text-white'
+                      ? 'text-white'
                       : 'text-[#5F6B63] hover:text-[#103D2C] hover:bg-white'
                   }`}
                 >
-                  {tab.label}
+                  {trendingFilter === tab.key && (
+                    <motion.span
+                      layoutId="trending-filter-pill"
+                      transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                      className="absolute inset-0 bg-[#103D2C] rounded-[2px]"
+                    />
+                  )}
+                  <span className="relative z-10">{tab.label}</span>
                 </button>
               ))}
             </div>
@@ -1492,13 +1521,20 @@ export function HomePage() {
                     key={layout.key}
                     type="button"
                     onClick={() => setTrendingLayout(layout.key as PropertyCardVariant)}
-                    className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
+                    className={`relative px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
                       trendingLayout === layout.key
-                        ? 'bg-[#176B45] text-white'
+                        ? 'text-white'
                         : 'text-[#5F6B63] hover:text-[#103D2C] hover:bg-white'
                     }`}
                   >
-                    {layout.label}
+                    {trendingLayout === layout.key && (
+                      <motion.span
+                        layoutId="trending-layout-pill"
+                        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                        className="absolute inset-0 bg-[#176B45] rounded-[2px]"
+                      />
+                    )}
+                    <span className="relative z-10">{layout.label}</span>
                   </button>
                 ))}
               </div>
@@ -1522,7 +1558,14 @@ export function HomePage() {
               }
             >
               {filteredTrendingProperties.map((property, idx) => (
-                <div key={property.id} className="relative group flex flex-col">
+                <motion.div
+                  key={`${property.id}-${trendingLayout}`}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.08 }}
+                  transition={{ duration: 0.25, delay: Math.min(idx * 0.04, 0.2), ease: 'easeOut' }}
+                  className="relative group flex flex-col"
+                >
                   <PropertyCard property={property} variant={trendingLayout} priority={idx < 3} />
                   {property.trendingVelocityText && (
                     <div className="mt-2 px-3 py-1.5 bg-[#FAFBF9] border border-[#DDE5DF] rounded-[2px] flex items-center justify-between text-[11px]">
@@ -1534,7 +1577,7 @@ export function HomePage() {
                       </span>
                     </div>
                   )}
-                </div>
+                </motion.div>
               ))}
             </div>
           ) : (

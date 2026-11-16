@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, useScroll, useSpring } from 'motion/react';
 import { Heart, Menu, X, ArrowUpRight, Home, Globe, Scale } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { useRouter } from '../hooks/useRouter';
@@ -131,10 +132,19 @@ export function Header({ isHomePage = false }: HeaderProps) {
   const isTransparent = isHomePage && !isScrolled;
   const isDarkHomeScrolled = isHomePage && isScrolled;
 
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 260,
+    damping: 32,
+    restDelta: 0.001,
+  });
+
   return (
     <>
       <header
-        className={`w-full h-[72px] z-50 transition-all duration-300 ${
+        className={`w-full ${
+          isScrolled ? 'h-[64px]' : 'h-[72px]'
+        } z-50 transition-all duration-300 ${
           isHomePage
             ? `fixed top-0 left-0 right-0 ${
                 isTransparent
@@ -147,12 +157,12 @@ export function Header({ isHomePage = false }: HeaderProps) {
         }`}
       >
         <div className="max-w-[1720px] w-full h-full mx-auto px-3 sm:px-5 lg:px-6 2xl:px-8 flex items-center justify-between gap-1.5 xl:gap-3 2xl:gap-4">
-          {/* Left: Brand Wordmark (with guaranteed spacing so .lk never touches Buy) */}
+          {/* Left: Brand Wordmark (reacts smoothly on hover, click, and scroll) */}
           <button
             onClick={() => handleNav('/')}
             className="flex items-center text-left focus-visible:outline-2 focus-visible:outline-[#176B45] rounded-[2px] cursor-pointer shrink-0 mr-3 xl:mr-5 2xl:mr-8"
           >
-            <BrandLogo variant={isHomePage ? 'dark' : 'light'} />
+            <BrandLogo variant={isHomePage ? 'dark' : 'light'} isCompact={isScrolled} />
           </button>
 
           {/* Centre: Navigation Links (Desktop - all full section words preserved) */}
@@ -173,7 +183,9 @@ export function Header({ isHomePage = false }: HeaderProps) {
               >
                 {link.label}
                 {link.isActive && (
-                  <span
+                  <motion.span
+                    layoutId="header-active-nav"
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                     className={`absolute bottom-0 left-0 right-0 h-[2px] ${
                       isHomePage ? 'bg-[#9FE3B8]' : 'bg-[#176B45]'
                     }`}
@@ -468,6 +480,14 @@ export function Header({ isHomePage = false }: HeaderProps) {
             </button>
           </div>
         </div>
+
+        {/* 2px Scroll Progress Hairline Bar */}
+        <motion.div
+          style={{ scaleX }}
+          className={`h-[2px] w-full origin-left ${
+            isHomePage ? 'bg-[#9FE3B8]' : 'bg-[#176B45]'
+          }`}
+        />
       </header>
 
       {/* Accessible Mobile / Tablet Drawer */}

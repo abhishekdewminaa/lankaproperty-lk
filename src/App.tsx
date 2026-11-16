@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useRouter } from './hooks/useRouter';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -306,10 +307,20 @@ export default function App() {
           {/* Persistent Site Header */}
           <Header isHomePage={isHome} />
 
-          {/* Main Semantic Landmark */}
+          {/* Main Semantic Landmark with Crisp Architectural Page Transitions */}
           <main id="main-content" className="flex-1">
             <Suspense fallback={<PageLoadingFallback />}>
-              {renderRoute()}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={pathname}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                >
+                  {renderRoute()}
+                </motion.div>
+              </AnimatePresence>
             </Suspense>
           </main>
 
