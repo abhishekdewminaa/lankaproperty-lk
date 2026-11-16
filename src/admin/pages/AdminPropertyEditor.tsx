@@ -212,16 +212,20 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
   // -------------------------------------------------------------
   // STAGE A: Instant Heuristic Parser Handler
   // -------------------------------------------------------------
-  const handleRunHeuristic = (textToParse = pastedRawText) => {
+  const handleRunHeuristic = (textToParse = pastedRawText, forceApply = false) => {
     if (!textToParse.trim()) return;
     const res = parseHeuristic(textToParse, formData);
     setParserResults(res.fields);
     setParserSummary(res.summary);
     setAiError(null);
 
-    // If autoFillEmptyFields is on, immediately apply unambiguous fields
-    if (autoFillEmptyFields) {
-      applyExtractedFields(res.fields.filter((f) => f.selectedToApply && !f.isConflict));
+    // Apply unambiguous extracted fields if autoFillEmptyFields is on OR explicitly triggered
+    if (autoFillEmptyFields || forceApply) {
+      const eligibleFields = res.fields.filter((f) => f.selectedToApply && !f.isConflict);
+      applyExtractedFields(eligibleFields);
+      if (forceApply && eligibleFields.length > 0) {
+        setSaveSuccessMessage(`Auto-arranged ${eligibleFields.length} extracted fields into the property form.`);
+      }
     }
   };
 
@@ -234,9 +238,9 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     debounceTimerRef.current = setTimeout(() => {
       if (val.trim().length > 15) {
-        handleRunHeuristic(val);
+        handleRunHeuristic(val, false);
       }
-    }, 600);
+    }, 500);
   };
 
   // -------------------------------------------------------------
@@ -279,7 +283,7 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
       } else {
         console.warn('AI Parsing failed, falling back to heuristic:', err);
         setAiError(err.message || 'AI service unavailable. Using instant heuristic extraction.');
-        handleRunHeuristic();
+        handleRunHeuristic(pastedRawText, true);
       }
     } finally {
       setIsAiLoading(false);
@@ -333,8 +337,19 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
         } else if (item.fieldKey.startsWith('agent.')) {
           const sub = item.fieldKey.split('.')[1] as keyof typeof prev.agent;
           next.agent = { ...next.agent, [sub]: item.proposedValue };
+          if (sub === 'phone' && !next.agent.whatsapp) {
+            next.agent.whatsapp = String(item.proposedValue).replace(/[^0-9]/g, '');
+          }
+        } else if (item.fieldKey === 'amenities' && Array.isArray(item.proposedValue)) {
+          next.amenities = Array.from(new Set([...(next.amenities || []), ...item.proposedValue]));
         } else {
           (next as any)[item.fieldKey] = item.proposedValue;
+          if (item.fieldKey === 'title' && !next.slug) {
+            next.slug = String(item.proposedValue)
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-|-$/g, '');
+          }
         }
       });
       return next;
@@ -863,7 +878,7 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
             type="button"
-            onClick={() => handleRunHeuristic()}
+            onClick={() => handleRunHeuristic(pastedRawText, true)}
             disabled={!pastedRawText.trim() || isAiLoading}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#176B45] hover:bg-[#115236] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
           >
