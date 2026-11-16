@@ -92,7 +92,7 @@ export function HomePage() {
 
   // Authoritative Featured & Trending Properties
   const [featuredFilter, setFeaturedFilter] = useState<'all' | 'house' | 'apartment' | 'land' | 'commercial'>('all');
-  const [featuredLayout, setFeaturedLayout] = useState<PropertyCardVariant>('grid');
+  const [featuredLayout, setFeaturedLayout] = useState<PropertyCardVariant>('compact');
 
   const featuredProperties = useMemo(() => {
     return propertyService.getFeaturedProperties(6);
