@@ -4,7 +4,7 @@ import { propertyService } from '../services/propertyService';
 import { homepageConfigService } from '../services/homepageConfigService';
 import { DEVELOPMENTS_DATA } from '../data/developments';
 import { SRI_LANKA_DISTRICTS, getCitiesForDistrict } from '../data/locations';
-import { PropertyCard } from '../components/PropertyCard';
+import { PropertyCard, PropertyCardVariant } from '../components/PropertyCard';
 import { AcquisitionCalculator } from '../components/AcquisitionCalculator';
 import { DistrictCadastralExplorer } from '../components/DistrictCadastralExplorer';
 import { SeoHead } from '../components/SeoHead';
@@ -91,9 +91,30 @@ export function HomePage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Authoritative Featured & Trending Properties
+  const [featuredFilter, setFeaturedFilter] = useState<'all' | 'house' | 'apartment' | 'land' | 'commercial'>('all');
+  const [featuredLayout, setFeaturedLayout] = useState<PropertyCardVariant>('grid');
+
   const featuredProperties = useMemo(() => {
     return propertyService.getFeaturedProperties(6);
   }, [storeVersion]);
+
+  const filteredFeaturedProperties = useMemo(() => {
+    if (featuredFilter === 'all') return featuredProperties;
+    if (featuredFilter === 'land') {
+      return featuredProperties.filter((p) => p.type === 'land' || p.purpose === 'land');
+    }
+    return featuredProperties.filter((p) => p.type === featuredFilter);
+  }, [featuredProperties, featuredFilter]);
+
+  const featuredCounts = useMemo(() => {
+    return {
+      all: featuredProperties.length,
+      house: featuredProperties.filter((p) => p.type === 'house').length,
+      apartment: featuredProperties.filter((p) => p.type === 'apartment').length,
+      land: featuredProperties.filter((p) => p.type === 'land' || p.purpose === 'land').length,
+      commercial: featuredProperties.filter((p) => p.type === 'commercial').length,
+    };
+  }, [featuredProperties]);
 
   const trendingProperties = useMemo(() => {
     return propertyService.getTrendingProperties(6);
@@ -928,7 +949,7 @@ export function HomePage() {
           ========================================================================= */}
       <section id="featured-properties" className="bg-[#FAFBF9] py-14 sm:py-20 border-b border-[#DDE5DF]">
         <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#DDE5DF] mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#DDE5DF] mb-6">
             <div>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-[#103D2C] tracking-tight">
                 Featured Properties & Flagship Estates
@@ -947,17 +968,97 @@ export function HomePage() {
             </button>
           </div>
 
-          <div
-            className={`grid grid-cols-1 md:grid-cols-2 ${
-              featuredProperties.length === 2 || featuredProperties.length === 4
-                ? 'lg:grid-cols-2'
-                : 'lg:grid-cols-3'
-            } gap-6 sm:gap-8`}
-          >
-            {featuredProperties.map((property, idx) => (
-              <PropertyCard key={property.id} property={property} priority={idx < 3} />
-            ))}
+          {/* Filter Tabs & Card Layout Switcher */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+            {/* Category Filter Tabs */}
+            <div className="flex flex-wrap items-center gap-1.5 bg-white p-1 rounded-[2px] border border-[#DDE5DF] shadow-2xs">
+              {[
+                { key: 'all', label: `All (${featuredCounts.all})` },
+                { key: 'house', label: `Houses & Villas (${featuredCounts.house})` },
+                { key: 'apartment', label: `Condominiums (${featuredCounts.apartment})` },
+                { key: 'land', label: `Land (${featuredCounts.land})` },
+                { key: 'commercial', label: `Commercial (${featuredCounts.commercial})` },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setFeaturedFilter(tab.key as any)}
+                  className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
+                    featuredFilter === tab.key
+                      ? 'bg-[#103D2C] text-white'
+                      : 'text-[#5F6B63] hover:text-[#103D2C] hover:bg-[#FAFBF9]'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Card Layout Switcher */}
+            <div className="flex items-center gap-2 self-start lg:self-auto">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#5F6B63]">
+                Card Layout:
+              </span>
+              <div className="flex items-center gap-1 bg-white p-1 rounded-[2px] border border-[#DDE5DF] shadow-2xs">
+                {[
+                  { key: 'grid', label: 'Grid' },
+                  { key: 'editorial', label: 'Editorial' },
+                  { key: 'ledger', label: 'Ledger' },
+                ].map((layout) => (
+                  <button
+                    key={layout.key}
+                    type="button"
+                    onClick={() => setFeaturedLayout(layout.key as PropertyCardVariant)}
+                    className={`px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
+                      featuredLayout === layout.key
+                        ? 'bg-[#176B45] text-white'
+                        : 'text-[#5F6B63] hover:text-[#103D2C] hover:bg-[#FAFBF9]'
+                    }`}
+                  >
+                    {layout.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
+
+          {filteredFeaturedProperties.length > 0 ? (
+            <div
+              className={
+                featuredLayout === 'grid'
+                  ? `grid grid-cols-1 md:grid-cols-2 ${
+                      filteredFeaturedProperties.length === 2 || filteredFeaturedProperties.length === 4
+                        ? 'lg:grid-cols-2'
+                        : 'lg:grid-cols-3'
+                    } gap-6 sm:gap-8`
+                  : featuredLayout === 'editorial'
+                  ? 'flex flex-col gap-6'
+                  : 'flex flex-col gap-4'
+              }
+            >
+              {filteredFeaturedProperties.map((property, idx) => (
+                <PropertyCard
+                  key={property.id}
+                  property={property}
+                  variant={featuredLayout}
+                  priority={idx < 3}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white border border-[#DDE5DF] rounded-[2px] p-10 text-center space-y-3">
+              <p className="text-sm font-semibold text-[#18251E]">
+                No featured listings currently match this category filter.
+              </p>
+              <button
+                type="button"
+                onClick={() => setFeaturedFilter('all')}
+                className="px-4 py-2 bg-[#103D2C] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] hover:bg-[#176B45] transition-colors cursor-pointer"
+              >
+                Show All Featured Properties
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
