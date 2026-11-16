@@ -140,8 +140,10 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
   const [aiError, setAiError] = useState<string | null>(null);
   const aiAbortControllerRef = useRef<AbortController | null>(null);
 
-  // Manual image URL input state
+  // Manual image URL & Drag-and-Drop Gallery Reorder State
   const [imageUrlInput, setImageUrlInput] = useState('');
+  const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
+  const [dragOverImageIndex, setDragOverImageIndex] = useState<number | null>(null);
   const [isCompressingAdminImages, setIsCompressingAdminImages] = useState(false);
   const [adminCompressionStats, setAdminCompressionStats] = useState<{
     count: number;
@@ -541,18 +543,11 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
     setSaveSuccessMessage('Listing unpublished and reverted to draft.');
   };
 
-  // Image Upload / Drag-and-Drop Handlers with Client-Side WebP Compression
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  // Image Upload / Drag-and-Drop Handlers with Client-Side WebP Compression (Unlimited for SuperAdmin)
+  const processImageFiles = async (files: FileList | File[]) => {
+    const selectedFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (selectedFiles.length === 0) return;
 
-    const availableSlots = 20 - formData.images.length;
-    if (availableSlots <= 0) {
-      alert('Maximum 20 images reached.');
-      return;
-    }
-
-    const selectedFiles = Array.from(files).slice(0, availableSlots);
     setIsCompressingAdminImages(true);
     setAdminCompressionStats(null);
 
@@ -560,7 +555,7 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
       const summary = await compressImagesBatch(selectedFiles, 1920, 0.82);
       const newUrls = summary.results.map((r) => r.dataUrl);
 
-      handleFieldChange('images', [...formData.images, ...newUrls].slice(0, 20));
+      handleFieldChange('images', [...formData.images, ...newUrls]);
       setAdminCompressionStats({
         count: summary.results.length,
         original: formatBytes(summary.totalOriginalBytes),
@@ -572,13 +567,19 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
       alert(`Image compression failed: ${err.message || 'Please choose valid images.'}`);
     } finally {
       setIsCompressingAdminImages(false);
-      e.target.value = '';
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    await processImageFiles(files);
+    e.target.value = '';
   };
 
   const handleAddImageUrl = () => {
     if (!imageUrlInput.trim()) return;
-    handleFieldChange('images', [...formData.images, imageUrlInput.trim()].slice(0, 20));
+    handleFieldChange('images', [...formData.images, imageUrlInput.trim()]);
     setImageUrlInput('');
   };
 
@@ -874,26 +875,24 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
           </div>
         </div>
 
-        {/* Action Controls */}
+        {/* Action Controls (Clean text-only buttons) */}
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
             type="button"
             onClick={() => handleRunHeuristic(pastedRawText, true)}
             disabled={!pastedRawText.trim() || isAiLoading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#176B45] hover:bg-[#115236] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
+            className="px-4 py-2 bg-[#176B45] hover:bg-[#115236] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
           >
-            <Wand2 className="w-3.5 h-3.5" />
-            <span>Extract & Auto-fill</span>
+            Extract & Auto-fill
           </button>
 
           <button
             type="button"
             onClick={handleEnhanceWithAI}
             disabled={!pastedRawText.trim() || isAiLoading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#103D2C] hover:bg-[#0c2e21] text-[#E8F3EC] text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
+            className="px-4 py-2 bg-[#103D2C] hover:bg-[#0c2e21] text-[#E8F3EC] text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>{isAiLoading ? 'Analyzing with Gemini...' : 'Enhance with AI'}</span>
+            {isAiLoading ? 'Analyzing with Gemini...' : 'Enhance with AI'}
           </button>
 
           {isAiLoading && (
@@ -910,10 +909,9 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
             <button
               type="button"
               onClick={handleUndoApply}
-              className="inline-flex items-center gap-1 px-3 py-2 border border-[#DDE5DF] bg-white text-[#5F6B63] hover:text-[#18251E] text-xs font-bold uppercase tracking-wider rounded-[3px]"
+              className="px-3 py-2 border border-[#DDE5DF] bg-white text-[#5F6B63] hover:text-[#18251E] text-xs font-bold uppercase tracking-wider rounded-[3px]"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Undo Last Apply</span>
+              Undo Last Apply
             </button>
           )}
         </div>
@@ -1744,19 +1742,32 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
           <div>
             <h2 className="text-lg font-bold text-[#18251E]">6. Photography & Media Gallery</h2>
             <p className="text-xs text-[#5F6B63]">
-              Upload architectural photography, choose the cover image, and attach video tours.
+              Click, hold, and drag any photo to reorder. Position #1 is automatically the Main Cover Photo.
             </p>
           </div>
-          <span className="text-xs font-bold tabular-nums px-3 py-1 bg-[#F5F8F5] border border-[#DDE5DF] rounded-[3px] text-[#18251E] self-start sm:self-auto">
-            {formData.images.length} / 20 Photos Uploaded
+          <span className="text-xs font-bold tabular-nums px-3 py-1 bg-[#E8F3EC] border border-[#176B45]/30 rounded-[3px] text-[#103D2C] self-start sm:self-auto">
+            {formData.images.length} Photos Uploaded · Unlimited SuperAdmin Quota
           </span>
         </div>
 
-        {/* Compact Drop Area */}
-        <div className="border-2 border-dashed border-[#DDE5DF] hover:border-[#176B45] rounded-[4px] p-6 text-center bg-[#F5F8F5]/60 transition-colors">
+        {/* Compact Drop Area (Supports drag-and-drop file upload) */}
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              processImageFiles(e.dataTransfer.files);
+            }
+          }}
+          className="border-2 border-dashed border-[#DDE5DF] hover:border-[#176B45] rounded-[4px] p-6 text-center bg-[#F5F8F5]/60 transition-colors"
+        >
           <UploadCloud className="w-8 h-8 text-[#176B45] mx-auto mb-2" />
           <p className="text-sm font-bold text-[#18251E]">Drag and drop images here, or browse files</p>
-          <p className="text-xs text-[#5F6B63] mt-0.5">Supports high-resolution JPG, PNG, WEBP. Maximum 20 photos.</p>
+          <p className="text-xs text-[#5F6B63] mt-0.5">
+            Supports high-resolution JPG, PNG, WEBP with automatic client-side compression. Unlimited photos for SuperAdmin.
+          </p>
 
           <div className="mt-3 flex items-center justify-center gap-3">
             <label className="px-4 py-2 bg-[#176B45] hover:bg-[#115236] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] cursor-pointer transition-colors shadow-2xs">
@@ -1790,80 +1801,140 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
           </button>
         </div>
 
-        {/* Selected Image Thumbnails Gallery */}
+        {/* Selected Image Thumbnails Gallery (Click, Hold & Drag to Reorder) */}
         {formData.images.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pt-2">
-            {formData.images.map((imgUrl, idx) => {
-              const isCover = idx === 0;
-              return (
-                <div
-                  key={idx}
-                  className={`group relative aspect-4/3 rounded-[3px] overflow-hidden border ${
-                    isCover ? 'border-2 border-[#176B45] ring-2 ring-[#176B45]/20' : 'border-[#DDE5DF]'
-                  } bg-[#F5F8F5] shadow-xs`}
-                >
-                  <img
-                    src={imgUrl}
-                    alt={`Listing photo ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+          <div className="space-y-2 pt-2">
+            <div className="flex items-center justify-between text-[11px] text-[#5F6B63] font-semibold">
+              <span>Click & hold any photo to drag it to Position #1 (Main Cover) or reorder your gallery.</span>
+              <span>Drag-and-Drop Reordering Active</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {formData.images.map((imgUrl, idx) => {
+                const isCover = idx === 0;
+                const isDragging = draggedImageIndex === idx;
+                const isDragOver = dragOverImageIndex === idx && draggedImageIndex !== idx;
+                return (
+                  <div
+                    key={`${idx}-${imgUrl.slice(-24)}`}
+                    draggable
+                    onDragStart={(e) => {
+                      setDraggedImageIndex(idx);
+                      e.dataTransfer.effectAllowed = 'move';
+                      e.dataTransfer.setData('text/plain', String(idx));
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      if (dragOverImageIndex !== idx) {
+                        setDragOverImageIndex(idx);
+                      }
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverImageIndex === idx) {
+                        setDragOverImageIndex(null);
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const fromIdx = draggedImageIndex;
+                      setDraggedImageIndex(null);
+                      setDragOverImageIndex(null);
+                      if (fromIdx !== null && fromIdx !== idx) {
+                        handleMoveImage(fromIdx, idx);
+                      }
+                    }}
+                    onDragEnd={() => {
+                      setDraggedImageIndex(null);
+                      setDragOverImageIndex(null);
+                    }}
+                    className={`group relative aspect-4/3 rounded-[3px] overflow-hidden border transition-all cursor-grab active:cursor-grabbing select-none ${
+                      isDragging
+                        ? 'opacity-45 scale-95 border-dashed border-[#103D2C]'
+                        : isDragOver
+                        ? 'border-2 border-[#C93636] ring-2 ring-[#C93636]/30 scale-[1.03]'
+                        : isCover
+                        ? 'border-2 border-[#176B45] ring-2 ring-[#176B45]/20'
+                        : 'border-[#DDE5DF] hover:border-[#103D2C]'
+                    } bg-[#F5F8F5] shadow-xs`}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`Listing photo ${idx + 1}`}
+                      draggable={false}
+                      className="w-full h-full object-cover pointer-events-none"
+                    />
 
-                  {/* Cover Badge */}
-                  {isCover && (
-                    <div className="absolute top-2 left-2 px-2 py-0.5 bg-[#176B45] text-white text-[10px] font-bold uppercase tracking-wider rounded-[2px] shadow-xs">
-                      Cover Photo
+                    {/* Position / Cover Badge */}
+                    <div
+                      className={`absolute top-2 left-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-[2px] shadow-xs ${
+                        isCover ? 'bg-[#176B45] text-white' : 'bg-[#103D2C]/85 text-white'
+                      }`}
+                    >
+                      {isCover ? 'Main Cover (#1)' : `#${idx + 1}`}
                     </div>
-                  )}
 
-                  {/* Actions overlay */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                    <div className="flex justify-end gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(idx)}
-                        className="p-1 bg-red-600 hover:bg-red-700 text-white rounded-[2px]"
-                        title="Remove photo"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-1 text-white">
-                      {!isCover && (
+                    {/* Actions overlay */}
+                    <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                      <div className="flex justify-end gap-1">
                         <button
                           type="button"
-                          onClick={() => handleSetCoverPhoto(idx)}
-                          className="px-2 py-1 bg-white text-[#18251E] hover:bg-[#E8F3EC] text-[10px] font-bold uppercase tracking-wider rounded-[2px]"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveImage(idx);
+                          }}
+                          className="p-1 bg-red-600 hover:bg-red-700 text-white rounded-[2px] cursor-pointer"
+                          title="Remove photo"
                         >
-                          Set Cover
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                      )}
+                      </div>
 
-                      <div className="flex items-center gap-1 ml-auto">
-                        <button
-                          type="button"
-                          onClick={() => handleMoveImage(idx, idx - 1)}
-                          disabled={idx === 0}
-                          className="p-1 bg-white/20 hover:bg-white/40 rounded-[2px] disabled:opacity-30"
-                          title="Move Left"
-                        >
-                          <ArrowUp className="w-3 h-3 rotate-[-90deg]" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleMoveImage(idx, idx + 1)}
-                          disabled={idx === formData.images.length - 1}
-                          className="p-1 bg-white/20 hover:bg-white/40 rounded-[2px] disabled:opacity-30"
-                          title="Move Right"
-                        >
-                          <ArrowDown className="w-3 h-3 rotate-[-90deg]" />
-                        </button>
+                      <div className="flex items-center justify-between gap-1 text-white">
+                        {!isCover && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSetCoverPhoto(idx);
+                            }}
+                            className="px-2 py-1 bg-white text-[#18251E] hover:bg-[#E8F3EC] text-[10px] font-bold uppercase tracking-wider rounded-[2px] cursor-pointer"
+                          >
+                            Set Cover
+                          </button>
+                        )}
+
+                        <div className="flex items-center gap-1 ml-auto">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveImage(idx, idx - 1);
+                            }}
+                            disabled={idx === 0}
+                            className="p-1 bg-white/20 hover:bg-white/40 rounded-[2px] disabled:opacity-30 cursor-pointer"
+                            title="Move Left"
+                          >
+                            <ArrowUp className="w-3 h-3 rotate-[-90deg]" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveImage(idx, idx + 1);
+                            }}
+                            disabled={idx === formData.images.length - 1}
+                            className="p-1 bg-white/20 hover:bg-white/40 rounded-[2px] disabled:opacity-30 cursor-pointer"
+                            title="Move Right"
+                          >
+                            <ArrowDown className="w-3 h-3 rotate-[-90deg]" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         ) : (
           <div className="p-4 bg-[#F5F8F5] border border-[#DDE5DF] rounded-[3px] text-xs text-[#5F6B63] text-center">
@@ -1965,11 +2036,19 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Operational Package */}
+          {/* Package Tier (Free Unlimited Override for SuperAdmin) */}
           <div className="p-4 bg-[#F5F8F5] border border-[#DDE5DF] rounded-[3px] space-y-3">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-[#18251E] block">
-              Operational Listing Package
-            </span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[#18251E] block">
+                Operational Listing Package
+              </span>
+              <span className="px-2 py-0.5 bg-[#103D2C] text-white text-[10px] font-extrabold uppercase tracking-wider rounded-[2px]">
+                SuperAdmin: Free Unlimited ($0)
+              </span>
+            </div>
+            <p className="text-[11px] text-[#5F6B63]">
+              SuperAdmin can publish unlimited listings across any tier, Featured, or Trending placement at LKR 0.
+            </p>
             <div className="space-y-2">
               {(['standard', 'gold', 'platinum'] as const).map((tier) => (
                 <label
