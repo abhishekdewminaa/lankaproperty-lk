@@ -2,9 +2,26 @@ import { Property, PropertyFilters, PaginatedResult } from '../types/property';
 import { PROPERTIES_DATA } from '../data/properties';
 import { AdminPropertyRecord, PublicationStatus } from '../admin/types/admin';
 import { calculateHaversineDistanceKm, DEFAULT_COLOMBO_COORDINATES } from '../data/landmarks';
+import { supabase } from '../lib/supabase';
 
 const STORAGE_KEY = 'lankaproperty_authoritative_properties';
 const STORAGE_INITIALIZED_KEY = 'lankaproperty_store_initialized';
+const STORAGE_LAST_SYNC_KEY = 'lankaproperty_supabase_last_sync';
+const SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5-minute cache TTL
+
+function getProvinceFromDistrict(district: string): string {
+  const norm = (district || '').toLowerCase();
+  if (['colombo', 'gampaha', 'kalutara'].some((d) => norm.includes(d))) return 'Western Province';
+  if (['kandy', 'matale', 'nuwara eliya'].some((d) => norm.includes(d))) return 'Central Province';
+  if (['galle', 'matara', 'hambantota'].some((d) => norm.includes(d))) return 'Southern Province';
+  if (['jaffna', 'kilinochchi', 'mannar', 'vavuniya', 'mullaitivu'].some((d) => norm.includes(d))) return 'Northern Province';
+  if (['batticaloa', 'ampara', 'trincomalee'].some((d) => norm.includes(d))) return 'Eastern Province';
+  if (['kurunegala', 'puttalam'].some((d) => norm.includes(d))) return 'North Western Province';
+  if (['anuradhapura', 'polonnaruwa'].some((d) => norm.includes(d))) return 'North Central Province';
+  if (['badulla', 'monaragala'].some((d) => norm.includes(d))) return 'Uva Province';
+  if (['ratnapura', 'kegalle'].some((d) => norm.includes(d))) return 'Sabaragamuwa Province';
+  return 'Western Province';
+}
 
 function getCityCentroidCoordinates(city: string, district: string): { latitude: number; longitude: number } {
   const normCity = (city || '').toLowerCase();
@@ -119,6 +136,220 @@ class PropertyService {
 
   constructor() {
     this.records = this.loadFromStorage();
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        this.syncWithSupabase();
+      }, 200);
+    }
+  }
+
+  /**
+   * High-Speed & Low-Bandwidth Supabase Synchronization
+   * - Enforces Column Projection (fetches only needed columns, avoiding SELECT *)
+   * - 5-Minute Client-Side Cooldown to prevent redundant API calls
+   * - Gracefully falls back to cached records if Supabase table is not yet initialized
+   */
+  public async syncWithSupabase(force = false): Promise<boolean> {
+    if (typeof window === 'undefined') return false;
+
+    const lastSync = parseInt(localStorage.getItem(STORAGE_LAST_SYNC_KEY) || '0', 10);
+    const now = Date.now();
+    if (!force && now - lastSync < SYNC_COOLDOWN_MS) {
+      return false; // Cached
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`
+          id, listing_ref, slug, title, description, property_type, purpose,
+          publication_status, status, price_lkr, price_unit, is_negotiable,
+          price_on_request, city, district, address, latitude, longitude,
+          bedrooms, bathrooms, sqft, land_perches, floors, parking_spaces,
+          hero_image, images, floor_plans, amenities, author_id, assigned_agent_name,
+          view_count, inquiry_count, save_count, is_featured, is_trending,
+          trending_velocity_text, collections, published_at, created_at, updated_at
+        `)
+        .order('published_at', { ascending: false });
+
+      if (error) {
+        // Table not yet migrated or network unreachable; retain local data gracefully
+        return false;
+      }
+
+      if (Array.isArray(data) && data.length > 0) {
+        const mappedRecords: AdminPropertyRecord[] = data.map((row: any) => ({
+          id: row.id,
+          listingRef: row.listing_ref || row.id,
+          slug: row.slug,
+          title: row.title,
+          description: row.description || '',
+          type: (row.property_type || 'house') as any,
+          purpose: (row.purpose || 'buy') as any,
+          publicationStatus: (row.publication_status || 'published') as any,
+          status: (row.status || 'active') as any,
+          priceLkr: Number(row.price_lkr) || 0,
+          priceUnit: row.price_unit || 'total',
+          isNegotiable: Boolean(row.is_negotiable),
+          priceOnRequest: Boolean(row.price_on_request),
+          location: {
+            city: row.city,
+            district: row.district,
+            province: getProvinceFromDistrict(row.district),
+            address: row.address || `${row.city}, ${row.district}`,
+            coordinates: row.latitude && row.longitude ? {
+              latitude: Number(row.latitude),
+              longitude: Number(row.longitude),
+              isApproximate: false,
+              lat: Number(row.latitude),
+              lng: Number(row.longitude),
+            } : {
+              ...getCityCentroidCoordinates(row.city, row.district),
+              isApproximate: false,
+            },
+          },
+          specs: {
+            bedrooms: row.bedrooms,
+            bathrooms: row.bathrooms,
+            sqft: row.sqft,
+            landPerches: row.land_perches,
+            parkingSpaces: row.parking_spaces,
+          },
+          images: Array.isArray(row.images) && row.images.length > 0 ? row.images : (row.hero_image ? [row.hero_image] : []),
+          floorPlans: Array.isArray(row.floor_plans) ? row.floor_plans : [],
+          amenities: Array.isArray(row.amenities) ? row.amenities : [],
+          agent: {
+            name: row.assigned_agent_name || 'Mr Lalith Ranatunga',
+            role: 'Managing Director & Super Admin',
+            phone: '+94 11 234 5678',
+            whatsapp: '+94 77 123 4567',
+          },
+          publishedDate: row.published_at ? row.published_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
+          isFeatured: Boolean(row.is_featured),
+          isTrending: Boolean(row.is_trending),
+          trendingVelocityText: row.trending_velocity_text,
+          collections: Array.isArray(row.collections) ? row.collections : [],
+          viewCount: row.view_count || 0,
+          inquiryCount: row.inquiry_count || 0,
+          saveCount: row.save_count || 0,
+          lastModifiedBy: row.assigned_agent_name || 'Mr Lalith Ranatunga',
+          lastModifiedAt: row.updated_at ? new Date(row.updated_at).toLocaleString() : new Date().toLocaleString(),
+          recordVersion: 1,
+        }));
+
+        this.records = mappedRecords;
+        localStorage.setItem(STORAGE_LAST_SYNC_KEY, now.toString());
+        this.notify();
+        return true;
+      }
+    } catch (err) {
+      console.warn('Supabase sync deferred:', err);
+    }
+    return false;
+  }
+
+  /**
+   * Seeds all authoritative local properties to Supabase in a single batch upsert
+   */
+  public async seedPropertiesToSupabase(): Promise<{ count: number; error?: string }> {
+    try {
+      const rows = this.records.map((r) => ({
+        id: r.id,
+        listing_ref: r.listingRef || r.id,
+        slug: r.slug,
+        title: r.title,
+        description: r.description || '',
+        property_type: r.type,
+        purpose: r.purpose || 'buy',
+        publication_status: r.publicationStatus || 'published',
+        status: r.status || 'active',
+        price_lkr: r.priceLkr,
+        price_unit: r.priceUnit || 'total',
+        is_negotiable: Boolean(r.isNegotiable),
+        price_on_request: Boolean(r.priceOnRequest),
+        city: r.location.city,
+        district: r.location.district,
+        address: r.location.address,
+        latitude: r.location.coordinates?.lat || null,
+        longitude: r.location.coordinates?.lng || null,
+        bedrooms: r.specs?.bedrooms || null,
+        bathrooms: r.specs?.bathrooms || null,
+        sqft: r.specs?.sqft || null,
+        land_perches: r.specs?.landPerches || null,
+        floors: (r.specs as any)?.floors || null,
+        parking_spaces: r.specs?.parkingSpaces || null,
+        hero_image: r.images?.[0] || null,
+        images: r.images || [],
+        floor_plans: r.floorPlans || [],
+        amenities: r.amenities || [],
+        assigned_agent_name: r.agent?.name || 'Mr Lalith Ranatunga',
+        is_featured: Boolean(r.isFeatured),
+        is_trending: Boolean(r.isTrending),
+        trending_velocity_text: r.trendingVelocityText || null,
+        collections: r.collections || [],
+        published_at: r.publishedDate ? new Date(r.publishedDate).toISOString() : new Date().toISOString(),
+      }));
+
+      const { error } = await supabase.from('properties').upsert(rows, { onConflict: 'id' });
+      if (error) {
+        return { count: 0, error: error.message };
+      }
+      return { count: rows.length };
+    } catch (e: any) {
+      return { count: 0, error: e?.message || 'Seeding failed' };
+    }
+  }
+
+  private async syncSinglePropertyToSupabase(r: AdminPropertyRecord): Promise<void> {
+    try {
+      const row = {
+        id: r.id,
+        listing_ref: r.listingRef || r.id,
+        slug: r.slug,
+        title: r.title,
+        description: r.description || '',
+        property_type: r.type,
+        purpose: r.purpose || 'buy',
+        publication_status: r.publicationStatus || 'published',
+        status: r.status || 'active',
+        price_lkr: r.priceLkr,
+        price_unit: r.priceUnit || 'total',
+        is_negotiable: Boolean(r.isNegotiable),
+        price_on_request: Boolean(r.priceOnRequest),
+        city: r.location.city,
+        district: r.location.district,
+        address: r.location.address,
+        latitude: r.location.coordinates?.lat || null,
+        longitude: r.location.coordinates?.lng || null,
+        bedrooms: r.specs?.bedrooms || null,
+        bathrooms: r.specs?.bathrooms || null,
+        sqft: r.specs?.sqft || null,
+        land_perches: r.specs?.landPerches || null,
+        floors: (r.specs as any)?.floors || null,
+        parking_spaces: r.specs?.parkingSpaces || null,
+        hero_image: r.images?.[0] || null,
+        images: r.images || [],
+        floor_plans: r.floorPlans || [],
+        amenities: r.amenities || [],
+        assigned_agent_name: r.agent?.name || 'Mr Lalith Ranatunga',
+        is_featured: Boolean(r.isFeatured),
+        is_trending: Boolean(r.isTrending),
+        trending_velocity_text: r.trendingVelocityText || null,
+        collections: r.collections || [],
+        published_at: r.publishedDate ? new Date(r.publishedDate).toISOString() : new Date().toISOString(),
+      };
+      await supabase.from('properties').upsert(row, { onConflict: 'id' });
+    } catch (err) {
+      console.warn('Background Supabase upsert deferred:', err);
+    }
+  }
+
+  private async deletePropertyFromSupabase(id: string): Promise<void> {
+    try {
+      await supabase.from('properties').delete().eq('id', id);
+    } catch (err) {
+      console.warn('Background Supabase delete deferred:', err);
+    }
   }
 
   private loadFromStorage(): AdminPropertyRecord[] {
@@ -451,6 +682,7 @@ class PropertyService {
     }
 
     this.notify();
+    this.syncSinglePropertyToSupabase(savedRecord);
     return { success: true, property: savedRecord, isNew };
   }
 
@@ -469,6 +701,7 @@ class PropertyService {
 
     this.records[index] = updated;
     this.notify();
+    this.syncSinglePropertyToSupabase(updated);
     return updated;
   }
 
@@ -498,6 +731,7 @@ class PropertyService {
 
     this.records[index] = updated;
     this.notify();
+    this.syncSinglePropertyToSupabase(updated);
     return updated;
   }
 
@@ -522,6 +756,7 @@ class PropertyService {
 
     this.records[index] = updated;
     this.notify();
+    this.syncSinglePropertyToSupabase(updated);
     return updated;
   }
 
@@ -549,6 +784,7 @@ class PropertyService {
 
     this.records[index] = updated;
     this.notify();
+    this.syncSinglePropertyToSupabase(updated);
     return updated;
   }
 
@@ -583,6 +819,7 @@ class PropertyService {
     this.records = this.records.filter((p) => p.id !== id);
     if (this.records.length !== beforeCount) {
       this.notify();
+      this.deletePropertyFromSupabase(id);
       return { success: true };
     }
     return { success: false };
