@@ -8,6 +8,14 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
+  // Authentication check for AI parser endpoint to prevent unauthorized quota exhaustion
+  const adminToken = (req.headers['x-admin-token'] || req.headers['X-Admin-Token']) as string | undefined;
+  if (!adminToken || !adminToken.startsWith('LP_SEC_ADM_') || adminToken.length < 24) {
+    return res.status(401).json({
+      error: 'Unauthorized. Super Admin authorization token required for AI extraction.',
+    });
+  }
+
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     const text = body?.text;

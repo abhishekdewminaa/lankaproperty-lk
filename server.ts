@@ -141,6 +141,14 @@ app.post('/api/admin/verify', (req: Request, res: Response): void => {
  * Interprets complex or multilingual Sri Lankan property descriptions.
  */
 app.post('/api/ai/parse-property', async (req: Request, res: Response): Promise<void> => {
+  const adminToken = (req.headers['x-admin-token'] || req.headers['X-Admin-Token']) as string | undefined;
+  if (!adminToken || !adminToken.startsWith('LP_SEC_ADM_') || adminToken.length < 24) {
+    res.status(401).json({
+      error: 'Unauthorized. Super Admin authorization token required for AI extraction.',
+    });
+    return;
+  }
+
   const { text } = req.body || {};
   if (!text || typeof text !== 'string' || text.trim().length === 0) {
     res.status(400).json({ error: 'Property description text is required.' });
@@ -179,8 +187,8 @@ app.post('/api/inquiries', async (req: Request, res: Response): Promise<void> =>
  * Protected Inquiry List Endpoint (Requires Super Admin Session Token Header)
  */
 app.get('/api/inquiries', (req: Request, res: Response): void => {
-  const adminToken = req.headers['x-admin-token'] as string | undefined;
-  if (!adminToken || !adminToken.startsWith('LP_SEC_ADM_')) {
+  const adminToken = (req.headers['x-admin-token'] || req.headers['X-Admin-Token']) as string | undefined;
+  if (!adminToken || !adminToken.startsWith('LP_SEC_ADM_') || adminToken.length < 24) {
     res.status(401).json({
       error: 'Unauthorized. Valid Super Admin session token required.',
     });

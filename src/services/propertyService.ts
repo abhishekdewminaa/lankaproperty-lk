@@ -359,7 +359,7 @@ class PropertyService {
     const items = filtered.slice(startIndex, startIndex + pageSize);
 
     return {
-      items,
+      items: items.map((item) => this.sanitizeForPublic(item)),
       total,
       page: clampedPage,
       pageSize,
@@ -369,13 +369,23 @@ class PropertyService {
     };
   }
 
+  /**
+   * Sanitizes a property record for public consumption, stripping private internal staff notes.
+   */
+  public sanitizeForPublic<T extends AdminPropertyRecord | null | undefined>(property: T): T {
+    if (!property) return property;
+    const sanitized = { ...property };
+    delete (sanitized as any).privateStaffNotes;
+    return sanitized;
+  }
+
   async getPropertyBySlug(slug: string, options: { allowDraft?: boolean } = {}): Promise<AdminPropertyRecord | null> {
     const found = this.records.find((p) => p.slug === slug || p.id === slug);
     if (!found) return null;
     if (!options.allowDraft && found.publicationStatus !== 'published') {
       return null;
     }
-    return { ...found };
+    return this.sanitizeForPublic({ ...found });
   }
 
   async getPropertyById(id: string): Promise<AdminPropertyRecord | null> {
