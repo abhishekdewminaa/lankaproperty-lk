@@ -136,7 +136,6 @@ if (!empty($slug)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></title>
-    <!-- DEBUG: slug: <?= htmlspecialchars($slug) ?> | resp_bytes: <?= strlen($response ?? '') ?> -->
     <meta name="description" content="<?= htmlspecialchars($description, ENT_QUOTES, 'UTF-8') ?>">
     <link rel="canonical" href="<?= htmlspecialchars($fullPropertyUrl, ENT_QUOTES, 'UTF-8') ?>">
 
