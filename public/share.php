@@ -11,8 +11,11 @@
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: public, max-age=300, s-maxage=600'); // 5-minute microcache for bots
 
-$slug = isset($_GET['slug']) ? trim($_GET['slug']) : '';
-$slug = preg_replace('/[^a-zA-Z0-9\-_]/', '', $slug);
+$rawSlug = isset($_GET['slug']) ? trim($_GET['slug']) : '';
+$decodedSlug = rawurldecode($rawSlug);
+// Normalize spaces, underscores, and special characters into hyphens
+$normalizedSlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $decodedSlug), '-'));
+$slug = !empty($normalizedSlug) ? $normalizedSlug : preg_replace('/[^a-zA-Z0-9\-_]/', '', $rawSlug);
 
 $baseUrl = 'https://lankaproperty.lk';
 $fullPropertyUrl = $baseUrl . '/properties/' . $slug;
@@ -29,7 +32,8 @@ if (!empty($slug)) {
     $supabaseUrl = 'https://rnedttrpovxswnraezas.supabase.co';
     $supabaseAnonKey = 'sb_publishable_vBaZKq7pyNXrYxRymTNdkQ_hGPZV6ca';
     
-    $apiUrl = $supabaseUrl . '/rest/v1/properties?slug=eq.' . urlencode($slug) . '&select=*';
+    // Match exact slug or prefix
+    $apiUrl = $supabaseUrl . '/rest/v1/properties?or=(slug.eq.' . urlencode($slug) . ',slug.ilike.' . urlencode($slug . '%') . ')&select=*&limit=1';
     
     $response = null;
     if (function_exists('curl_init')) {

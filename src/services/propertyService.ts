@@ -9,6 +9,24 @@ const STORAGE_INITIALIZED_KEY = 'lankaproperty_store_initialized';
 const STORAGE_LAST_SYNC_KEY = 'lankaproperty_supabase_last_sync';
 const SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5-minute cache TTL
 
+/**
+ * Guarantees that any string ID conforms to an RFC-4122 UUID v4 shape for PostgreSQL
+ */
+export function ensureValidUUID(id: string): string {
+  if (!id) return '00000000-0000-4000-8000-000000000000';
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(id)) {
+    return id.toLowerCase();
+  }
+  // Deterministic hex-encoded UUID fallback
+  let hex = '';
+  for (let i = 0; i < id.length; i++) {
+    hex += id.charCodeAt(i).toString(16).padStart(2, '0');
+  }
+  hex = (hex + '00000000000000000000000000000000').slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
 function getProvinceFromDistrict(district: string): string {
   const norm = (district || '').toLowerCase();
   if (['colombo', 'gampaha', 'kalutara'].some((d) => norm.includes(d))) return 'Western Province';
@@ -138,7 +156,29 @@ class PropertyService {
     this.records = this.loadFromStorage();
     if (typeof window !== 'undefined') {
       const isOnlyDemoData = this.records.length <= PROPERTIES_DATA.length;
-      this.syncWithSupabase(isOnlyDemoData);
+      this.syncWithSupabase(isOnlyDemoData).then(() => {
+        // Automatically sync any local published listings that may have failed earlier
+        this.syncLocalPublishedPropertiesToSupabase();
+      });
+    }
+  }
+
+  /**
+   * Self-Healing Sync: Ensures local published records reach Supabase with valid UUIDs
+   */
+  public async syncLocalPublishedPropertiesToSupabase(): Promise<void> {
+    if (typeof window === 'undefined') return;
+    try {
+      const localPublished = this.records.filter((p) => p.publicationStatus === 'published');
+      for (const prop of localPublished) {
+        const validId = ensureValidUUID(prop.id);
+        if (prop.id !== validId) {
+          prop.id = validId;
+        }
+        await this.syncSinglePropertyToSupabase(prop);
+      }
+    } catch (err) {
+      console.warn('Auto-sync local published properties deferred:', err);
     }
   }
 
@@ -305,34 +345,35 @@ class PropertyService {
 
   private async syncSinglePropertyToSupabase(r: AdminPropertyRecord): Promise<void> {
     try {
+      const validId = ensureValidUUID(r.id);
       const row = {
-        id: r.id,
+        id: validId,
         listing_ref: r.listingRef || r.id,
         slug: r.slug,
         title: r.title,
         description: r.description || '',
-        property_type: r.type,
+        property_type: r.type || 'house',
         category: r.type || 'house',
         purpose: r.purpose || 'buy',
         listing_type: r.purpose || 'buy',
         publication_status: r.publicationStatus || 'published',
         status: r.status || 'active',
-        price_lkr: r.priceLkr,
+        price_lkr: r.priceLkr || 0,
         price: r.priceLkr || 0,
         price_unit: r.priceUnit || 'total',
         negotiable: Boolean(r.isNegotiable),
         price_on_request: Boolean(r.priceOnRequest),
-        city: r.location.city,
-        district: r.location.district,
-        address: r.location.address,
-        latitude: r.location.coordinates?.lat || null,
-        longitude: r.location.coordinates?.lng || null,
-        bedrooms: r.specs?.bedrooms || null,
-        bathrooms: r.specs?.bathrooms || null,
-        sqft: r.specs?.sqft || null,
-        land_perches: r.specs?.landPerches || null,
-        floors: (r.specs as any)?.floors || null,
-        parking_spaces: r.specs?.parkingSpaces || null,
+        city: r.location?.city || 'Colombo',
+        district: r.location?.district || 'Colombo',
+        address: r.location?.address || `${r.location?.city || ''}, ${r.location?.district || ''}`.trim() || 'Sri Lanka',
+        latitude: r.location?.coordinates?.lat || null,
+        longitude: r.location?.coordinates?.lng || null,
+        bedrooms: Number(r.specs?.bedrooms) || null,
+        bathrooms: Number(r.specs?.bathrooms) || null,
+        sqft: Number(r.specs?.sqft || (r.specs as any)?.floorAreaSqFt) || null,
+        land_perches: Number(r.specs?.landPerches) || null,
+        floors: Number((r.specs as any)?.floors) || null,
+        parking_spaces: Number(r.specs?.parkingSpaces) || null,
         hero_image: r.images?.[0] || null,
         images: r.images || [],
         floor_plans: r.floorPlans || [],
@@ -344,7 +385,10 @@ class PropertyService {
         collections: r.collections || [],
         published_at: r.publishedDate ? new Date(r.publishedDate).toISOString() : new Date().toISOString(),
       };
-      await supabase.from('properties').upsert(row, { onConflict: 'id' });
+      const { error } = await supabase.from('properties').upsert(row, { onConflict: 'id' });
+      if (error) {
+        console.warn('Supabase upsert note for property:', r.slug, error.message);
+      }
     } catch (err) {
       console.warn('Background Supabase upsert deferred:', err);
     }
@@ -616,14 +660,58 @@ class PropertyService {
     return sanitized;
   }
 
+  /**
+   * Universal In-Memory Property Matcher
+   * Matches by exact slug, normalized hyphenated slug, decoded space-separated slug,
+   * title similarity, or valid UUID / original ID.
+   */
+  public findPropertyInMemory(slug: string): AdminPropertyRecord | null {
+    if (!slug) return null;
+    let decoded = slug;
+    try {
+      decoded = decodeURIComponent(slug);
+    } catch {}
+
+    const normalizedSlug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const cleanRaw = decoded.toLowerCase().replace(/^\/+|\/+$/g, '').trim();
+
+    return (
+      this.records.find((p) => {
+        const pSlug = (p.slug || '').toLowerCase();
+        const pSlugNorm = pSlug.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const pTitleNorm = (p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const pId = (p.id || '').toLowerCase();
+
+        return (
+          pSlug === cleanRaw ||
+          pSlugNorm === normalizedSlug ||
+          pTitleNorm === normalizedSlug ||
+          (normalizedSlug.length > 5 && pSlugNorm.includes(normalizedSlug)) ||
+          (pSlugNorm.length > 5 && normalizedSlug.includes(pSlugNorm)) ||
+          pId === cleanRaw ||
+          ensureValidUUID(p.id) === ensureValidUUID(cleanRaw)
+        );
+      }) || null
+    );
+  }
+
   async getPropertyBySlug(slug: string, options: { allowDraft?: boolean } = {}): Promise<AdminPropertyRecord | null> {
-    const cleanSlug = (slug || '').trim().toLowerCase().replace(/^\/+|\/+$/g, '');
-    let found = this.records.find((p) => {
-      const pSlug = (p.slug || '').toLowerCase();
-      return pSlug === cleanSlug || pSlug.replace(/\.+$/, '') === cleanSlug.replace(/\.+$/, '') || p.id === slug;
-    });
+    let found = this.findPropertyInMemory(slug);
 
     if (!found) {
+      let decoded = slug;
+      try {
+        decoded = decodeURIComponent(slug);
+      } catch {}
+
+      const normalizedSlug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const cleanRaw = decoded.toLowerCase().replace(/^\/+|\/+$/g, '').trim();
+      const validUUID = ensureValidUUID(cleanRaw);
+
+      // Extract significant keywords for fuzzy title matching in database
+      const tokens = normalizedSlug.split('-').filter((t) => t.length > 3).slice(0, 3);
+      const titleSearch = tokens.length > 0 ? tokens.join('%') : normalizedSlug;
+
       try {
         const { data, error } = await supabase
           .from('properties')
@@ -636,7 +724,8 @@ class PropertyService {
             view_count, inquiry_count, save_count, is_featured, is_trending,
             trending_velocity_text, collections, published_at, created_at, updated_at
           `)
-          .or(`slug.ilike.${cleanSlug},slug.ilike.${cleanSlug}%,id.eq.${cleanSlug}`)
+          .or(`slug.ilike.${normalizedSlug},slug.ilike.%${normalizedSlug}%,title.ilike.%${titleSearch}%,id.eq.${validUUID}`)
+          .limit(1)
           .maybeSingle();
 
         if (data && !error) {
@@ -739,11 +828,12 @@ class PropertyService {
   }
 
   saveProperty(record: AdminPropertyRecord): { success: boolean; property: AdminPropertyRecord; isNew: boolean } {
-    const existingIndex = this.records.findIndex((p) => p.id === record.id);
+    const validId = ensureValidUUID(record.id);
+    const existingIndex = this.records.findIndex((p) => p.id === record.id || p.id === validId);
     const isNew = existingIndex === -1;
 
     let savedRecord: AdminPropertyRecord;
-    const uniqueSlug = this.ensureUniqueSlug(record.slug || record.title, record.id);
+    const uniqueSlug = this.ensureUniqueSlug(record.slug || record.title, validId);
     const sanitizedRecord = this.pruneSoldPropertyMedia(record);
 
     if (isNew) {
@@ -753,6 +843,7 @@ class PropertyService {
 
       savedRecord = {
         ...sanitizedRecord,
+        id: validId,
         slug: uniqueSlug,
         listingRef: generatedRef,
         publishedDate: sanitizedRecord.publishedDate || new Date().toISOString().split('T')[0],
@@ -769,6 +860,7 @@ class PropertyService {
       savedRecord = this.pruneSoldPropertyMedia({
         ...current,
         ...sanitizedRecord,
+        id: validId,
         slug: uniqueSlug,
         listingRef: current.listingRef || sanitizedRecord.listingRef, // Preserve existing reference
         recordVersion: (current.recordVersion || 1) + 1,

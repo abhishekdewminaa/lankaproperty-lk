@@ -25,27 +25,14 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
   const isPreviewParam = searchParams.get('preview') === 'true';
 
   const [property, setProperty] = useState<AdminPropertyRecord | null>(() => {
-    const list = propertyService.getAllAuthoritativeProperties();
-    const cleanSlug = (slug || '').trim().toLowerCase().replace(/^\/+|\/+$/g, '');
-    return list.find((p) => {
-      const pSlug = (p.slug || '').toLowerCase();
-      return pSlug === cleanSlug || pSlug.replace(/\.+$/, '') === cleanSlug.replace(/\.+$/, '') || p.id === slug;
-    }) || null;
+    return propertyService.findPropertyInMemory(slug);
   });
   const [loading, setLoading] = useState<boolean>(!property);
 
   useEffect(() => {
     let isCurrent = true;
-    const cleanSlug = (slug || '').trim().toLowerCase().replace(/^\/+|\/+$/g, '');
 
-    const checkFromList = () => {
-      return propertyService.getAllAuthoritativeProperties().find((p) => {
-        const pSlug = (p.slug || '').toLowerCase();
-        return pSlug === cleanSlug || pSlug.replace(/\.+$/, '') === cleanSlug.replace(/\.+$/, '') || p.id === slug;
-      });
-    };
-
-    const immediate = checkFromList();
+    const immediate = propertyService.findPropertyInMemory(slug);
     if (immediate) {
       setProperty(immediate);
       setLoading(false);
@@ -63,7 +50,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
 
     const unsub = propertyService.subscribe(() => {
       if (!isCurrent) return;
-      const updated = checkFromList();
+      const updated = propertyService.findPropertyInMemory(slug);
       if (updated) {
         setProperty(updated);
         setLoading(false);

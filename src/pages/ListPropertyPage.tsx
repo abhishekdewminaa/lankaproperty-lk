@@ -9,6 +9,7 @@ import { userPortalService } from '../services/userPortalService';
 import { compressImagesBatch, formatBytes } from '../utils/imageCompressor';
 import { uploadBatchPropertyPhotosToHostinger } from '../services/mediaStorageService';
 import { advertisingPackageService, AdvertisedPackage } from '../services/advertisingPackageService';
+import { ensureValidUUID } from '../services/propertyService';
 
 interface ListingDraft {
   purpose: PropertyPurpose;
@@ -357,10 +358,14 @@ export function ListPropertyPage() {
 
     setIsSubmitting(true);
 
-    const generatedId = `prop-${Date.now().toString().slice(-4)}`;
+    const generatedId =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : ensureValidUUID(`prop-${Date.now()}`);
     const districtPrefix = (draft.district || 'COL').slice(0, 3).toUpperCase();
     const generatedRef = `LP-${districtPrefix}-2026-${Date.now().toString().slice(-4)}`;
-    const generatedSlug = (draft.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `property-${generatedId}`) + `-${Date.now().toString().slice(-3)}`;
+    const baseSlug = draft.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `property-${Date.now()}`;
+    const generatedSlug = `${baseSlug}-${Date.now().toString().slice(-3)}`;
 
     const selectedPkg = getPackageHelper(draft.packageId, availablePackages);
 

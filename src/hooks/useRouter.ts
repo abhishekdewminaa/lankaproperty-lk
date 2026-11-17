@@ -34,7 +34,16 @@ export function useRouter() {
   }, []);
 
   // Parse path segments, e.g. /properties/slug -> ['properties', 'slug']
-  const segments = currentPath.split('/').filter(Boolean);
+  const segments = currentPath
+    .split('/')
+    .filter(Boolean)
+    .map((s) => {
+      try {
+        return decodeURIComponent(s);
+      } catch {
+        return s;
+      }
+    });
 
   return {
     pathname: currentPath,
