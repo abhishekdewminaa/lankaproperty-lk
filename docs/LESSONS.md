@@ -17,3 +17,9 @@
 ## 3. InitPlan Caching for Row-Level Security
 * **Observation**: Supabase Database Linter flags `auth.uid()` as a high-severity warning (`auth_rls_initplan`) when used directly in `USING` clauses.
 * **Lesson**: Writing `(SELECT auth.uid()) = user_id` triggers PostgreSQL's InitPlan optimization, which evaluates the authentication identity exactly once per query rather than once per row.
+
+---
+
+## 4. Browser Autofill Collisions with Honeypot Trap Inputs
+* **Observation**: Modern browser password managers and autofill heuristics aggressively populate hidden `<input type="text" tabIndex={-1}>` fields placed inside authentication modals, causing false-positive "Automated bot activity detected" rejections for genuine human administrators.
+* **Lesson**: Honeypot inputs must not be placed inside administrative gatekeeper modals where browser credential managers operate. Valid cryptographic authorization (such as salted SHA-256 constant-time digest verification) must always take absolute precedence, and storage accesses should use defensive abstractions with in-memory fallbacks.
