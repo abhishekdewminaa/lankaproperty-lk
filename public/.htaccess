@@ -13,6 +13,10 @@
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
+  # Social Media Crawlers: Dynamically render OpenGraph meta tags for WhatsApp, Facebook, Twitter, Telegram, LinkedIn
+  RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|WhatsApp|Twitterbot|Pinterest|Google.*snippet|LinkedInBot|TelegramBot|Discordbot|Applebot) [NC]
+  RewriteRule ^(properties|property)/([^/]+)/?$ /share.php?slug=$2 [L,QSA]
+
   # SPA Fallback: Route all client-side paths to index.html
   RewriteRule ^ index.html [L]
 </IfModule>

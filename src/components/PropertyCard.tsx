@@ -157,14 +157,27 @@ export function PropertyCard({ property, priority = false, variant = 'grid' }: P
   const renderPhoto = (containerClass: string) => (
     <div className={`relative overflow-hidden bg-[#F5F8F5] ${containerClass}`}>
       {!imageError ? (
-        <img
-          src={heroSrc}
-          alt={property.title}
-          loading={priority ? 'eager' : 'lazy'}
-          referrerPolicy="no-referrer"
-          onError={() => setImageError(true)}
-          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-        />
+        <>
+          <img
+            src={heroSrc}
+            alt={property.title}
+            loading={priority ? 'eager' : 'lazy'}
+            referrerPolicy="no-referrer"
+            onError={() => setImageError(true)}
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          />
+          {/* Subtle Hover Enlarge Hint */}
+          <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-2 py-0.5 bg-black/70 text-white text-[9px] font-bold uppercase tracking-wider rounded-[2px] backdrop-blur-xs pointer-events-none">
+            Inspect ↗
+          </div>
+
+          {/* Photo Count Badge if multi-photo */}
+          {property.images && property.images.length > 1 && (
+            <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 bg-black/65 text-white text-[10px] font-bold rounded-[2px] backdrop-blur-xs pointer-events-none tabular-nums">
+              {property.images.length} Photos
+            </div>
+          )}
+        </>
       ) : (
         <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-[#F5F8F5] text-[#5F6B63]">
           <span className="text-[11px] font-bold tracking-widest uppercase text-[#103D2C]">

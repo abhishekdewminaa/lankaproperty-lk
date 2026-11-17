@@ -18,6 +18,10 @@
   RewriteCond %{DOCUMENT_ROOT}/dist/$1 -f
   RewriteRule ^(.*)$ dist/$1 [L]
 
+  # If crawler is requesting a property, route to dist/share.php for OpenGraph link previews
+  RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|WhatsApp|Twitterbot|Pinterest|Google.*snippet|LinkedInBot|TelegramBot|Discordbot|Applebot) [NC]
+  RewriteRule ^(properties|property)/([^/]+)/?$ dist/share.php?slug=$2 [L,QSA]
+
   # Otherwise route all SPA paths to dist/index.html
   RewriteRule ^ dist/index.html [L]
 </IfModule>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { MessageCircle, Share2, Maximize2 } from 'lucide-react';
 import { useRouter } from '../hooks/useRouter';
 import { propertyService } from '../services/propertyService';
 import { useSavedProperties } from '../hooks/useSavedProperties';
@@ -114,6 +115,21 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
       setCopiedShare(true);
       setTimeout(() => setCopiedShare(false), 2500);
     }
+  };
+
+  const handleShareToWhatsApp = () => {
+    const priceText = property.priceLkr > 0 ? formatPrice(property.priceLkr, false) : 'Price on Application (POA)';
+    const specsArr: string[] = [];
+    if (property.specs.bedrooms) specsArr.push(`${property.specs.bedrooms} Beds`);
+    if (property.specs.bathrooms) specsArr.push(`${property.specs.bathrooms} Baths`);
+    if (property.specs.floorAreaSqFt) specsArr.push(`${property.specs.floorAreaSqFt.toLocaleString()} sq ft`);
+    if (property.specs.landPerches) specsArr.push(`${property.specs.landPerches} Perches`);
+    const specsStr = specsArr.length > 0 ? ` · ${specsArr.join(' | ')}` : '';
+
+    const text = encodeURIComponent(
+      `*${property.title}*\n📍 ${property.location.city}, ${property.location.district}\n💰 Price: ${priceText}${specsStr}\n\n✨ View Full-Screen HD Photos & Verified Title:\n${window.location.href}`
+    );
+    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
 
   const handleCompareClick = () => {
@@ -349,12 +365,25 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
                 {compared ? 'In Compare Dossier' : 'Compare Dossier'}
               </button>
 
+              {/* WhatsApp Share with Client-Optimized Format */}
+              <button
+                type="button"
+                onClick={handleShareToWhatsApp}
+                className="px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[2px] bg-[#128C7E] hover:bg-[#075E54] text-white transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+                title="Share this listing directly on WhatsApp with full formatted details"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>WhatsApp Share</span>
+              </button>
+
               {/* Share */}
               <button
+                type="button"
                 onClick={handleShare}
-                className="px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[2px] border border-[#DDE5DF] bg-white text-[#18251E] hover:bg-[#F5F8F5] transition-colors cursor-pointer"
+                className="px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[2px] border border-[#DDE5DF] bg-white text-[#18251E] hover:bg-[#F5F8F5] transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                {copiedShare ? 'Link Copied!' : 'Share Listing'}
+                <Share2 className="w-3.5 h-3.5 text-[#5F6B63]" />
+                <span>{copiedShare ? 'Link Copied!' : 'Copy Link'}</span>
               </button>
             </div>
 
@@ -401,13 +430,17 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
             <div className="space-y-3">
               {/* Mosaic Display: Primary Photo + 2 Side Previews */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4">
-                {/* Main Hero Photo (Spans 8 columns on desktop) */}
+                {/* Main Hero Photo (Spans 12 columns if single photo, 8 columns if multi-photo) */}
                 <div
                   onClick={() => {
                     setSelectedPhotoIndex(0);
                     setLightboxOpen(true);
                   }}
-                  className="md:col-span-8 aspect-16/10 relative overflow-hidden rounded-[3px] border border-[#DDE5DF] group cursor-pointer bg-[#F5F8F5]"
+                  className={`${
+                    property.images.length > 1
+                      ? 'md:col-span-8 aspect-16/10'
+                      : 'md:col-span-12 aspect-16/10 sm:aspect-16/9 md:aspect-21/9'
+                  } relative overflow-hidden rounded-[3px] border border-[#DDE5DF] group cursor-pointer bg-[#F5F8F5] shadow-xs`}
                 >
                   <img
                     src={property.images[0]}
@@ -416,35 +449,45 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
                   />
-                  <div className="absolute bottom-4 right-4 px-4 py-2 bg-black/80 text-white text-xs font-bold uppercase tracking-wider rounded-[2px] backdrop-blur-xs flex items-center gap-2">
-                    <span>View All {property.images.length} Architectural Photos ↗</span>
+
+                  {/* Top-Right Badge: Inspect Full Screen HD */}
+                  <div className="absolute top-3 right-3 px-3 py-1.5 bg-black/80 hover:bg-black text-white text-[11px] font-bold uppercase tracking-wider rounded-[2px] backdrop-blur-xs flex items-center gap-1.5 transition-all shadow-md">
+                    <Maximize2 className="w-3.5 h-3.5" />
+                    <span>Inspect Full Screen HD</span>
+                  </div>
+
+                  {/* Bottom-Right Count Badge */}
+                  <div className="absolute bottom-3 right-3 px-3 py-1.5 bg-black/80 text-white text-xs font-bold uppercase tracking-wider rounded-[2px] backdrop-blur-xs flex items-center gap-1.5">
+                    <span>View All {property.images.length} {property.images.length === 1 ? 'Photo' : 'Photos'} ↗</span>
                   </div>
                 </div>
 
-                {/* Secondary Views (Spans 4 columns on desktop) */}
-                <div className="hidden md:grid md:col-span-4 grid-rows-2 gap-3 sm:gap-4">
-                  {property.images.slice(1, 3).map((img, idx) => (
-                    <div
-                      key={img + idx}
-                      onClick={() => {
-                        setSelectedPhotoIndex(idx + 1);
-                        setLightboxOpen(true);
-                      }}
-                      className="aspect-16/10 relative overflow-hidden rounded-[3px] border border-[#DDE5DF] group cursor-pointer bg-[#F5F8F5]"
-                    >
-                      <img
-                        src={img}
-                        alt={`${property.title} view ${idx + 2}`}
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-400"
-                      />
-                      <div className="absolute top-3 left-3 px-2 py-0.5 bg-black/60 text-white text-[10px] font-bold uppercase rounded-[1px]">
-                        Perspective 0{idx + 2}
+                {/* Secondary Views (Spans 4 columns on desktop only if multi-photo) */}
+                {property.images.length > 1 && (
+                  <div className="hidden md:grid md:col-span-4 grid-rows-2 gap-3 sm:gap-4">
+                    {property.images.slice(1, 3).map((img, idx) => (
+                      <div
+                        key={img + idx}
+                        onClick={() => {
+                          setSelectedPhotoIndex(idx + 1);
+                          setLightboxOpen(true);
+                        }}
+                        className="aspect-16/10 relative overflow-hidden rounded-[3px] border border-[#DDE5DF] group cursor-pointer bg-[#F5F8F5]"
+                      >
+                        <img
+                          src={img}
+                          alt={`${property.title} view ${idx + 2}`}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-400"
+                        />
+                        <div className="absolute top-3 left-3 px-2 py-0.5 bg-black/60 text-white text-[10px] font-bold uppercase rounded-[1px]">
+                          Perspective 0{idx + 2}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* 20-Photo Filmstrip Carousel Rail */}

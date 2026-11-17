@@ -93,6 +93,9 @@ export function SeoHead({
     setOrCreateMeta('property', 'og:description', description);
     setOrCreateMeta('property', 'og:url', canonicalUrl);
     setOrCreateMeta('property', 'og:image', ogImage);
+    setOrCreateMeta('property', 'og:image:secure_url', ogImage);
+    setOrCreateMeta('property', 'og:image:width', '1200');
+    setOrCreateMeta('property', 'og:image:height', '630');
     setOrCreateMeta('property', 'og:type', ogType);
     setOrCreateMeta('property', 'og:site_name', 'LankaProperty.lk');
     setOrCreateMeta('property', 'og:locale', 'en_LK');

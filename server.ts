@@ -55,6 +55,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // In-memory rate limiting: 20 requests per minute per IP for API routes
 const requestHistory = new Map<string, number[]>();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -552,6 +561,82 @@ async function startServer() {
   // Serve static crawler & manifest files from public/
   const publicPath = path.resolve(__dirname, 'public');
   app.use(express.static(publicPath));
+
+  // Dynamic OpenGraph Metadata Interceptor for Social Bots (WhatsApp, Facebook, Twitter, Telegram, LinkedIn)
+  app.get(['/properties/:slug', '/property/:slug'], async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const userAgent = req.headers['user-agent'] || '';
+    const isSocialCrawler = /facebookexternalhit|WhatsApp|Twitterbot|Pinterest|Google.*snippet|LinkedInBot|TelegramBot|Discordbot|Applebot/i.test(userAgent);
+
+    if (!isSocialCrawler) {
+      next();
+      return;
+    }
+
+    const slug = req.params.slug;
+    try {
+      const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+      const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+      if (supabaseUrl && supabaseAnonKey) {
+        const fetchRes = await fetch(`${supabaseUrl}/rest/v1/properties?slug=eq.${encodeURIComponent(slug)}&select=*`, {
+          headers: {
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${supabaseAnonKey}`,
+            Accept: 'application/json',
+          },
+        });
+        if (fetchRes.ok) {
+          const data: any = await fetchRes.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const p = data[0];
+            const title = `${p.title} | LankaProperty.lk`;
+            const baseUrl = 'https://lankaproperty.lk';
+            let imageUrl = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=85';
+            const rawImg = p.hero_image || (Array.isArray(p.images) ? p.images[0] : null);
+            if (rawImg) {
+              imageUrl = rawImg.startsWith('http') ? rawImg : `${baseUrl}${rawImg.startsWith('/') ? '' : '/'}${rawImg}`;
+            }
+            const priceText = p.price_on_request || !p.price_lkr ? 'POA (Price on Application)' : `LKR ${Number(p.price_lkr).toLocaleString()}`;
+            const desc = `${p.city || ''}, ${p.district || ''} · ${p.bedrooms || 0} Beds · ${p.bathrooms || 0} Baths · ${priceText} — Verified Freehold Title on LankaProperty.lk`;
+            const fullUrl = `${baseUrl}/properties/${slug}`;
+
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeHtml(desc)}">
+  <link rel="canonical" href="${escapeHtml(fullUrl)}">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="LankaProperty.lk">
+  <meta property="og:url" content="${escapeHtml(fullUrl)}">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(desc)}">
+  <meta property="og:image" content="${escapeHtml(imageUrl)}">
+  <meta property="og:image:secure_url" content="${escapeHtml(imageUrl)}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@LankaPropertyLK">
+  <meta name="twitter:title" content="${escapeHtml(title)}">
+  <meta name="twitter:description" content="${escapeHtml(desc)}">
+  <meta name="twitter:image" content="${escapeHtml(imageUrl)}">
+  <script>window.location.replace(${JSON.stringify(fullUrl)});</script>
+</head>
+<body style="font-family: sans-serif; padding: 20px; text-align: center;">
+  <p>Redirecting to <a href="${escapeHtml(fullUrl)}">${escapeHtml(title)}</a>...</p>
+</body>
+</html>`;
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            res.send(html);
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Crawler OG injection fallback:', err);
+    }
+    next();
+  });
 
   if (!isProduction) {
     // Mount Vite in middleware mode for local development
