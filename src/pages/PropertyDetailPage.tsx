@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { MessageCircle, Share2, Maximize2 } from 'lucide-react';
 import { useRouter } from '../hooks/useRouter';
 import { propertyService } from '../services/propertyService';
+import { AdminPropertyRecord } from '../admin/types/admin';
 import { useSavedProperties } from '../hooks/useSavedProperties';
 import { useCurrency } from '../context/CurrencyContext';
 import { useCompare } from '../context/CompareContext';
@@ -23,10 +24,57 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
   const { isInCompare, addToCompare } = useCompare();
   const isPreviewParam = searchParams.get('preview') === 'true';
 
-  const allAuthoritative = propertyService.getAllAuthoritativeProperties();
-  const property = useMemo(() => {
-    return allAuthoritative.find((p) => p.slug === slug || p.id === slug) || null;
-  }, [slug, allAuthoritative]);
+  const [property, setProperty] = useState<AdminPropertyRecord | null>(() => {
+    const list = propertyService.getAllAuthoritativeProperties();
+    const cleanSlug = (slug || '').trim().toLowerCase().replace(/^\/+|\/+$/g, '');
+    return list.find((p) => {
+      const pSlug = (p.slug || '').toLowerCase();
+      return pSlug === cleanSlug || pSlug.replace(/\.+$/, '') === cleanSlug.replace(/\.+$/, '') || p.id === slug;
+    }) || null;
+  });
+  const [loading, setLoading] = useState<boolean>(!property);
+
+  useEffect(() => {
+    let isCurrent = true;
+    const cleanSlug = (slug || '').trim().toLowerCase().replace(/^\/+|\/+$/g, '');
+
+    const checkFromList = () => {
+      return propertyService.getAllAuthoritativeProperties().find((p) => {
+        const pSlug = (p.slug || '').toLowerCase();
+        return pSlug === cleanSlug || pSlug.replace(/\.+$/, '') === cleanSlug.replace(/\.+$/, '') || p.id === slug;
+      });
+    };
+
+    const immediate = checkFromList();
+    if (immediate) {
+      setProperty(immediate);
+      setLoading(false);
+    }
+
+    // Always query or verify with Supabase
+    propertyService.getPropertyBySlug(slug, { allowDraft: isPreviewParam }).then((fetched) => {
+      if (isCurrent) {
+        if (fetched) {
+          setProperty(fetched);
+        }
+        setLoading(false);
+      }
+    });
+
+    const unsub = propertyService.subscribe(() => {
+      if (!isCurrent) return;
+      const updated = checkFromList();
+      if (updated) {
+        setProperty(updated);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isCurrent = false;
+      unsub();
+    };
+  }, [slug, isPreviewParam]);
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
@@ -34,6 +82,21 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
   const [copiedShare, setCopiedShare] = useState(false);
   const [compareMessage, setCompareMessage] = useState<string | null>(null);
   const [activeMediaTab, setActiveMediaTab] = useState<'photos' | 'floorplans'>('photos');
+
+  // Loading indicator for direct links / mobile
+  if (loading && !property) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 space-y-4 max-w-lg mx-auto">
+        <div className="w-10 h-10 border-2 border-[#176B45] border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs uppercase font-extrabold tracking-widest text-[#176B45]">
+          Authenticating Listing
+        </span>
+        <p className="text-sm text-[#5F6B63]">
+          Loading authoritative property dossier and architectural media...
+        </p>
+      </div>
+    );
+  }
 
   // Handle missing properties
   if (!property) {
@@ -89,12 +152,15 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
   const compared = isInCompare(property.id);
 
   // Similar properties in same district or category
-  const similarProperties = allAuthoritative.filter(
-    (p) =>
-      p.publicationStatus === 'published' &&
-      p.id !== property.id &&
-      (p.location.district === property.location.district || p.type === property.type)
-  ).slice(0, 3);
+  const similarProperties = propertyService
+    .getAllAuthoritativeProperties()
+    .filter(
+      (p) =>
+        p.publicationStatus === 'published' &&
+        p.id !== property.id &&
+        (p.location.district === property.location.district || p.type === property.type)
+    )
+    .slice(0, 3);
 
   const handleShare = async () => {
     if (navigator.share) {

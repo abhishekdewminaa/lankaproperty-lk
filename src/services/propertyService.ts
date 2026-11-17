@@ -137,9 +137,8 @@ class PropertyService {
   constructor() {
     this.records = this.loadFromStorage();
     if (typeof window !== 'undefined') {
-      setTimeout(() => {
-        this.syncWithSupabase();
-      }, 200);
+      const isOnlyDemoData = this.records.length <= PROPERTIES_DATA.length;
+      this.syncWithSupabase(isOnlyDemoData);
     }
   }
 
@@ -154,7 +153,8 @@ class PropertyService {
 
     const lastSync = parseInt(localStorage.getItem(STORAGE_LAST_SYNC_KEY) || '0', 10);
     const now = Date.now();
-    if (!force && now - lastSync < SYNC_COOLDOWN_MS) {
+    const isOnlyDemoData = this.records.length <= PROPERTIES_DATA.length;
+    if (!force && !isOnlyDemoData && now - lastSync < SYNC_COOLDOWN_MS) {
       return false; // Cached
     }
 
@@ -209,11 +209,11 @@ class PropertyService {
             },
           },
           specs: {
-            bedrooms: row.bedrooms,
-            bathrooms: row.bathrooms,
-            sqft: row.sqft,
-            landPerches: row.land_perches,
-            parkingSpaces: row.parking_spaces,
+            bedrooms: Number(row.bedrooms) || 0,
+            bathrooms: Number(row.bathrooms) || 0,
+            sqft: Number(row.sqft) || 0,
+            landPerches: Number(row.land_perches) || 0,
+            parkingSpaces: Number(row.parking_spaces) || 0,
           },
           images: Array.isArray(row.images) && row.images.length > 0 ? row.images : (row.hero_image ? [row.hero_image] : []),
           floorPlans: Array.isArray(row.floor_plans) ? row.floor_plans : [],
@@ -617,7 +617,12 @@ class PropertyService {
   }
 
   async getPropertyBySlug(slug: string, options: { allowDraft?: boolean } = {}): Promise<AdminPropertyRecord | null> {
-    let found = this.records.find((p) => p.slug === slug || p.id === slug);
+    const cleanSlug = (slug || '').trim().toLowerCase().replace(/^\/+|\/+$/g, '');
+    let found = this.records.find((p) => {
+      const pSlug = (p.slug || '').toLowerCase();
+      return pSlug === cleanSlug || pSlug.replace(/\.+$/, '') === cleanSlug.replace(/\.+$/, '') || p.id === slug;
+    });
+
     if (!found) {
       try {
         const { data, error } = await supabase
@@ -631,7 +636,7 @@ class PropertyService {
             view_count, inquiry_count, save_count, is_featured, is_trending,
             trending_velocity_text, collections, published_at, created_at, updated_at
           `)
-          .or(`slug.eq.${slug},id.eq.${slug}`)
+          .or(`slug.ilike.${cleanSlug},slug.ilike.${cleanSlug}%,id.eq.${cleanSlug}`)
           .maybeSingle();
 
         if (data && !error) {
@@ -666,11 +671,11 @@ class PropertyService {
               },
             },
             specs: {
-              bedrooms: data.bedrooms,
-              bathrooms: data.bathrooms,
-              sqft: data.sqft,
-              landPerches: data.land_perches,
-              parkingSpaces: data.parking_spaces,
+              bedrooms: Number(data.bedrooms) || 0,
+              bathrooms: Number(data.bathrooms) || 0,
+              sqft: Number(data.sqft) || 0,
+              landPerches: Number(data.land_perches) || 0,
+              parkingSpaces: Number(data.parking_spaces) || 0,
             },
             images: Array.isArray(data.images) && data.images.length > 0 ? data.images : (data.hero_image ? [data.hero_image] : []),
             floorPlans: Array.isArray(data.floor_plans) ? data.floor_plans : [],
@@ -694,7 +699,9 @@ class PropertyService {
             lastModifiedBy: 'Super Admin',
             lastModifiedAt: new Date().toLocaleString(),
           };
-          this.records = [mapped, ...this.records];
+          this.records = [mapped, ...this.records.filter((p) => p.id !== mapped.id)];
+          this.persistToStorage(this.records);
+          this.notify();
           found = mapped;
         }
       } catch (err) {

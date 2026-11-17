@@ -159,19 +159,25 @@ export function ListPropertyPage() {
 
   // Load user's previously listed properties in this browser
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_USER_LISTINGS_KEY);
-      if (stored) {
-        const ids: string[] = JSON.parse(stored);
-        if (Array.isArray(ids) && ids.length > 0) {
-          const all = propertyService.getAllAuthoritativeProperties();
-          const userProps = all.filter((p) => ids.includes(p.id));
-          setMyListedProperties(userProps);
+    const updateMyListings = () => {
+      try {
+        const stored = localStorage.getItem(LOCAL_STORAGE_USER_LISTINGS_KEY);
+        if (stored) {
+          const ids: string[] = JSON.parse(stored);
+          if (Array.isArray(ids) && ids.length > 0) {
+            const all = propertyService.getAllAuthoritativeProperties();
+            const userProps = all.filter((p) => ids.includes(p.id));
+            setMyListedProperties(userProps);
+          }
         }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
-    }
+    };
+
+    updateMyListings();
+    const unsub = propertyService.subscribe(updateMyListings);
+    return () => unsub();
   }, [publishedProperty]);
 
   const isLand = draft.purpose === 'land' || draft.type === 'land';

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from '../hooks/useRouter';
 import { SRI_LANKA_DISTRICTS } from '../data/locations';
 import { propertyService } from '../services/propertyService';
@@ -13,6 +13,15 @@ interface DistrictDetailPageProps {
 export function DistrictDetailPage({ districtSlug }: DistrictDetailPageProps) {
   const { navigate } = useRouter();
   const { currency } = useCurrency();
+  const [storeVersion, setStoreVersion] = useState(0);
+
+  useEffect(() => {
+    propertyService.syncWithSupabase(false);
+    const unsub = propertyService.subscribe(() => {
+      setStoreVersion((v) => v + 1);
+    });
+    return () => unsub();
+  }, []);
 
   // Find matching district
   const districtData = useMemo(() => {
@@ -28,11 +37,10 @@ export function DistrictDetailPage({ districtSlug }: DistrictDetailPageProps) {
   const [selectedCity, setSelectedCity] = useState<string>('all');
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<string>('all');
 
-  const allAuthoritative = propertyService.getAllAuthoritativeProperties();
-
   // Filter properties in this district
   const districtProperties = useMemo(() => {
     if (!districtData) return [];
+    const allAuthoritative = propertyService.getAllAuthoritativeProperties();
     return allAuthoritative.filter((p) => {
       if (p.publicationStatus !== 'published') return false;
       const matchDistrict =
@@ -47,7 +55,7 @@ export function DistrictDetailPage({ districtSlug }: DistrictDetailPageProps) {
       }
       return true;
     });
-  }, [districtData, allAuthoritative, selectedCity, propertyTypeFilter]);
+  }, [districtData, storeVersion, selectedCity, propertyTypeFilter]);
 
   if (!districtData) {
     return (

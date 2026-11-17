@@ -28,6 +28,15 @@ export function PropertiesPage() {
 
   // View Mode: 'grid' (spacious 3-col) | 'dossier' (wide horizontal magazine spread)
   const [viewMode, setViewMode] = useState<'grid' | 'dossier'>('grid');
+  const [storeVersion, setStoreVersion] = useState(0);
+
+  useEffect(() => {
+    propertyService.syncWithSupabase(false);
+    const unsub = propertyService.subscribe(() => {
+      setStoreVersion((v) => v + 1);
+    });
+    return () => unsub();
+  }, []);
 
   // Read URL params
   const purposeParam = searchParams.get('purpose') || '';
@@ -210,6 +219,7 @@ export function PropertiesPage() {
     radiusParam,
     nearMeParam,
     landmarkParam,
+    storeVersion,
   ]);
 
   // Pagination (9 items per page)
