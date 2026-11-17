@@ -27,24 +27,40 @@ $imageHeight = '630';
 if (!empty($slug)) {
     // Supabase REST endpoint
     $supabaseUrl = 'https://rnedttrpovxswnraezas.supabase.co';
-    $supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuZWR0dHJwb3Z4c3ducmFlemFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5NzI0ODksImV4cCI6MjA3MDU0ODQ4OX0.j672465133644026362846977792629738048688463';
+    $supabaseAnonKey = 'sb_publishable_vBaZKq7pyNXrYxRymTNdkQ_hGPZV6ca';
     
     $apiUrl = $supabaseUrl . '/rest/v1/properties?slug=eq.' . urlencode($slug) . '&select=*';
     
-    $opts = [
-        'http' => [
-            'method' => 'GET',
-            'header' => [
-                'apikey: ' . $supabaseAnonKey,
-                'Authorization: Bearer ' . $supabaseAnonKey,
-                'Accept: application/json'
-            ],
-            'timeout' => 2.5
-        ]
-    ];
+    $response = null;
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'apikey: ' . $supabaseAnonKey,
+            'Authorization: Bearer ' . $supabaseAnonKey,
+            'Accept: application/json'
+        ]);
+        $response = curl_exec($ch);
+        curl_close($ch);
+    }
     
-    $context = stream_context_create($opts);
-    $response = @file_get_contents($apiUrl, false, $context);
+    if (!$response) {
+        $opts = [
+            'http' => [
+                'method' => 'GET',
+                'header' => [
+                    'apikey: ' . $supabaseAnonKey,
+                    'Authorization: Bearer ' . $supabaseAnonKey,
+                    'Accept: application/json'
+                ],
+                'timeout' => 3
+            ]
+        ];
+        $context = stream_context_create($opts);
+        $response = @file_get_contents($apiUrl, false, $context);
+    }
     
     if ($response !== false) {
         $data = json_decode($response, true);
