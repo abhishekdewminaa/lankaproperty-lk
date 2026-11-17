@@ -163,7 +163,7 @@ class PropertyService {
         .from('properties')
         .select(`
           id, listing_ref, slug, title, description, property_type, purpose,
-          publication_status, status, price_lkr, price_unit, is_negotiable,
+          publication_status, status, price_lkr, price_unit, negotiable,
           price_on_request, city, district, address, latitude, longitude,
           bedrooms, bathrooms, sqft, land_perches, floors, parking_spaces,
           hero_image, images, floor_plans, amenities, author_id, assigned_agent_name,
@@ -190,7 +190,7 @@ class PropertyService {
           status: (row.status || 'active') as any,
           priceLkr: Number(row.price_lkr) || 0,
           priceUnit: row.price_unit || 'total',
-          isNegotiable: Boolean(row.is_negotiable),
+          isNegotiable: Boolean(row.negotiable ?? row.is_negotiable),
           priceOnRequest: Boolean(row.price_on_request),
           location: {
             city: row.city,
@@ -617,7 +617,90 @@ class PropertyService {
   }
 
   async getPropertyBySlug(slug: string, options: { allowDraft?: boolean } = {}): Promise<AdminPropertyRecord | null> {
-    const found = this.records.find((p) => p.slug === slug || p.id === slug);
+    let found = this.records.find((p) => p.slug === slug || p.id === slug);
+    if (!found) {
+      try {
+        const { data, error } = await supabase
+          .from('properties')
+          .select(`
+            id, listing_ref, slug, title, description, property_type, purpose,
+            publication_status, status, price_lkr, price_unit, negotiable,
+            price_on_request, city, district, address, latitude, longitude,
+            bedrooms, bathrooms, sqft, land_perches, floors, parking_spaces,
+            hero_image, images, floor_plans, amenities, assigned_agent_name,
+            view_count, inquiry_count, save_count, is_featured, is_trending,
+            trending_velocity_text, collections, published_at, created_at, updated_at
+          `)
+          .or(`slug.eq.${slug},id.eq.${slug}`)
+          .maybeSingle();
+
+        if (data && !error) {
+          const mapped: AdminPropertyRecord = {
+            id: data.id,
+            listingRef: data.listing_ref || data.id,
+            slug: data.slug,
+            title: data.title,
+            description: data.description || '',
+            type: (data.property_type || 'house') as any,
+            purpose: (data.purpose || 'buy') as any,
+            publicationStatus: (data.publication_status || 'published') as any,
+            status: (data.status || 'active') as any,
+            priceLkr: Number(data.price_lkr) || 0,
+            priceUnit: data.price_unit || 'total',
+            isNegotiable: Boolean(data.negotiable),
+            priceOnRequest: Boolean(data.price_on_request),
+            location: {
+              city: data.city,
+              district: data.district,
+              province: getProvinceFromDistrict(data.district),
+              address: data.address || `${data.city}, ${data.district}`,
+              coordinates: data.latitude && data.longitude ? {
+                latitude: Number(data.latitude),
+                longitude: Number(data.longitude),
+                isApproximate: false,
+                lat: Number(data.latitude),
+                lng: Number(data.longitude),
+              } : {
+                ...getCityCentroidCoordinates(data.city, data.district),
+                isApproximate: false,
+              },
+            },
+            specs: {
+              bedrooms: data.bedrooms,
+              bathrooms: data.bathrooms,
+              sqft: data.sqft,
+              landPerches: data.land_perches,
+              parkingSpaces: data.parking_spaces,
+            },
+            images: Array.isArray(data.images) && data.images.length > 0 ? data.images : (data.hero_image ? [data.hero_image] : []),
+            floorPlans: Array.isArray(data.floor_plans) ? data.floor_plans : [],
+            amenities: Array.isArray(data.amenities) ? data.amenities : [],
+            isFeatured: Boolean(data.is_featured),
+            isTrending: Boolean(data.is_trending),
+            trendingVelocityText: data.trending_velocity_text || undefined,
+            collections: Array.isArray(data.collections) ? data.collections : [],
+            publishedDate: data.published_at ? data.published_at.split('T')[0] : new Date().toISOString().split('T')[0],
+            publishedAt: data.published_at || new Date().toISOString(),
+            viewCount: data.view_count || 0,
+            inquiryCount: data.inquiry_count || 0,
+            saveCount: data.save_count || 0,
+            agent: {
+              name: data.assigned_agent_name || 'Mr Lalith Ranatunga',
+              phone: '+94 77 712 3456',
+              whatsapp: '+94 77 712 3456',
+              role: 'Senior Portfolio Partner',
+            },
+            recordVersion: 1,
+            lastModifiedBy: 'Super Admin',
+            lastModifiedAt: new Date().toLocaleString(),
+          };
+          this.records = [mapped, ...this.records];
+          found = mapped;
+        }
+      } catch (err) {
+        console.warn('Direct fetch by slug fallback error:', err);
+      }
+    }
     if (!found) return null;
     if (!options.allowDraft && found.publicationStatus !== 'published') {
       return null;
