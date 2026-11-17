@@ -26,6 +26,21 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
   },
+  global: {
+    headers: {
+      'x-application-name': 'lankaproperty-web',
+      'x-client-info': 'supabase-js/2.119.0-hostinger-optimized',
+    },
+  },
 });
+
+/**
+ * Strategy 5: Supavisor Transaction Pooler Configuration Guide
+ * For any direct PostgreSQL connection strings (e.g. Prisma, Drizzle, migrations):
+ * ALWAYS connect to Port 6543 with '?pgbouncer=true' rather than direct Port 5432:
+ * postgresql://postgres.[PROJECT_ID]:[PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+ */
+export const SUPAVISOR_POOLER_PORT = 6543;
+export const SUPAVISOR_POOLER_PARAMS = '?pgbouncer=true';
 
 export default supabase;

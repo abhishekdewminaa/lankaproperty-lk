@@ -312,3 +312,16 @@ EXCEPTION WHEN OTHERS THEN
     -- In environments where cron schema is restricted, ignore error
     NULL;
 END $$;
+
+-- ==============================================================================
+-- 11. STRATEGY 5: SUPAVISOR POOLER STATEMENT TIMEOUTS (CRASH PREVENTION)
+-- ==============================================================================
+-- Enforces a 3.0 second circuit-breaker limit on database queries from public & API callers.
+-- Any rogue, runaway, or abusive query is killed after 3000ms, preserving CPU and RAM.
+DO $$ BEGIN
+    EXECUTE 'ALTER ROLE authenticator SET statement_timeout = ''3000''';
+    EXECUTE 'ALTER ROLE anon SET statement_timeout = ''3000''';
+    EXECUTE 'ALTER ROLE authenticated SET statement_timeout = ''5000''';
+EXCEPTION WHEN OTHERS THEN
+    NULL;
+END $$;

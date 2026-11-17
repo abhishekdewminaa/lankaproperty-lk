@@ -539,12 +539,12 @@ app.all('/api/*', (req: Request, res: Response): void => {
 async function startServer() {
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Serve static uploads with 30-day immutable caching headers (high-speed delivery from Hostinger SSD)
+  // Strategy 6: Serve static uploads with 1-Year (31,536,000s) immutable caching headers
   const uploadsPath = path.resolve(__dirname, 'public/uploads');
   app.use(
     '/uploads',
     express.static(uploadsPath, {
-      maxAge: '30d',
+      maxAge: '31536000s',
       immutable: true,
     })
   );
@@ -561,9 +561,29 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    // Serve static files in production
     const distPath = path.resolve(__dirname, 'dist');
-    app.use(express.static(distPath));
+
+    // Strategy 6: Serve immutable hashed assets (/dist/assets) with 1-year cache
+    const assetsPath = path.resolve(distPath, 'assets');
+    app.use(
+      '/assets',
+      express.static(assetsPath, {
+        maxAge: '31536000s',
+        immutable: true,
+      })
+    );
+
+    // Serve other production static files
+    app.use(
+      express.static(distPath, {
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('.html')) {
+            // Never cache index.html so users immediately receive newly deployed asset hashes
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          }
+        },
+      })
+    );
 
     // SPA Fallback for client routing: /properties, /properties/:slug, /admin, etc.
     app.get('*', (req: Request, res: Response) => {
@@ -572,6 +592,7 @@ async function startServer() {
         res.status(404).json({ error: 'API endpoint not found', path: req.path });
         return;
       }
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.sendFile(path.resolve(distPath, 'index.html'));
     });
   }
