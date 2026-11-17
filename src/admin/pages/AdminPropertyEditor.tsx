@@ -624,53 +624,85 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
     );
   }
 
-  // Published Success Dialog Overlay
+  // Published Success Dialog Overlay (with Live Property Cover & Gallery Preview)
   if (publishedFeedback) {
+    const coverImg =
+      formData.images?.[0] ||
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1000&q=80';
     return (
-      <div className="max-w-2xl mx-auto my-12 p-8 bg-white border border-[#176B45]/40 rounded-[4px] shadow-md space-y-6 text-center">
-        <div className="w-14 h-14 bg-[#E8F3EC] text-[#176B45] rounded-[4px] mx-auto flex items-center justify-center">
-          <CheckCircle2 className="w-8 h-8" />
+      <div className="max-w-2xl mx-auto my-10 bg-white border border-[#176B45]/40 rounded-[4px] shadow-[0_14px_38px_rgba(16,61,44,0.12)] overflow-hidden">
+        {/* Top Cover Preview Image */}
+        <div className="relative aspect-16/9 w-full bg-[#0B2519] overflow-hidden">
+          <img
+            src={coverImg}
+            alt={formData.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0B2519]/90 via-[#0B2519]/25 to-transparent" />
+          <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1.5 bg-[#176B45] text-white text-[11px] font-extrabold uppercase tracking-widest rounded-[2px] shadow-md">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Publication Confirmed · Live</span>
+          </div>
+          <div className="absolute bottom-4 left-5 right-5 text-white flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-widest text-[#9FE3B8]">
+                {formData.location.city}, {formData.location.district} · Ref: {formData.listingRef || formData.id}
+              </span>
+              <h2 className="text-xl sm:text-2xl font-extrabold leading-snug mt-0.5">
+                {formData.title}
+              </h2>
+            </div>
+            <div className="text-lg sm:text-xl font-black text-white bg-[#103D2C]/90 px-3 py-1.5 rounded-[2px] border border-white/20 tabular-nums">
+              {formData.priceLkr > 0 ? formatPriceLkr(formData.priceLkr, formData.priceUnit) : 'Price on Request'}
+            </div>
+          </div>
         </div>
 
-        <div>
-          <span className="text-xs font-extrabold uppercase tracking-widest text-[#176B45]">
-            Publication Confirmed
-          </span>
-          <h2 className="text-2xl font-extrabold text-[#18251E] mt-1">
-            "{formData.title}" is Live
-          </h2>
-          <p className="text-sm text-[#5F6B63] mt-1 font-semibold">
-            Listing Reference: <strong>{formData.listingRef || formData.id}</strong> · Status: Published
+        {/* Thumbnail Strip if multiple photos uploaded */}
+        {formData.images.length > 1 && (
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 px-6 pt-4 bg-[#FAFBF9]">
+            {formData.images.slice(0, 6).map((img, i) => (
+              <div
+                key={i}
+                className={`aspect-4/3 rounded-[2px] overflow-hidden border ${
+                  i === 0 ? 'border-2 border-[#176B45]' : 'border-[#DDE5DF]'
+                }`}
+              >
+                <img src={img} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="p-6 sm:p-8 text-center space-y-5">
+          <p className="text-sm text-[#5F6B63] leading-relaxed max-w-lg mx-auto">
+            Your listing has been published to the authoritative property database with{' '}
+            <strong>{formData.images.length} photos</strong>. It is immediately live in marketplace searches and regional collections.
           </p>
-        </div>
 
-        <p className="text-sm text-[#5F6B63] leading-relaxed max-w-md mx-auto">
-          The listing has been written to the authoritative property database. It is immediately discoverable in
-          marketplace searches and regional collections.
-        </p>
-
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-          <button
-            onClick={() => setPublishedFeedback(false)}
-            className="px-5 py-2.5 bg-[#176B45] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] hover:bg-[#115236] transition-colors"
-          >
-            Continue Editing
-          </button>
-          <a
-            href={`/properties/${formData.slug}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white border border-[#176B45] text-[#176B45] text-xs font-bold uppercase tracking-wider rounded-[3px] hover:bg-[#E8F3EC] transition-colors"
-          >
-            <span>View Public Page</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-          <button
-            onClick={() => navigate('/admin/properties')}
-            className="px-5 py-2.5 bg-[#F5F8F5] border border-[#DDE5DF] text-[#18251E] text-xs font-bold uppercase tracking-wider rounded-[3px]"
-          >
-            Back to Inventory
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => setPublishedFeedback(false)}
+              className="px-5 py-2.5 bg-[#176B45] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] hover:bg-[#115236] transition-colors cursor-pointer"
+            >
+              Continue Editing
+            </button>
+            <a
+              href={`/properties/${formData.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white border border-[#176B45] text-[#176B45] text-xs font-bold uppercase tracking-wider rounded-[3px] hover:bg-[#E8F3EC] transition-colors"
+            >
+              <span>View Public Page</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+            <button
+              onClick={() => navigate('/admin/properties')}
+              className="px-5 py-2.5 bg-[#F5F8F5] border border-[#DDE5DF] text-[#18251E] text-xs font-bold uppercase tracking-wider rounded-[3px] cursor-pointer"
+            >
+              Back to Inventory
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -2224,36 +2256,77 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
           </div>
         )}
 
-        {/* Summary Card */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-          <div className="p-3 bg-[#F5F8F5] border border-[#DDE5DF] rounded-[2px]">
-            <span className="text-[#5F6B63] block">Title</span>
-            <span className="font-bold text-[#18251E] truncate block mt-0.5">
-              {formData.title || 'Untitled Listing'}
+        {/* Visual Live Card Preview Before Publishing */}
+        <div className="p-4 bg-[#FAFBF9] border border-[#DDE5DF] rounded-[3px] space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-extrabold uppercase tracking-wider text-[#103D2C]">
+              Live Marketplace Preview
+            </span>
+            <span className="text-[#5F6B63] font-semibold">
+              {formData.images.length} {formData.images.length === 1 ? 'photo' : 'photos'} attached
             </span>
           </div>
 
-          <div className="p-3 bg-[#F5F8F5] border border-[#DDE5DF] rounded-[2px]">
-            <span className="text-[#5F6B63] block">Location</span>
-            <span className="font-bold text-[#18251E] block mt-0.5">
-              {formData.location.city || 'No city'}, {formData.location.district || 'No district'}
-            </span>
-          </div>
+          <div className="flex flex-col md:flex-row gap-4 bg-white border border-[#DDE5DF] rounded-[3px] overflow-hidden shadow-xs">
+            <div className="w-full md:w-64 aspect-16/10 md:aspect-auto md:min-h-[150px] bg-[#F5F8F5] shrink-0 relative overflow-hidden">
+              {formData.images.length > 0 ? (
+                <img
+                  src={formData.images[0]}
+                  alt={formData.title || 'Property cover preview'}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs text-[#5F6B63] font-semibold p-4 text-center">
+                  No cover photo selected yet
+                </div>
+              )}
+              {formData.images.length > 0 && (
+                <span className="absolute top-2 left-2 px-2 py-0.5 bg-[#103D2C]/90 text-white text-[10px] font-bold uppercase tracking-wider rounded-[2px]">
+                  Cover Image (#1)
+                </span>
+              )}
+            </div>
 
-          <div className="p-3 bg-[#F5F8F5] border border-[#DDE5DF] rounded-[2px]">
-            <span className="text-[#5F6B63] block">Price</span>
-            <span className="font-bold text-[#103D2C] block mt-0.5">
-              {formData.priceLkr > 0
-                ? formatPriceLkr(formData.priceLkr, formData.priceUnit)
-                : 'Price not entered'}
-            </span>
-          </div>
+            <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[#5F6B63]">
+                  {formData.location.city || 'City'}, {formData.location.district || 'District'} ·{' '}
+                  {formData.purpose.toUpperCase()} · {formData.type.toUpperCase()}
+                </div>
+                <h3 className="text-base sm:text-lg font-extrabold text-[#18251E] line-clamp-1">
+                  {formData.title || 'Untitled Listing'}
+                </h3>
+                <p className="text-xs text-[#5F6B63] line-clamp-2">
+                  {formData.description || 'Property description will appear here...'}
+                </p>
+              </div>
 
-          <div className="p-3 bg-[#F5F8F5] border border-[#DDE5DF] rounded-[2px]">
-            <span className="text-[#5F6B63] block">Gallery Photos</span>
-            <span className="font-bold text-[#18251E] block mt-0.5">
-              {formData.images.length} photos attached
-            </span>
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#DDE5DF]">
+                <span className="text-base sm:text-lg font-extrabold text-[#103D2C] tabular-nums">
+                  {formData.priceLkr > 0
+                    ? formatPriceLkr(formData.priceLkr, formData.priceUnit)
+                    : 'Price not entered'}
+                </span>
+
+                {formData.images.length > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    {formData.images.slice(1, 5).map((img, i) => (
+                      <img
+                        key={i}
+                        src={img}
+                        alt={`Gallery thumb ${i + 2}`}
+                        className="w-9 h-7 object-cover rounded-[2px] border border-[#DDE5DF]"
+                      />
+                    ))}
+                    {formData.images.length > 5 && (
+                      <span className="text-[10px] font-bold text-[#5F6B63] px-1">
+                        +{formData.images.length - 5}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
