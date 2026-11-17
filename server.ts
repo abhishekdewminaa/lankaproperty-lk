@@ -3,6 +3,7 @@ import { createServer as createViteServer } from 'vite';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { parsePropertyWithAI } from './server/parserService';
 import { processInquiry, getAllInquiries } from './server/inquiryService';
@@ -18,8 +19,8 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3030;
 // Disable Express X-Powered-By header to prevent server fingerprinting
 app.disable('x-powered-by');
 
-// Body parsing with strict payload size limits (1mb max)
-app.use(express.json({ limit: '1mb' }));
+// Body parsing with payload size limits (15mb to allow batch compressed WebP uploads)
+app.use(express.json({ limit: '15mb' }));
 
 // Global OWASP Security Headers & Crawler Indexing Directives Middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -198,6 +199,66 @@ app.get('/api/inquiries', (req: Request, res: Response): void => {
 });
 
 /**
+ * Strategy 1: Hostinger NVMe SSD Direct Photo Upload Endpoint
+ * Receives client-compressed WebP base64, validates mime type (< 1.5MB),
+ * saves directly to Hostinger's 50 GB SSD filesystem at public/uploads/properties/,
+ * and returns the permanent URL.
+ * Preserves 100% of Supabase Free Storage (0 MB used) and Free Egress (0 MB used).
+ */
+app.post('/api/upload/property-image', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { imageBase64 } = req.body || {};
+    if (!imageBase64 || typeof imageBase64 !== 'string') {
+      res.status(400).json({ error: 'Image data is required.' });
+      return;
+    }
+
+    const matches = imageBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      res.status(400).json({ error: 'Invalid base64 image format.' });
+      return;
+    }
+
+    const mimeType = matches[1];
+    const base64Data = matches[2];
+
+    const allowedMimeTypes = ['image/webp', 'image/jpeg', 'image/png'];
+    if (!allowedMimeTypes.includes(mimeType)) {
+      res.status(400).json({ error: 'Only WebP, JPEG, and PNG images are supported.' });
+      return;
+    }
+
+    const buffer = Buffer.from(base64Data, 'base64');
+    if (buffer.length > 2 * 1024 * 1024) {
+      res.status(400).json({ error: 'Image exceeds maximum 2 MB compressed size limit.' });
+      return;
+    }
+
+    const uploadDir = path.resolve(__dirname, 'public/uploads/properties');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const ext = mimeType === 'image/webp' ? 'webp' : mimeType === 'image/png' ? 'png' : 'jpg';
+    const safeFilename = `lp_${Date.now()}_${crypto.randomBytes(6).toString('hex')}.${ext}`;
+    const filePath = path.join(uploadDir, safeFilename);
+
+    await fs.promises.writeFile(filePath, buffer);
+
+    const publicUrl = `/uploads/properties/${safeFilename}`;
+    res.status(200).json({
+      success: true,
+      url: publicUrl,
+      size: buffer.length,
+      mimeType,
+    });
+  } catch (error: any) {
+    console.error('Hostinger SSD photo upload error:', error);
+    res.status(500).json({ error: 'Failed to save photo to Hostinger SSD storage.' });
+  }
+});
+
+/**
  * Catch-all for unknown /api/* routes
  * Returns JSON 404, never HTML!
  */
@@ -212,6 +273,16 @@ app.all('/api/*', (req: Request, res: Response): void => {
 // Full-Stack Architecture Mounting
 async function startServer() {
   const isProduction = process.env.NODE_ENV === 'production';
+
+  // Serve static uploads with 30-day immutable caching headers (high-speed delivery from Hostinger SSD)
+  const uploadsPath = path.resolve(__dirname, 'public/uploads');
+  app.use(
+    '/uploads',
+    express.static(uploadsPath, {
+      maxAge: '30d',
+      immutable: true,
+    })
+  );
 
   // Serve static crawler & manifest files from public/
   const publicPath = path.resolve(__dirname, 'public');

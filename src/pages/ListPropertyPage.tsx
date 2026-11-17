@@ -7,6 +7,7 @@ import { SRI_LANKA_DISTRICTS, getCitiesForDistrict } from '../data/locations';
 import { AdminPropertyRecord } from '../admin/types/admin';
 import { userPortalService } from '../services/userPortalService';
 import { compressImagesBatch, formatBytes } from '../utils/imageCompressor';
+import { uploadBatchPropertyPhotosToHostinger } from '../services/mediaStorageService';
 import { advertisingPackageService, AdvertisedPackage } from '../services/advertisingPackageService';
 
 interface ListingDraft {
@@ -255,11 +256,12 @@ export function ListPropertyPage() {
 
     try {
       const summary = await compressImagesBatch(selectedFiles, 1920, 0.82);
-      const newPhotoUrls = summary.results.map((r) => r.dataUrl);
+      const rawUrls = summary.results.map((r) => r.dataUrl);
+      const hostedUrls = await uploadBatchPropertyPhotosToHostinger(rawUrls);
 
       setDraft((prev) => ({
         ...prev,
-        photos: [...prev.photos, ...newPhotoUrls],
+        photos: [...prev.photos, ...hostedUrls],
       }));
 
       setCompressionStats({

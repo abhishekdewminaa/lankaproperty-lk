@@ -5,6 +5,7 @@ import { propertyService } from '../services/propertyService';
 import { useCurrency } from '../context/CurrencyContext';
 import { AdminPropertyRecord } from '../admin/types/admin';
 import { compressImagesBatch, formatBytes } from '../utils/imageCompressor';
+import { uploadBatchPropertyPhotosToHostinger } from '../services/mediaStorageService';
 import { advertisingPackageService, AdvertisedPackage } from '../services/advertisingPackageService';
 
 export function OwnerDashboardPage() {
@@ -574,11 +575,13 @@ export function OwnerDashboardPage() {
                         setIsCompressingOwnerPhotos(true);
                         try {
                           const summary = await compressImagesBatch(Array.from(files).slice(0, available), 1920, 0.82);
+                          const rawUrls = summary.results.map((r) => r.dataUrl);
+                          const hostedUrls = await uploadBatchPropertyPhotosToHostinger(rawUrls);
                           setEditingProperty({
                             ...editingProperty,
-                            images: [...editingProperty.images, ...summary.results.map((r) => r.dataUrl)],
+                            images: [...editingProperty.images, ...hostedUrls],
                           });
-                          setOwnerCompressionStats(`✓ ${summary.results.length} photos compressed (${summary.overallPercentSaved}% space saved)`);
+                          setOwnerCompressionStats(`✓ ${summary.results.length} photos uploaded to Hostinger SSD (${summary.overallPercentSaved}% space saved)`);
                         } catch (err: any) {
                           alert(`Compression failed: ${err.message}`);
                         } finally {

@@ -7,6 +7,7 @@ import { PropertyPurpose, PropertyType, PriceUnit } from '../../types/property';
 import { formatPriceLkr } from '../../utils/formatters';
 import { SRI_LANKA_DISTRICTS, getCitiesForDistrict } from '../../data/locations';
 import { compressImagesBatch, formatBytes } from '../../utils/imageCompressor';
+import { uploadBatchPropertyPhotosToHostinger } from '../../services/mediaStorageService';
 import { userPortalService } from '../../services/userPortalService';
 import {
   parseHeuristic,
@@ -553,9 +554,10 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
 
     try {
       const summary = await compressImagesBatch(selectedFiles, 1920, 0.82);
-      const newUrls = summary.results.map((r) => r.dataUrl);
+      const rawUrls = summary.results.map((r) => r.dataUrl);
+      const hostedUrls = await uploadBatchPropertyPhotosToHostinger(rawUrls);
 
-      handleFieldChange('images', [...formData.images, ...newUrls]);
+      handleFieldChange('images', [...formData.images, ...hostedUrls]);
       setAdminCompressionStats({
         count: summary.results.length,
         original: formatBytes(summary.totalOriginalBytes),
