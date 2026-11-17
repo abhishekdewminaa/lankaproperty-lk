@@ -36,7 +36,11 @@ if (!empty($slug)) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $apiUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'LankaProperty-Bot/1.0');
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'apikey: ' . $supabaseAnonKey,
             'Authorization: Bearer ' . $supabaseAnonKey,
@@ -132,6 +136,7 @@ if (!empty($slug)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></title>
+    <!-- DEBUG: slug: <?= htmlspecialchars($slug) ?> | resp_bytes: <?= strlen($response ?? '') ?> -->
     <meta name="description" content="<?= htmlspecialchars($description, ENT_QUOTES, 'UTF-8') ?>">
     <link rel="canonical" href="<?= htmlspecialchars($fullPropertyUrl, ENT_QUOTES, 'UTF-8') ?>">
 
