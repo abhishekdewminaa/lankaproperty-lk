@@ -139,11 +139,11 @@ export const ROLE_PERMISSIONS: Record<AdminRole, AdminPermissionSet> = {
 export const INITIAL_STAFF_MEMBERS: StaffUser[] = [
   {
     id: 'staff-1',
-    name: 'Dilshan Samarasinghe',
-    email: 'dilshan.s@lankaproperty.lk',
+    name: 'Mr Lalith Ranatunga',
+    email: 'lalith.ranatunga@lankaproperty.lk',
     role: 'super_admin',
     department: 'Executive Leadership',
-    title: 'Chief Technology Officer & Superadmin',
+    title: 'Managing Director & Superadmin',
     phone: '+94 77 100 2000',
     isActive: true,
     lastLogin: '2026-10-05 10:45 AM',
@@ -224,7 +224,21 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [staffMembers, setStaffMembers] = useState<StaffUser[]>(() => {
     try {
       const saved = localStorage.getItem('lankaproperty_admin_staff');
-      return saved ? JSON.parse(saved) : INITIAL_STAFF_MEMBERS;
+      if (saved) {
+        const parsed = JSON.parse(saved) as StaffUser[];
+        // Ensure primary superadmin identity matches Mr Lalith Ranatunga
+        return parsed.map((m) =>
+          m.id === 'staff-1'
+            ? {
+                ...m,
+                name: 'Mr Lalith Ranatunga',
+                email: 'lalith.ranatunga@lankaproperty.lk',
+                title: 'Managing Director & Superadmin',
+              }
+            : m
+        );
+      }
+      return INITIAL_STAFF_MEMBERS;
     } catch {
       return INITIAL_STAFF_MEMBERS;
     }

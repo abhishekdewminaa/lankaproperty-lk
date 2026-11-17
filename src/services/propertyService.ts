@@ -100,7 +100,7 @@ function buildInitialAuthoritativeRecords(): AdminPropertyRecord[] {
       assignedAgentId: `agent-${(index % 3) + 1}`,
       assignedAgentName: p.agent.name,
       listingRef: `LP-${(p.location.district || 'SRI').slice(0, 3).toUpperCase()}-2026-${(100 + index).toString()}`,
-      lastModifiedBy: 'Dilshan Samarasinghe',
+      lastModifiedBy: 'Mr Lalith Ranatunga',
       lastModifiedAt: '2026-10-04 14:32',
       publishedAt: pubStatus === 'published' ? p.publishedDate : undefined,
       recordVersion: 1,

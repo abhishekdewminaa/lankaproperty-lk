@@ -148,8 +148,8 @@ const INITIAL_VIEWINGS: ViewingAppointment[] = [
 const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
   {
     id: 'log-1',
-    actorName: 'Dilshan Samarasinghe',
-    actorEmail: 'dilshan.s@lankaproperty.lk',
+    actorName: 'Mr Lalith Ranatunga',
+    actorEmail: 'lalith.ranatunga@lankaproperty.lk',
     actorRole: 'super_admin',
     action: 'PUBLISH_HOMEPAGE',
     targetRecord: 'Homepage v2.4',
@@ -186,8 +186,8 @@ const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
   },
   {
     id: 'log-4',
-    actorName: 'Dilshan Samarasinghe',
-    actorEmail: 'dilshan.s@lankaproperty.lk',
+    actorName: 'Mr Lalith Ranatunga',
+    actorEmail: 'lalith.ranatunga@lankaproperty.lk',
     actorRole: 'super_admin',
     action: 'UPDATE_COLLECTION',
     targetRecord: 'Featured Properties Collection',
