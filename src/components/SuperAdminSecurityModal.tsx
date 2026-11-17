@@ -15,7 +15,6 @@ export function SuperAdminSecurityModal({
   isDirectRoute = false,
 }: SuperAdminSecurityModalProps) {
   const [password, setPassword] = useState('');
-  const [honeypot, setHoneypot] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -57,7 +56,6 @@ export function SuperAdminSecurityModal({
 
   const handleDismiss = () => {
     setPassword('');
-    setHoneypot('');
     setErrorMessage('');
     onClose();
   };
@@ -74,12 +72,11 @@ export function SuperAdminSecurityModal({
 
     // Timing-safe delay (350ms) + constant-time SHA-256 digest verification
     setTimeout(() => {
-      const result = superAdminSecurityService.verifyPassword(password.trim(), honeypot);
+      const result = superAdminSecurityService.verifyPassword(password.trim());
       setIsVerifying(false);
 
       if (result.success) {
         setPassword('');
-        setHoneypot('');
         setErrorMessage('');
         onSuccess();
       } else {
@@ -129,19 +126,6 @@ export function SuperAdminSecurityModal({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 bg-[#FAFBF9]">
-          {/* Invisible Bot Honeypot Trap */}
-          <div className="sr-only" aria-hidden="true">
-            <label htmlFor="admin-corp-website-trap">Organization Website</label>
-            <input
-              id="admin-corp-website-trap"
-              type="text"
-              tabIndex={-1}
-              autoComplete="off"
-              value={honeypot}
-              onChange={(e) => setHoneypot(e.target.value)}
-            />
-          </div>
-
           {/* Lockout Warning Box */}
           {lockoutRemaining > 0 ? (
             <div className="bg-red-50 border border-[#C93636] p-4 rounded-[3px] space-y-1.5 text-xs text-[#C93636]">
@@ -191,7 +175,7 @@ export function SuperAdminSecurityModal({
                   />
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-[#5F6B63] pt-1">
-                  <span>Brute-Force Guard & Honeypot: Active</span>
+                  <span>Brute-Force Guard & Cryptographic Vault: Active</span>
                   <span className="tabular-nums font-semibold">
                     {failedAttempts > 0
                       ? `Attempt: ${failedAttempts} of 5`
