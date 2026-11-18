@@ -98,16 +98,8 @@ export function HomePage() {
 
   // Featured Properties (Strictly balanced 6 items for 3-column grid so no orphan card ever appears)
   const featuredShowcaseProperties = useMemo(() => {
-    const adminOrderedFeatured = homepageConfig.featuredPropertyIds
-      .map((id) => eligibleProperties.find((p) => p.id === id))
-      .filter((p): p is NonNullable<typeof p> => Boolean(p));
-
-    const flaggedFeatured = eligibleProperties.filter(
-      (p) => p.isFeatured && !adminOrderedFeatured.some((af) => af.id === p.id)
-    );
-
-    const combined = [...adminOrderedFeatured, ...flaggedFeatured];
-    let pool = combined.length > 0 ? combined : eligibleProperties;
+    const flaggedFeatured = eligibleProperties.filter((p) => p.isFeatured);
+    let pool = flaggedFeatured.length > 0 ? [...flaggedFeatured] : [...eligibleProperties];
 
     if (featuredCategoryFilter !== 'all') {
       pool = eligibleProperties.filter((p) =>
@@ -128,20 +120,12 @@ export function HomePage() {
     }
 
     return pool.slice(0, 6);
-  }, [eligibleProperties, homepageConfig.featuredPropertyIds, featuredCategoryFilter]);
+  }, [eligibleProperties, featuredCategoryFilter]);
 
   // Latest & Trending Properties (Strictly balanced 6 items for 3-column grid)
   const trendingShowcaseProperties = useMemo(() => {
-    const adminOrderedTrending = (homepageConfig.trendingPropertyIds || [])
-      .map((id) => eligibleProperties.find((p) => p.id === id))
-      .filter((p): p is NonNullable<typeof p> => Boolean(p));
-
-    const flaggedTrending = eligibleProperties.filter(
-      (p) => p.isTrending && !adminOrderedTrending.some((at) => at.id === p.id)
-    );
-
-    const combined = [...adminOrderedTrending, ...flaggedTrending];
-    let pool = combined.length > 0 ? combined : eligibleProperties;
+    const flaggedTrending = eligibleProperties.filter((p) => p.isTrending);
+    let pool = flaggedTrending.length > 0 ? [...flaggedTrending] : [...eligibleProperties];
 
     if (trendingCategoryFilter !== 'all') {
       pool = eligibleProperties.filter((p) =>
@@ -161,7 +145,7 @@ export function HomePage() {
     }
 
     return pool.slice(0, 6);
-  }, [eligibleProperties, homepageConfig.trendingPropertyIds, trendingCategoryFilter]);
+  }, [eligibleProperties, trendingCategoryFilter]);
 
   // District counts
   const locationCounts = useMemo(() => {
@@ -879,8 +863,8 @@ export function HomePage() {
                 >
                   <div className="aspect-16/9 overflow-hidden bg-[#E8F3EC] relative">
                     <img
-                      src={dev.heroImage}
-                      alt={dev.name}
+                      src={dev.coverImage}
+                      alt={dev.title}
                       loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
@@ -889,17 +873,17 @@ export function HomePage() {
                         {dev.status}
                       </span>
                       <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-white/95 text-[#18251E] rounded-[2px]">
-                        Delivery {dev.completionQuarter}
+                        Delivery {dev.completionDate}
                       </span>
                     </div>
                   </div>
                   <div className="p-6 flex flex-col flex-1 justify-between space-y-4">
                     <div>
                       <span className="text-xs font-bold text-[#176B45] uppercase tracking-wider">
-                        {dev.location.city}, {dev.location.district} · {dev.developer}
+                        {dev.location.city}, {dev.location.district} · {dev.projectType}
                       </span>
                       <h3 className="text-xl font-bold text-[#18251E] group-hover:text-[#103D2C] mt-1">
-                        {dev.name}
+                        {dev.title}
                       </h3>
                       <p className="text-xs sm:text-sm text-[#5F6B63] mt-1.5 line-clamp-2 leading-relaxed">
                         {dev.tagline}
@@ -1020,10 +1004,10 @@ export function HomePage() {
                           {isFree ? 'Free' : `Rs. ${pkg.priceLkr.toLocaleString()}`}
                         </span>
                         <span className="text-xs text-[#5F6B63] font-medium">
-                          / {pkg.durationLabel}
+                          / {pkg.duration}
                         </span>
                       </div>
-                      <p className="text-xs text-[#5F6B63] mt-2 leading-relaxed">{pkg.tagline}</p>
+                      <p className="text-xs text-[#5F6B63] mt-2 leading-relaxed">{pkg.description}</p>
 
                       <ul className="mt-5 pt-4 border-t border-[#DDE5DF] space-y-2 text-xs text-[#18251E]">
                         <li className="flex items-start gap-2">
@@ -1035,7 +1019,7 @@ export function HomePage() {
                         <li className="flex items-start gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#176B45] mt-1.5 shrink-0" />
                           <span>
-                            <strong>{pkg.placementMultiplier}</strong> search visibility
+                            Syndicated across <strong>{pkg.syndicationWebsitesCount}</strong> partner portals
                           </span>
                         </li>
                         {pkg.features.slice(0, 3).map((feat, idx) => (
@@ -1052,8 +1036,8 @@ export function HomePage() {
                       onClick={() =>
                         navigate(
                           isFree
-                            ? `/list-property?plan=${pkg.slug}`
-                            : `/advertising-packages?plan=${pkg.slug}`
+                            ? `/list-property?plan=${pkg.id}`
+                            : `/advertising-packages?plan=${pkg.id}`
                         )
                       }
                       className={`mt-6 w-full py-2.5 font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer ${
@@ -1062,7 +1046,7 @@ export function HomePage() {
                           : 'bg-white border border-[#103D2C] text-[#103D2C] hover:bg-[#103D2C] hover:text-white'
                       }`}
                     >
-                      {pkg.ctaLabel}
+                      {isFree ? 'Post Property Free' : `Select ${pkg.name}`}
                     </button>
                   </div>
                 );

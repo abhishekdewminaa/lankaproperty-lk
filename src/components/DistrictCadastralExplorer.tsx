@@ -194,7 +194,7 @@ export function DistrictCadastralExplorer({
                 {selectedDistrict.district} District Properties
               </h3>
               <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
-                {selectedDistrict.headline ||
+                {selectedDistrict.character ||
                   `Browse residential houses, apartments, commercial buildings, and land plots in ${selectedDistrict.district} District.`}
               </p>
             </div>
