@@ -13,12 +13,12 @@ const getEnvVar = (name: string): string => {
 const supabaseUrl =
   getEnvVar('VITE_SUPABASE_URL') ||
   getEnvVar('SUPABASE_URL') ||
-  'https://rnedttrpovxswnraezas.supabase.co';
+  'https://xmvhnzuidwpwvdnyydio.supabase.co';
 
 const supabaseAnonKey =
   getEnvVar('VITE_SUPABASE_ANON_KEY') ||
   getEnvVar('SUPABASE_ANON_KEY') ||
-  'sb_publishable_vBaZKq7pyNXrYxRymTNdkQ_hGPZV6ca';
+  'sb_publishable_2LUs3ORDsu4TrHUQOlsXyw_xP9KgxP9';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

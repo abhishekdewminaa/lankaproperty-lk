@@ -155,7 +155,7 @@ async function getFallbackCatalog(): Promise<any[]> {
 }
 
 async function fetchAuthoritativePropertiesFromSupabase(): Promise<any[]> {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://rnedttrpovxswnraezas.supabase.co';
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://xmvhnzuidwpwvdnyydio.supabase.co';
   const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_2LUs3ORDsu4TrHUQOlsXyw_xP9KgxP9';
 
   try {
@@ -250,7 +250,7 @@ app.get('/api/properties/search', async (req: Request, res: Response): Promise<v
     return;
   }
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://rnedttrpovxswnraezas.supabase.co';
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://xmvhnzuidwpwvdnyydio.supabase.co';
   const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_2LUs3ORDsu4TrHUQOlsXyw_xP9KgxP9';
 
   try {

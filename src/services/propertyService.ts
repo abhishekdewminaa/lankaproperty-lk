@@ -309,6 +309,7 @@ class PropertyService {
         price_lkr: r.priceLkr,
         price: r.priceLkr || 0,
         price_unit: r.priceUnit || 'total',
+        is_negotiable: Boolean(r.isNegotiable),
         negotiable: Boolean(r.isNegotiable),
         price_on_request: Boolean(r.priceOnRequest),
         city: r.location.city,
@@ -362,6 +363,7 @@ class PropertyService {
         price_lkr: r.priceLkr || 0,
         price: r.priceLkr || 0,
         price_unit: r.priceUnit || 'total',
+        is_negotiable: Boolean(r.isNegotiable),
         negotiable: Boolean(r.isNegotiable),
         price_on_request: Boolean(r.priceOnRequest),
         city: r.location?.city || 'Colombo',
@@ -424,12 +426,13 @@ class PropertyService {
             );
             const mergedRecords = [...validRecords, ...missingSeeds];
 
-            // If store was explicitly initialized, honor valid records and sync updated seed images
+            // If store was explicitly initialized, honor valid records and ensure seed property images stay up to date
             if (isInitialized) {
               const seedMap = new Map(PROPERTIES_DATA.map((p) => [p.id, p]));
               return mergedRecords.map((rec) => {
                 const seed = seedMap.get(rec.id);
-                if (seed && seed.images && seed.images.length > rec.images.length) {
+                if (seed && seed.images && seed.images.length > 0) {
+                  // Prefer updated seed images (e.g. Supabase Storage WebP URLs)
                   return { ...rec, images: seed.images };
                 }
                 return rec;

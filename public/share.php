@@ -29,8 +29,8 @@ $imageHeight = '630';
 
 if (!empty($slug)) {
     // Supabase REST endpoint
-    $supabaseUrl = 'https://rnedttrpovxswnraezas.supabase.co';
-    $supabaseAnonKey = 'sb_publishable_vBaZKq7pyNXrYxRymTNdkQ_hGPZV6ca';
+    $supabaseUrl = 'https://xmvhnzuidwpwvdnyydio.supabase.co';
+    $supabaseAnonKey = 'sb_publishable_2LUs3ORDsu4TrHUQOlsXyw_xP9KgxP9';
     
     // Match exact slug, prefix, or listing reference
     $cleanRaw = rawurldecode($rawSlug);
