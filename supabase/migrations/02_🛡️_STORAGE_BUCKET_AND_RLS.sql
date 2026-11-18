@@ -119,9 +119,10 @@ WITH CHECK (
 );
 
 DROP POLICY IF EXISTS "Super Admins delete listings" ON public.properties;
-CREATE POLICY "Super Admins delete listings"
+DROP POLICY IF EXISTS "Public and service can delete listings" ON public.properties;
+CREATE POLICY "Public and service can delete listings"
 ON public.properties FOR DELETE
-USING (public.is_super_admin());
+USING (true);
 
 -- 6. HARDENED INQUIRIES & WANTED LEADS POLICIES (Anti-spam & XSS bounds)
 DROP POLICY IF EXISTS "Public can submit inquiries" ON public.inquiries;

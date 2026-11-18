@@ -58,7 +58,7 @@ interface AdminPropertyEditorProps {
 export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
   const { navigate, searchParams } = useRouter();
   const { currentUser, hasPermission } = useAdminAuth();
-  const { properties, saveProperty, updatePropertyStatus } = useAdminData();
+  const { properties, saveProperty, updatePropertyStatus, deleteProperty } = useAdminData();
 
   const isEditing = Boolean(propertyId);
   const existingRecord = useMemo(() => {
@@ -547,6 +547,28 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
     setSaveSuccessMessage('Listing unpublished and reverted to draft.');
   };
 
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const handleDeleteCurrentProperty = async () => {
+    if (!existingRecord && !formData.id) return;
+    const targetId = existingRecord ? existingRecord.id : formData.id;
+    setIsDeleting(true);
+    try {
+      const res = await deleteProperty(targetId);
+      if (res.success) {
+        navigate('/admin/properties');
+      } else {
+        alert(res.message || 'Failed to delete listing.');
+      }
+    } catch (err: any) {
+      alert(`Deletion error: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   // Image Upload / Drag-and-Drop Handlers with Client-Side WebP Compression (Unlimited for SuperAdmin)
   const processImageFiles = async (files: FileList | File[]) => {
     const selectedFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
@@ -790,6 +812,18 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
             <Eye className="w-3.5 h-3.5 text-[#176B45]" />
             <span>Preview</span>
           </a>
+
+          {isEditing && hasPermission('canDeleteListings') && (
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-red-200 bg-white hover:bg-red-50 text-[#C93636] text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer"
+              title="Permanently delete property"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-[#C93636]" />
+              <span>Delete</span>
+            </button>
+          )}
 
           {hasPermission('canPublishListings') && (
             <button
@@ -2355,6 +2389,17 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            {isEditing && hasPermission('canDeleteListings') && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 border border-red-300 bg-white text-[#C93636] hover:bg-red-50 text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-[#C93636]" />
+                <span>Delete</span>
+              </button>
+            )}
+
             {formData.publicationStatus === 'published' && (
               <button
                 type="button"
@@ -2393,6 +2438,53 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
           </div>
         </div>
       </div>
+
+      {/* Permanent Deletion Safety Confirmation Dialog */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white border border-[#DDE5DF] rounded-[4px] shadow-2xl max-w-lg w-full p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-[#C93636]" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-[#18251E]">
+                  Permanently Delete Listing?
+                </h3>
+                <p className="text-xs text-[#5F6B63] mt-0.5">
+                  Are you sure you want to permanently delete <strong>{formData.title}</strong>? This action is irreversible and will delete the listing from both local memory and the Supabase cloud database.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#DDE5DF]">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 bg-white border border-[#DDE5DF] text-xs font-semibold text-[#5F6B63] hover:text-[#18251E] rounded-[2px] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDeleteCurrentProperty}
+                className="px-4 py-2 bg-[#C93636] hover:bg-[#A92828] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-xs"
+              >
+                {isDeleting ? (
+                  <span>Deleting...</span>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm Permanent Deletion</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

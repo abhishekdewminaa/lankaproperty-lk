@@ -120,9 +120,9 @@ export function AgentDashboardPage() {
     });
   };
 
-  const handleDeleteProperty = (id: string) => {
-    if (confirm('Are you sure you want to permanently delete this listing?')) {
-      propertyService.deleteProperty(id);
+  const handleDeleteProperty = async (id: string) => {
+    if (confirm('Are you sure you want to permanently delete this listing from the database?')) {
+      await propertyService.deleteProperty(id);
       loadProperties();
     }
   };

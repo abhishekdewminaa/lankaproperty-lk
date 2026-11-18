@@ -152,7 +152,7 @@ async function runSuperAdminListingFullTest() {
 
   // STEP 7: Cleanup
   console.log('\n--- TEST 7: Test Record Teardown ---');
-  const deleteResult = propertyService.deleteProperty(testId);
+  const deleteResult = await propertyService.deleteProperty(testId);
   console.log('✅ Test record removed from store:', deleteResult.success);
 
   console.log('\n================================================================');

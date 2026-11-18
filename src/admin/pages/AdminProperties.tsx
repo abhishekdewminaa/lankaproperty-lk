@@ -64,6 +64,11 @@ export function AdminProperties() {
   // Details Modal
   const [selectedDetailsProperty, setSelectedDetailsProperty] = useState<AdminPropertyRecord | null>(null);
 
+  // Permanent Delete Dialog & Toast State
+  const [propertyToDelete, setPropertyToDelete] = useState<AdminPropertyRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'warning' } | null>(null);
+
   // View Mode & Image Lightbox (Cards with Big Images vs Table)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -114,6 +119,53 @@ export function AdminProperties() {
   const handleBulkApprove = () => {
     bulkUpdateProperties(selectedIds, { publicationStatus: 'published' });
     setSelectedIds([]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} properties from the database? This cannot be undone.`)) return;
+    setIsDeleting(true);
+    try {
+      let count = 0;
+      for (const id of selectedIds) {
+        const res = await deleteProperty(id);
+        if (res.success) count++;
+      }
+      setSelectedIds([]);
+      setToastMessage({
+        text: `Successfully deleted ${count} properties from database and inventory.`,
+        type: 'success',
+      });
+    } finally {
+      setIsDeleting(false);
+      setTimeout(() => setToastMessage(null), 6000);
+    }
+  };
+
+  const handleConfirmPermanentDelete = async () => {
+    if (!propertyToDelete) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteProperty(propertyToDelete.id);
+      if (res.success) {
+        setToastMessage({
+          text: res.supabaseDeleted
+            ? `Property "${propertyToDelete.title}" permanently deleted from database and marketplace.`
+            : `Property removed locally. (Supabase notice: Run RLS DELETE policy in SQL Editor)`,
+          type: res.supabaseDeleted ? 'success' : 'warning',
+        });
+        if (selectedDetailsProperty?.id === propertyToDelete.id) {
+          setSelectedDetailsProperty(null);
+        }
+      } else {
+        alert(res.message || 'Failed to delete property.');
+      }
+    } catch (err: any) {
+      alert(`Delete error: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setIsDeleting(false);
+      setPropertyToDelete(null);
+      setTimeout(() => setToastMessage(null), 6000);
+    }
   };
 
   const handleDuplicate = (property: AdminPropertyRecord) => {
@@ -339,9 +391,18 @@ export function AdminProperties() {
               {hasPermission('canArchiveListings') && (
                 <button
                   onClick={handleBulkArchive}
-                  className="px-2.5 py-1 bg-white text-[#C93636] border border-[#C93636] font-bold rounded-[2px] hover:bg-red-50"
+                  className="px-2.5 py-1 bg-white text-[#5F6B63] border border-[#DDE5DF] font-bold rounded-[2px] hover:bg-stone-50"
                 >
                   Archive Selected
+                </button>
+              )}
+              {hasPermission('canDeleteListings') && (
+                <button
+                  onClick={handleBulkDelete}
+                  className="px-2.5 py-1 bg-[#C93636] text-white font-bold rounded-[2px] hover:bg-[#A92828] flex items-center gap-1 cursor-pointer"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Delete Selected</span>
                 </button>
               )}
             </div>
@@ -549,6 +610,20 @@ export function AdminProperties() {
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
+                    {hasPermission('canDeleteListings') && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPropertyToDelete(p);
+                        }}
+                        className="px-2 py-1 bg-white hover:bg-red-50 text-[#C93636] border border-[#DDE5DF] hover:border-[#C93636] rounded-[2px] flex items-center gap-1 text-[11px] font-bold transition-colors cursor-pointer"
+                        title="Permanently delete property from database"
+                      >
+                        <Trash2 className="w-3 h-3 text-[#C93636]" />
+                        <span>Delete</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -845,6 +920,17 @@ export function AdminProperties() {
                             <RotateCcw className="w-3.5 h-3.5" />
                           </button>
                         )}
+
+                        {/* Permanently Delete */}
+                        {hasPermission('canDeleteListings') && (
+                          <button
+                            onClick={() => setPropertyToDelete(p)}
+                            className="p-1.5 text-[#5F6B63] hover:text-[#C93636] hover:bg-red-50 rounded-[2px] transition-colors cursor-pointer"
+                            title="Permanently delete listing from database"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-[#C93636]" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1096,6 +1182,17 @@ export function AdminProperties() {
                 >
                   Close
                 </button>
+                {hasPermission('canDeleteListings') && (
+                  <button
+                    onClick={() => {
+                      setPropertyToDelete(selectedDetailsProperty);
+                    }}
+                    className="px-3 py-1.5 bg-white border border-[#C93636]/40 text-[#C93636] hover:bg-red-50 text-xs font-bold uppercase rounded-[2px] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                )}
                 {hasPermission('canEditListings') && (
                   <button
                     onClick={() => {
@@ -1111,6 +1208,119 @@ export function AdminProperties() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Permanent Deletion Safety Confirmation Dialog */}
+      {propertyToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white border border-[#DDE5DF] rounded-[4px] shadow-2xl max-w-lg w-full p-6 space-y-4">
+            {/* Header */}
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-[#C93636]" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-[#18251E]">
+                  Permanently Delete Property?
+                </h3>
+                <p className="text-xs text-[#5F6B63] mt-0.5">
+                  This action is irreversible. The listing will be permanently purged from both the local inventory and the live Supabase cloud database.
+                </p>
+              </div>
+            </div>
+
+            {/* Target Property Summary Card */}
+            <div className="p-3 bg-[#F5F8F5] border border-[#DDE5DF] rounded-[3px] flex items-center gap-3">
+              <div className="w-16 h-12 rounded-[2px] overflow-hidden bg-gray-200 shrink-0 border border-[#DDE5DF]">
+                <img
+                  src={propertyToDelete.images?.[0] || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&q=80'}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="text-xs font-bold text-[#18251E] truncate" title={propertyToDelete.title}>
+                  {propertyToDelete.title}
+                </h4>
+                <div className="text-[11px] font-extrabold text-[#103D2C]">
+                  {formatPriceLkr(propertyToDelete.priceLkr, propertyToDelete.priceUnit, true)}
+                </div>
+                <div className="text-[10px] text-[#5F6B63]">
+                  {propertyToDelete.location.city}, {propertyToDelete.location.district} · Ref: {propertyToDelete.listingRef || propertyToDelete.id}
+                </div>
+              </div>
+            </div>
+
+            {/* Warning Checklist */}
+            <div className="space-y-1.5 text-xs text-[#5F6B63] bg-red-50/60 p-3 rounded-[3px] border border-red-200/60">
+              <div className="flex items-center gap-2 text-[#C93636] font-bold text-[11px]">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>What will happen upon deletion:</span>
+              </div>
+              <ul className="list-disc list-inside space-y-0.5 text-[11px] text-[#7A2E2E] pl-1">
+                <li>Removed permanently from public search and homepage collections</li>
+                <li>Database row deleted from Supabase PostgreSQL (<code>public.properties</code>)</li>
+                <li>Associated buyer inquiries cascade-deleted to prevent orphaned records</li>
+                <li>Local storage cache flushed across mobile and desktop devices</li>
+              </ul>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#DDE5DF]">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => {
+                  setPropertyToDelete(null);
+                }}
+                className="px-4 py-2 bg-white border border-[#DDE5DF] text-xs font-semibold text-[#5F6B63] hover:text-[#18251E] rounded-[2px] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmPermanentDelete}
+                className="px-4 py-2 bg-[#C93636] hover:bg-[#A92828] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-xs"
+              >
+                {isDeleting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting from Cloud...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm Permanent Deletion</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5">
+          <div
+            className={`p-4 rounded-[4px] shadow-lg border text-xs font-bold flex items-center gap-2.5 max-w-md ${
+              toastMessage.type === 'success'
+                ? 'bg-[#103D2C] text-white border-[#176B45]'
+                : 'bg-amber-900 text-white border-amber-700'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4 text-[#9FE3B8] shrink-0" />
+            <span>{toastMessage.text}</span>
+            <button
+              type="button"
+              onClick={() => setToastMessage(null)}
+              className="ml-auto text-white/70 hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       )}

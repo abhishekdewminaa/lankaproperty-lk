@@ -111,11 +111,11 @@ export function AdminUsersAndAgents() {
   };
 
   // Inspect Modal: Delete Property
-  const handleDeleteProperty = (propertyId: string, propertyTitle: string) => {
+  const handleDeleteProperty = async (propertyId: string, propertyTitle: string) => {
     if (window.confirm(`Permanently remove property listing "${propertyTitle}"?`)) {
-      propertyService.deleteProperty(propertyId);
+      await propertyService.deleteProperty(propertyId);
       refreshData();
-      showNotification(`Property "${propertyTitle}" deleted from system.`);
+      showNotification(`Property "${propertyTitle}" deleted from database and marketplace.`);
     }
   };
 

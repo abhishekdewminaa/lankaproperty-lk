@@ -98,9 +98,9 @@ export function OwnerDashboardPage() {
     });
   };
 
-  const handleDeleteProperty = (id: string) => {
-    if (confirm('Are you sure you want to delete this listing from the marketplace?')) {
-      propertyService.deleteProperty(id);
+  const handleDeleteProperty = async (id: string) => {
+    if (confirm('Are you sure you want to delete this listing from the database and marketplace?')) {
+      await propertyService.deleteProperty(id);
       loadProperties();
     }
   };

@@ -417,11 +417,25 @@ class PropertyService {
     }
   }
 
-  private async deletePropertyFromSupabase(id: string): Promise<void> {
+  private async deletePropertyFromSupabase(id: string, slug?: string): Promise<{ success: boolean; error?: string }> {
     try {
-      await supabase.from('properties').delete().eq('id', id);
-    } catch (err) {
+      const validUuid = ensureValidUUID(id);
+      const filters = [`id.eq.${id}`, `id.eq.${validUuid}`];
+      if (slug) filters.push(`slug.eq.${slug}`);
+
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .or(filters.join(','));
+
+      if (error) {
+        console.warn('Supabase delete error:', error.message);
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (err: any) {
       console.warn('Background Supabase delete deferred:', err);
+      return { success: false, error: err?.message || 'Network error' };
     }
   }
 
@@ -1089,15 +1103,29 @@ class PropertyService {
       .sort((a, b) => a.distanceKm - b.distanceKm);
   }
 
-  deleteProperty(id: string): { success: boolean } {
+  async deleteProperty(id: string): Promise<{ success: boolean; supabaseDeleted: boolean; message?: string }> {
+    const target = this.records.find((p) => p.id === id || p.slug === id);
+    const slug = target?.slug;
     const beforeCount = this.records.length;
-    this.records = this.records.filter((p) => p.id !== id);
-    if (this.records.length !== beforeCount) {
+    this.records = this.records.filter((p) => p.id !== id && p.slug !== id);
+    const isRemoved = this.records.length !== beforeCount;
+
+    if (isRemoved) {
+      this.remoteSyncedIds.delete(id);
+      if (slug) this.remoteSyncedIds.delete(slug);
+
       this.notify();
-      this.deletePropertyFromSupabase(id);
-      return { success: true };
+
+      const dbRes = await this.deletePropertyFromSupabase(id, slug);
+      return {
+        success: true,
+        supabaseDeleted: dbRes.success,
+        message: dbRes.success
+          ? 'Property permanently deleted from database and marketplace.'
+          : `Removed locally. Supabase note: ${dbRes.error || 'Check RLS policy'}`,
+      };
     }
-    return { success: false };
+    return { success: false, supabaseDeleted: false, message: 'Property not found.' };
   }
 
   bulkUpdateProperties(

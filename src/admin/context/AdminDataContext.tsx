@@ -303,7 +303,7 @@ interface AdminDataContextType {
 
   // Property Actions
   saveProperty: (property: AdminPropertyRecord) => { success: boolean; property?: AdminPropertyRecord; message?: string };
-  deleteProperty: (id: string) => { success: boolean; message?: string };
+  deleteProperty: (id: string) => Promise<{ success: boolean; supabaseDeleted?: boolean; message?: string }>;
   updatePropertyStatus: (id: string, status: PublicationStatus, reason?: string) => void;
   bulkUpdateProperties: (ids: string[], updates: Partial<AdminPropertyRecord>) => { successCount: number; failureCount: number };
   toggleCollectionPlacement: (
@@ -496,18 +496,20 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const deleteProperty = (id: string): { success: boolean; message?: string } => {
+  const deleteProperty = async (id: string): Promise<{ success: boolean; supabaseDeleted?: boolean; message?: string }> => {
     const target = properties.find((p) => p.id === id);
     if (!target) return { success: false, message: 'Property not found.' };
 
-    const res = propertyService.deleteProperty(id);
+    const res = await propertyService.deleteProperty(id);
 
     logAuditEvent({
-      action: 'DELETE_PROPERTY',
+      action: 'PERMANENT_DELETE_PROPERTY',
       targetRecord: `${target.title} (${target.id})`,
       recordType: 'property',
-      outcome: 'warning',
-      details: 'Deleted property record from inventory.',
+      outcome: res.supabaseDeleted ? 'warning' : 'failed',
+      details: res.supabaseDeleted
+        ? `Permanently deleted property "${target.title}" (Ref: ${target.listingRef || target.id}) from local inventory and Supabase database.`
+        : `Deleted property "${target.title}" locally. Supabase note: ${res.message}`,
     });
 
     return res;
