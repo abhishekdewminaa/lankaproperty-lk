@@ -83,6 +83,8 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
       type: 'house' as PropertyType,
       priceLkr: 0,
       priceUnit: 'total' as PriceUnit,
+      isNegotiable: true,
+      priceOnRequest: true,
       status: 'available',
       publicationStatus: 'draft',
       collections: [],
@@ -185,6 +187,16 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
         next.agent = { ...next.agent, [sub]: value };
       } else {
         (next as any)[fieldPath] = value;
+        if (fieldPath === 'priceLkr') {
+          const numPrice = Number(value) || 0;
+          if (numPrice > 0) {
+            next.isNegotiable = true;
+            next.priceOnRequest = false;
+          } else {
+            next.isNegotiable = true;
+            next.priceOnRequest = true;
+          }
+        }
       }
       return next;
     });

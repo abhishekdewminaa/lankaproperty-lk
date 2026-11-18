@@ -242,27 +242,35 @@ export function parseHeuristic(
     purposeExcerpt = match ? match[0] : 'Land keyword';
   }
 
-  // 2. Property Category / Type (Check Apartment -> Commercial -> House -> Land)
-  let proposedType: 'house' | 'apartment' | 'land' | 'commercial' | null = null;
+  // 2. Property Category / Type (Check Headline/Overview first so "Land for Sale... ideal for building a house" stays Land)
+  let proposedType: 'house' | 'apartment' | 'land' | 'hotel' | 'business' | null = null;
   let typeExcerpt = '';
+  const overviewType = (overview['property type'] || overview['category'] || overview['type'] || '').toLowerCase();
+  const headlineText = `${overviewType} ${sections.titleCandidate || ''} ${rawText.split(/\r?\n/).slice(0, 2).join(' ')}`;
   const titleAndStart = `${sections.titleCandidate || ''} ${rawText.slice(0, 350)}`;
 
-  if (/\b(?:apartment|condo|condominium|residencies|flat|penthouse|ඇපාර්ට්මන්ට්|அபார்ட்மெண்ட்)\b/i.test(titleAndStart)) {
-    proposedType = 'apartment';
-    const match = titleAndStart.match(/\b(?:apartment|condo|condominium|residencies|penthouse)\b/i);
-    typeExcerpt = match ? match[0] : 'Apartment';
-  } else if (/\b(?:commercial|office building|factory|warehouse|guest house|guesthouse|hotel|resort|වාණිජ)\b/i.test(titleAndStart)) {
-    proposedType = 'commercial';
-    const match = titleAndStart.match(/\b(?:commercial|office building|factory|warehouse|guest house|guesthouse|hotel|resort)\b/i);
-    typeExcerpt = match ? match[0] : 'Commercial';
-  } else if (/\b(?:villa|house|bungalow|residence|mansion|නිවස|வீடு)\b/i.test(titleAndStart)) {
-    proposedType = 'house';
-    const match = titleAndStart.match(/\b(?:villa|house|bungalow|residence|mansion|නිවස)\b/i);
-    typeExcerpt = match ? match[0] : 'House';
-  } else if (/\b(?:land|plot|estate|paddy|beachfront land|ඉඩම|காணி)\b/i.test(titleAndStart)) {
-    proposedType = 'land';
-    const match = titleAndStart.match(/\b(?:land|plot|estate|beachfront land)\b/i);
-    typeExcerpt = match ? match[0] : 'Land';
+  const detectCategoryFromSegment = (seg: string): { type: 'house' | 'apartment' | 'land' | 'hotel' | 'business'; excerpt: string } | null => {
+    const landMatch = seg.match(/\b(?:bare land|residential land|commercial land|agricultural land|paddy land|tea estate|coconut estate|rubber estate|beachfront land|land|plot|plots|ඉඩම|காணி)\b/i);
+    const aptMatch = seg.match(/\b(?:apartment|condo|condominium|residencies|flat|penthouse|ඇපාර්ට්මන්ට්|அபார்ட்மெண்ட்)\b/i);
+    const hotelMatch = seg.match(/\b(?:boutique hotel|guest house|guesthouse|hotel|resort|cabana|eco lodge)\b/i);
+    const bizMatch = seg.match(/\b(?:commercial|office building|factory|warehouse|showroom|shop|වාණිජ)\b/i);
+    const houseMatch = seg.match(/\b(?:villa|house|bungalow|residence|mansion|නිවස|வீடு)\b/i);
+
+    if (landMatch && !aptMatch && !houseMatch && !hotelMatch) {
+      return { type: 'land', excerpt: landMatch[0] };
+    }
+    if (aptMatch) return { type: 'apartment', excerpt: aptMatch[0] };
+    if (hotelMatch) return { type: 'hotel', excerpt: hotelMatch[0] };
+    if (bizMatch && !landMatch) return { type: 'business', excerpt: bizMatch[0] };
+    if (houseMatch) return { type: 'house', excerpt: houseMatch[0] };
+    if (landMatch) return { type: 'land', excerpt: landMatch[0] };
+    return null;
+  };
+
+  const detected = detectCategoryFromSegment(headlineText) || detectCategoryFromSegment(titleAndStart);
+  if (detected) {
+    proposedType = detected.type;
+    typeExcerpt = detected.excerpt;
   }
 
   // 3. Currency and Valuation Extraction
@@ -678,7 +686,10 @@ export function parseHeuristic(
     });
   }
 
-  if (proposedPrice !== null) {
+  const hasExtractedPrice = proposedPrice !== null && proposedPrice > 0;
+  const explicitlyFixedPrice = /\b(?:non[- ]?negotiable|fixed price|strictly fixed)\b/i.test(rawText);
+
+  if (hasExtractedPrice) {
     fields.push({
       fieldKey: 'priceLkr',
       fieldLabel: 'Asking Price (LKR)',
@@ -690,6 +701,19 @@ export function parseHeuristic(
       method: 'heuristic',
       confidence: priceConfidence,
       conflictOrAmbiguity: calculationNote,
+      selectedToApply: true,
+    });
+  } else {
+    fields.push({
+      fieldKey: 'priceLkr',
+      fieldLabel: 'Asking Price (LKR)',
+      category: 'price',
+      currentValue: currentForm.priceLkr || 0,
+      proposedValue: 0,
+      normalizedUnit: 'LKR',
+      sourceExcerpt: 'No price listed — Price on Request',
+      method: 'heuristic',
+      confidence: 'high',
       selectedToApply: true,
     });
   }
@@ -708,19 +732,29 @@ export function parseHeuristic(
     });
   }
 
-  if (isNegotiable) {
-    fields.push({
-      fieldKey: 'isNegotiable',
-      fieldLabel: 'Price Negotiable',
-      category: 'price',
-      currentValue: currentForm.isNegotiable || false,
-      proposedValue: true,
-      sourceExcerpt: 'Negotiable stated in text',
-      method: 'heuristic',
-      confidence: 'high',
-      selectedToApply: true,
-    });
-  }
+  fields.push({
+    fieldKey: 'isNegotiable',
+    fieldLabel: 'Price Negotiable',
+    category: 'price',
+    currentValue: Boolean(currentForm.isNegotiable),
+    proposedValue: explicitlyFixedPrice ? false : true,
+    sourceExcerpt: isNegotiable ? 'Negotiable stated in text' : 'Default negotiable enabled',
+    method: 'heuristic',
+    confidence: 'high',
+    selectedToApply: true,
+  });
+
+  fields.push({
+    fieldKey: 'priceOnRequest',
+    fieldLabel: 'Price on Request',
+    category: 'price',
+    currentValue: Boolean(currentForm.priceOnRequest),
+    proposedValue: !hasExtractedPrice,
+    sourceExcerpt: hasExtractedPrice ? 'Price provided' : 'No price found — Price on Request enabled',
+    method: 'heuristic',
+    confidence: 'high',
+    selectedToApply: true,
+  });
 
   if (proposedBedrooms !== null || bedConflict) {
     fields.push({
@@ -984,12 +1018,13 @@ export function mergeAIResultsWithForm(
   }
 
   if (aiResult.type) {
+    const normalizedAiType = aiResult.type === 'commercial' ? 'business' : aiResult.type;
     fields.push({
       fieldKey: 'type',
       fieldLabel: 'Property Type',
       category: 'core',
       currentValue: currentForm.type,
-      proposedValue: aiResult.type,
+      proposedValue: normalizedAiType,
       sourceExcerpt: excerpts['type']?.excerpt,
       method: 'ai',
       confidence: excerpts['type']?.confidence || 'high',
@@ -1070,19 +1105,32 @@ export function mergeAIResultsWithForm(
     });
   }
 
-  if (aiResult.price?.isNegotiable !== undefined && aiResult.price.isNegotiable !== null) {
-    fields.push({
-      fieldKey: 'isNegotiable',
-      fieldLabel: 'Price Negotiable',
-      category: 'price',
-      currentValue: currentForm.isNegotiable || false,
-      proposedValue: aiResult.price.isNegotiable,
-      sourceExcerpt: excerpts['negotiable']?.excerpt,
-      method: 'ai',
-      confidence: 'high',
-      selectedToApply: true,
-    });
-  }
+  const aiHasPrice = Boolean(aiResult.price?.priceLkr && aiResult.price.priceLkr > 0);
+  fields.push({
+    fieldKey: 'isNegotiable',
+    fieldLabel: 'Price Negotiable',
+    category: 'price',
+    currentValue: Boolean(currentForm.isNegotiable),
+    proposedValue: aiResult.price?.isNegotiable !== undefined && aiResult.price.isNegotiable !== null
+      ? aiResult.price.isNegotiable
+      : true,
+    sourceExcerpt: excerpts['negotiable']?.excerpt || 'Default negotiable enabled',
+    method: 'ai',
+    confidence: 'high',
+    selectedToApply: true,
+  });
+
+  fields.push({
+    fieldKey: 'priceOnRequest',
+    fieldLabel: 'Price on Request',
+    category: 'price',
+    currentValue: Boolean(currentForm.priceOnRequest),
+    proposedValue: !aiHasPrice,
+    sourceExcerpt: aiHasPrice ? 'Price provided' : 'No price found — Price on Request enabled',
+    method: 'ai',
+    confidence: 'high',
+    selectedToApply: true,
+  });
 
   if (aiResult.specs?.bedrooms !== undefined && aiResult.specs.bedrooms !== null) {
     const isConflict = aiResult.analysis?.conflicts.some((c) => /bedroom|bed/i.test(c));
