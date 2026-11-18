@@ -76,6 +76,20 @@ export function GalleryLightbox({
 
   if (!isOpen || images.length === 0) return null;
 
+  const handleImageFallback = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const imgEl = e.currentTarget;
+    const currentSrc = imgEl.src;
+    const filename = currentSrc.split('/').pop() || '';
+    const defaultFallback =
+      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80';
+    if (currentSrc.includes('supabase.co') && filename && !imgEl.dataset.triedLocal) {
+      imgEl.dataset.triedLocal = 'true';
+      imgEl.src = `/uploads/properties/${filename}`;
+    } else if (currentSrc !== defaultFallback) {
+      imgEl.src = defaultFallback;
+    }
+  };
+
   return (
     <div
       role="dialog"
@@ -126,6 +140,7 @@ export function GalleryLightbox({
           src={images[currentIndex]}
           alt={`${title} - Photo ${currentIndex + 1}`}
           referrerPolicy="no-referrer"
+          onError={handleImageFallback}
           onClick={() => setIsZoomed((prev) => !prev)}
           className={`max-h-[82vh] max-w-full object-contain select-none transition-transform duration-300 ease-out cursor-pointer ${
             isZoomed ? 'scale-150 cursor-zoom-out' : 'scale-100 cursor-zoom-in'
@@ -176,6 +191,7 @@ export function GalleryLightbox({
                 src={img}
                 alt=""
                 referrerPolicy="no-referrer"
+                onError={handleImageFallback}
                 className="w-full h-full object-cover"
               />
             </button>

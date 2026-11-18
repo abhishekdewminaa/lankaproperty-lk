@@ -1,51 +1,59 @@
 import os
 from PIL import Image
 
-BASE_DIR = r"C:\Users\META\.gemini\antigravity\scratch\lankaproperty-lk\public\uploads\properties"
+UPLOADS_DIR = os.path.join("public", "uploads", "properties")
+MAX_WIDTH = 1280
+WEBP_QUALITY = 65
 
-files_to_optimize = [
-    "asgiriya-gampaha-hero.jpg",
-    "maharagama-janatha-mawatha-1-hero.jpg",
-    "maharagama-janatha-mawatha-2-aerial.jpg",
-    "maharagama-janatha-mawatha-3-interior.jpg",
-    "godigamuwa-dunagaha-1-hero.jpg",
-    "godigamuwa-dunagaha-2-verandah.jpg",
-    "godigamuwa-dunagaha-3-living.jpg",
-    "godigamuwa-dunagaha-4-bed1.jpg",
-    "godigamuwa-dunagaha-5-bed2.jpg",
-    "godigamuwa-dunagaha-6-bath.jpg",
-    "godigamuwa-dunagaha-7-bath2.jpg",
-    "godigamuwa-dunagaha-8-garden.jpg"
-]
+# Map high-resolution 800x533 Godigamuwa source photos to their canonical WebP filenames
+GODIGAMUWA_HD_MAP = {
+    "lp_1794897927987_defb52ee7958.webp": "godigamuwa-dunagaha-1-hero.webp",
+    "lp_1794897927982_11cf5c53a1a9.webp": "godigamuwa-dunagaha-2-verandah.webp",
+    "lp_1794897927871_6534bd851f22.webp": "godigamuwa-dunagaha-3-living.webp",
+    "lp_1794897927869_1d35ddc9ad7d.webp": "godigamuwa-dunagaha-4-bed1.webp",
+    "lp_1794897927867_5543d86b7067.webp": "godigamuwa-dunagaha-5-bed2.webp",
+    "lp_1794897927865_4ddecbd91bdc.webp": "godigamuwa-dunagaha-6-bath.webp",
+    "lp_1794897927856_14f913e54e8c.webp": "godigamuwa-dunagaha-7-bath2.webp",
+    "lp_1794897927838_de40cf5d3a89.webp": "godigamuwa-dunagaha-8-garden.webp",
+}
 
-print("--- STARTING IMAGE OPTIMIZATION (65% QUALITY WEBP, MAX 1280px) ---")
-total_orig = 0
-total_new = 0
+OTHER_JPG_MAP = {
+    "asgiriya-gampaha-hero.jpg": "asgiriya-gampaha-hero.webp",
+    "maharagama-janatha-mawatha-1-hero.jpg": "maharagama-janatha-mawatha-1-hero.webp",
+    "maharagama-janatha-mawatha-2-aerial.jpg": "maharagama-janatha-mawatha-2-aerial.webp",
+    "maharagama-janatha-mawatha-3-interior.jpg": "maharagama-janatha-mawatha-3-interior.webp",
+}
 
-for filename in files_to_optimize:
-    src_path = os.path.join(BASE_DIR, filename)
+def compress_to_webp(src_name: str, dst_name: str):
+    src_path = os.path.join(UPLOADS_DIR, src_name)
+    dst_path = os.path.join(UPLOADS_DIR, dst_name)
     if not os.path.exists(src_path):
-        print(f"Skipping missing file: {filename}")
-        continue
-    
-    orig_size = os.path.getsize(src_path)
-    total_orig += orig_size
-    
-    with Image.open(src_path) as im:
-        if im.mode in ("RGBA", "P"):
-            im = im.convert("RGB")
-        
-        w, h = im.size
-        if w > 1280:
-            new_h = int(h * (1280 / w))
-            im = im.resize((1280, new_h), Image.Resampling.LANCZOS)
-        
-        webp_name = os.path.splitext(filename)[0] + ".webp"
-        dest_path = os.path.join(BASE_DIR, webp_name)
-        im.save(dest_path, "WEBP", quality=65, method=6)
-        
-        new_size = os.path.getsize(dest_path)
-        total_new += new_size
-        print(f"Optimized {filename} -> {webp_name}: {orig_size/1024:.1f} KB -> {new_size/1024:.1f} KB (saved {100 - (new_size/orig_size*100):.1f}%)")
+        print(f"SKIP (missing): {src_name}")
+        return 0, 0
 
-print(f"\nTOTAL STORAGE RECLAIMED: {total_orig/1024:.1f} KB -> {total_new/1024:.1f} KB (Overall saving: {100 - (total_new/total_orig*100):.1f}%)")
+    orig_size = os.path.getsize(src_path)
+    with Image.open(src_path) as img:
+        img = img.convert("RGB")
+        w, h = img.size
+        if w > MAX_WIDTH:
+            new_h = int(h * (MAX_WIDTH / w))
+            img = img.resize((MAX_WIDTH, new_h), Image.Resampling.LANCZOS)
+        img.save(dst_path, "WEBP", quality=WEBP_QUALITY, method=6)
+
+    new_size = os.path.getsize(dst_path)
+    saved_pct = ((orig_size - new_size) / orig_size * 100) if orig_size > 0 else 0
+    print(f"OK {dst_name} ({img.size[0]}x{img.size[1]}): {orig_size/1024:.1f} KB -> {new_size/1024:.1f} KB ({saved_pct:.1f}% saved)")
+    return orig_size, new_size
+
+def main():
+    total_orig = 0
+    total_new = 0
+    for src, dst in {**GODIGAMUWA_HD_MAP, **OTHER_JPG_MAP}.items():
+        o, n = compress_to_webp(src, dst)
+        total_orig += o
+        total_new += n
+
+    print(f"\nTotal: {total_orig/1024:.1f} KB -> {total_new/1024:.1f} KB ({((total_orig-total_new)/total_orig*100) if total_orig else 0:.1f}% reduction)")
+
+if __name__ == "__main__":
+    main()

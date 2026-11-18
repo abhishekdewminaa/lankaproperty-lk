@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { SeoHead } from '../components/SeoHead';
 import { useCurrency } from '../context/CurrencyContext';
 import {
@@ -51,6 +51,13 @@ export function WantedPropertiesPage() {
 
   // Refresh trigger
   const [refreshKey, setRefreshKey] = useState<number>(0);
+
+  useEffect(() => {
+    wantedPropertyService.syncWithSupabase();
+    return wantedPropertyService.subscribe(() => {
+      setRefreshKey((prev) => prev + 1);
+    });
+  }, []);
 
   // Filtered leads
   const leads = useMemo(() => {

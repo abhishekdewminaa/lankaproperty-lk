@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 export interface WantedPropertyLead {
   id: string;
   buyerName: string;
@@ -173,6 +175,69 @@ class WantedPropertyService {
     return { purgedLeads, purgedProposals };
   }
 
+  private listeners: Set<() => void> = new Set();
+
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private notify() {
+    this.listeners.forEach((cb) => {
+      try {
+        cb();
+      } catch {}
+    });
+  }
+
+  async syncWithSupabase(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('wanted_properties')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(200);
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const remoteLeads: WantedPropertyLead[] = data.map((row: any) => ({
+          id: row.id,
+          buyerName: row.buyer_name,
+          buyerType: (row.buyer_type || 'private_buyer') as any,
+          phone: row.phone,
+          email: row.email || undefined,
+          preferredContactMethod: (row.preferred_contact || 'whatsapp') as any,
+          propertyType: (row.property_type || 'house') as any,
+          district: row.district,
+          specificAreas: Array.isArray(row.specific_areas) ? row.specific_areas : [],
+          budgetMinLkr: Number(row.budget_min_lkr) || 0,
+          budgetMaxLkr: Number(row.budget_max_lkr) || 0,
+          minBedrooms: row.min_bedrooms ? Number(row.min_bedrooms) : undefined,
+          minLandPerches: row.min_land_perches ? Number(row.min_land_perches) : undefined,
+          urgency: (row.urgency || 'within_30_days') as any,
+          title: row.title,
+          description: row.description,
+          status: (row.status || 'active') as any,
+          createdAt: row.created_at || new Date().toISOString(),
+          verifiedBuyer: Boolean(row.verified_buyer),
+          proposalsCount: 0,
+        }));
+
+        const local = this.getStoredLeads();
+        const remoteIds = new Set(remoteLeads.map((r) => r.id));
+        const remoteTitles = new Set(remoteLeads.map((r) => r.title.toLowerCase()));
+        const merged = [
+          ...remoteLeads,
+          ...local.filter((l) => !remoteIds.has(l.id) && !remoteTitles.has(l.title.toLowerCase())),
+        ];
+        this.saveLeads(merged);
+        this.notify();
+      }
+    } catch (err) {
+      console.warn('Wanted leads Supabase sync deferred:', err);
+    }
+  }
+
   private getStoredLeads(): WantedPropertyLead[] {
     try {
       this.purgeExpiredRecords(90);
@@ -295,6 +360,33 @@ class WantedPropertyService {
 
     leads.unshift(newLead);
     this.saveLeads(leads);
+    this.notify();
+
+    // Asynchronously persist to Supabase cloud database for cross-device visibility
+    supabase
+      .from('wanted_properties')
+      .insert({
+        buyer_name: newLead.buyerName,
+        buyer_type: newLead.buyerType,
+        phone: newLead.phone,
+        email: newLead.email || null,
+        preferred_contact: newLead.preferredContactMethod,
+        property_type: newLead.propertyType,
+        district: newLead.district,
+        specific_areas: newLead.specificAreas,
+        budget_min_lkr: newLead.budgetMinLkr,
+        budget_max_lkr: newLead.budgetMaxLkr,
+        min_bedrooms: newLead.minBedrooms || null,
+        min_land_perches: newLead.minLandPerches || null,
+        urgency: newLead.urgency,
+        title: newLead.title,
+        description: newLead.description,
+        status: 'active',
+        verified_buyer: false,
+      })
+      .then(({ error }) => {
+        if (error) console.warn('Supabase wanted_properties insert note:', error.message);
+      });
 
     return {
       success: true,

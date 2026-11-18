@@ -4,9 +4,10 @@ import { AdminPropertyRecord, PublicationStatus } from '../admin/types/admin';
 import { calculateHaversineDistanceKm, DEFAULT_COLOMBO_COORDINATES } from '../data/landmarks';
 import { supabase } from '../lib/supabase';
 
-const STORAGE_KEY = 'lankaproperty_authoritative_properties';
-const STORAGE_INITIALIZED_KEY = 'lankaproperty_store_initialized';
-const STORAGE_LAST_SYNC_KEY = 'lankaproperty_supabase_last_sync';
+const STORAGE_KEY = 'lankaproperty_authoritative_properties_v3';
+const LEGACY_STORAGE_KEYS = ['lankaproperty_authoritative_properties', 'lankaproperty_authoritative_properties_v2'];
+const STORAGE_INITIALIZED_KEY = 'lankaproperty_store_initialized_v3';
+const STORAGE_LAST_SYNC_KEY = 'lankaproperty_supabase_last_sync_v3';
 const SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5-minute cache TTL
 
 /**
@@ -427,6 +428,12 @@ class PropertyService {
   private loadFromStorage(): AdminPropertyRecord[] {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
+        // Purge stale legacy cache keys so returning mobile/desktop browsers load fresh Supabase WebP URLs
+        for (const oldKey of LEGACY_STORAGE_KEYS) {
+          if (localStorage.getItem(oldKey)) {
+            localStorage.removeItem(oldKey);
+          }
+        }
         const isInitialized = localStorage.getItem(STORAGE_INITIALIZED_KEY) === 'true';
         const stored = localStorage.getItem(STORAGE_KEY);
 

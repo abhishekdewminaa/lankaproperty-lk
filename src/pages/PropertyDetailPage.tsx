@@ -203,6 +203,22 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
     ? (property.floorPlans as string[])
     : property.images;
 
+  const handleImageFallback = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const imgEl = e.currentTarget;
+    const currentSrc = imgEl.src;
+    const filename = currentSrc.split('/').pop() || '';
+    const localMirror = `/uploads/properties/${filename}`;
+    const defaultArchitecturalFallback =
+      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80';
+
+    if (currentSrc.includes('supabase.co') && filename && !imgEl.dataset.triedLocal) {
+      imgEl.dataset.triedLocal = 'true';
+      imgEl.src = localMirror;
+    } else if (currentSrc !== defaultArchitecturalFallback) {
+      imgEl.src = defaultArchitecturalFallback;
+    }
+  };
+
   return (
     <div className="bg-white min-h-screen pb-28 md:pb-20">
       <SeoHead
@@ -500,6 +516,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
                     alt={`${property.title} primary architectural perspective`}
                     loading="eager"
                     referrerPolicy="no-referrer"
+                    onError={handleImageFallback}
                     className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
                   />
 
@@ -532,6 +549,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
                           alt={`${property.title} view ${idx + 2}`}
                           loading="lazy"
                           referrerPolicy="no-referrer"
+                          onError={handleImageFallback}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-400"
                         />
                         <div className="absolute top-3 left-3 px-2 py-0.5 bg-black/60 text-white text-[10px] font-bold uppercase rounded-[1px]">
@@ -574,6 +592,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
                           src={img}
                           alt={`Thumbnail ${index + 1}`}
                           loading="lazy"
+                          onError={handleImageFallback}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         />
                         <div className="absolute bottom-1 right-1 px-1 py-0.2 bg-black/70 text-white text-[9px] tabular-nums font-bold rounded-[1px]">

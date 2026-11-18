@@ -758,6 +758,17 @@ export function PropertiesPage() {
                         <img
                           src={property.images[0]}
                           alt={property.title}
+                          onError={(e) => {
+                            const imgEl = e.currentTarget;
+                            const filename = imgEl.src.split('/').pop() || '';
+                            const fallback = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80';
+                            if (imgEl.src.includes('supabase.co') && filename && !imgEl.dataset.triedLocal) {
+                              imgEl.dataset.triedLocal = 'true';
+                              imgEl.src = `/uploads/properties/${filename}`;
+                            } else if (imgEl.src !== fallback) {
+                              imgEl.src = fallback;
+                            }
+                          }}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                         />
                         <div className="absolute top-3 left-3 flex items-center gap-1.5">
