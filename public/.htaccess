@@ -2,6 +2,9 @@
   RewriteEngine On
   RewriteBase /
 
+  # Block hackers from accessing hidden dot-files (.env, .git, etc.) except .well-known
+  RewriteRule (^|/)\.(?!well-known) - [F,L]
+
   # Enforce HTTPS on production domain (skip localhost)
   RewriteCond %{HTTPS} off
   RewriteCond %{HTTP_HOST} !^localhost [NC]
@@ -21,11 +24,14 @@
   RewriteRule ^ index.html [L]
 </IfModule>
 
-# Security Headers
+# Hardened Security & Edge Caching Headers
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Permissions-Policy "camera=(), microphone=(), payment=(), usb=()"
+  Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 
   # Cache hashed static assets for 1 year (immutable)
   <FilesMatch "\.(js|css|woff2?|ttf|otf|eot|svg|png|jpg|jpeg|webp|avif|ico)$">

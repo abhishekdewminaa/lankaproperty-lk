@@ -163,7 +163,14 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc', now())
 );
 
--- 6. PERFORMANCE INDEXES
+-- 6. ENABLE ROW-LEVEL SECURITY IMMEDIATELY (Prevents Supabase SQL Editor warning popup)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.properties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wanted_properties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- 7. PERFORMANCE INDEXES
 CREATE INDEX IF NOT EXISTS idx_properties_search_gin ON public.properties USING GIN (search_vector);
 CREATE INDEX IF NOT EXISTS idx_properties_search ON public.properties (district, property_type, price_lkr) WHERE publication_status = 'published';
 CREATE INDEX IF NOT EXISTS idx_properties_slug ON public.properties (slug);
