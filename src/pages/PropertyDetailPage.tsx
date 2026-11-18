@@ -564,11 +564,11 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
             </div>
 
             {/* Clean Typographic Action Buttons (Zero Icons) */}
-            <div className="grid grid-cols-4 sm:flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => toggleSave(property.id)}
-                className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[3px] border transition-colors cursor-pointer text-center ${
+                className={`flex-1 sm:flex-none px-2.5 sm:px-3.5 py-2 text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider whitespace-nowrap rounded-[3px] border transition-colors cursor-pointer text-center ${
                   saved
                     ? 'bg-[#C93636] text-white border-[#C93636]'
                     : 'bg-white text-[#18251E] border-[#DDE5DF] hover:border-[#103D2C]'
@@ -580,7 +580,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
               <button
                 type="button"
                 onClick={handleCompareClick}
-                className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[3px] border transition-colors cursor-pointer text-center ${
+                className={`flex-1 sm:flex-none px-2.5 sm:px-3.5 py-2 text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider whitespace-nowrap rounded-[3px] border transition-colors cursor-pointer text-center ${
                   compared
                     ? 'bg-[#103D2C] text-white border-[#103D2C]'
                     : 'bg-white text-[#18251E] border-[#DDE5DF] hover:border-[#103D2C]'
@@ -592,7 +592,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
               <button
                 type="button"
                 onClick={handleShareToWhatsApp}
-                className="px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[3px] bg-[#128C7E] hover:bg-[#075E54] text-white transition-colors cursor-pointer text-center"
+                className="flex-1 sm:flex-none px-2.5 sm:px-3.5 py-2 text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider whitespace-nowrap rounded-[3px] bg-[#128C7E] hover:bg-[#075E54] text-white transition-colors cursor-pointer text-center"
               >
                 WhatsApp
               </button>
@@ -600,7 +600,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
               <button
                 type="button"
                 onClick={handleShare}
-                className="px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[3px] border border-[#DDE5DF] bg-white text-[#18251E] hover:border-[#103D2C] transition-colors cursor-pointer text-center"
+                className="flex-1 sm:flex-none px-2.5 sm:px-3.5 py-2 text-[11px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-wider whitespace-nowrap rounded-[3px] border border-[#DDE5DF] bg-white text-[#18251E] hover:border-[#103D2C] transition-colors cursor-pointer text-center"
               >
                 {copiedShare ? 'Copied' : 'Share'}
               </button>
