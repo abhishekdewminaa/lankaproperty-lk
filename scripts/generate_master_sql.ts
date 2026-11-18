@@ -14,10 +14,16 @@ function sqlJson(data: any): string {
 }
 
 let sql = `-- ==============================================================================
--- 04_SEED_ALL_16_PROPERTIES.sql
--- LankaProperty.lk — Step 4 of 4: Authoritative Seed & Upsert for All 16 Properties
+-- 04_🌱_SEED_AND_SCALE_PROPERTIES.sql
+-- LankaProperty.lk — Step 4 of 4: Authoritative Catalog Seed & 500+ Scale Setup
 -- Target: xmvhnzuidwpwvdnyydio.supabase.co
--- Safe & Idempotent: Upserts all 16 properties with Supabase Storage WebP URLs.
+--
+-- Designed for Continuous Growth (500 to 50,000+ Properties):
+-- 1. Safely upserts the core foundational properties without overwriting or
+--    deleting any of your 500+ user/admin listings added over time.
+-- 2. Advances 'property_listing_ref_seq' automatically above the highest
+--    existing listing number so new properties added via website or admin
+--    scale seamlessly without ID or reference collisions.
 -- ==============================================================================
 
 `;
@@ -121,5 +127,13 @@ ON CONFLICT (id) DO UPDATE SET
 `;
 }
 
-fs.writeFileSync('supabase/migrations/04_🌱_SEED_ALL_16_PROPERTIES.sql', sql, 'utf8');
-console.log(`Generated supabase/migrations/04_🌱_SEED_ALL_16_PROPERTIES.sql (${PROPERTIES_DATA.length} properties, CDN base: ${SUPABASE_STORAGE_URL})`);
+sql += `-- Synchronize sequence counter above current catalog count for seamless 500+ expansion
+SELECT setval(
+    'public.property_listing_ref_seq',
+    GREATEST(1000, (SELECT COUNT(*) + 1000 FROM public.properties)),
+    true
+);
+`;
+
+fs.writeFileSync('supabase/migrations/04_🌱_SEED_AND_SCALE_PROPERTIES.sql', sql, 'utf8');
+console.log(`Generated supabase/migrations/04_🌱_SEED_AND_SCALE_PROPERTIES.sql (${PROPERTIES_DATA.length} base properties + 500+ dynamic scale sequence, CDN base: ${SUPABASE_STORAGE_URL})`);

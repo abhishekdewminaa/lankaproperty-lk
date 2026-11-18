@@ -151,6 +151,7 @@ function buildInitialAuthoritativeRecords(): AdminPropertyRecord[] {
 class PropertyService {
   private records: AdminPropertyRecord[];
   private listeners: Set<() => void> = new Set();
+  private remoteSyncedIds: Set<string> = new Set();
   private isDemoPersistence = true;
 
   constructor() {
@@ -158,25 +159,35 @@ class PropertyService {
     if (typeof window !== 'undefined') {
       const isOnlyDemoData = this.records.length <= PROPERTIES_DATA.length;
       this.syncWithSupabase(isOnlyDemoData).then(() => {
-        // Automatically sync any local published listings that may have failed earlier
+        // Only sync local delta records that are not yet present in Supabase
         this.syncLocalPublishedPropertiesToSupabase();
       });
     }
   }
 
   /**
-   * Self-Healing Sync: Ensures local published records reach Supabase with valid UUIDs
+   * Delta Self-Healing Sync (Scalable to 500+ properties):
+   * Only pushes local published records that are NOT yet present in Supabase,
+   * avoiding redundant N-row upserts on every page load.
    */
   public async syncLocalPublishedPropertiesToSupabase(): Promise<void> {
     if (typeof window === 'undefined') return;
     try {
-      const localPublished = this.records.filter((p) => p.publicationStatus === 'published');
-      for (const prop of localPublished) {
+      const unsyncedPublished = this.records.filter(
+        (p) =>
+          p.publicationStatus === 'published' &&
+          !this.remoteSyncedIds.has(p.id) &&
+          !this.remoteSyncedIds.has(ensureValidUUID(p.id)) &&
+          !this.remoteSyncedIds.has(p.slug)
+      );
+      for (const prop of unsyncedPublished) {
         const validId = ensureValidUUID(prop.id);
         if (prop.id !== validId) {
           prop.id = validId;
         }
         await this.syncSinglePropertyToSupabase(prop);
+        this.remoteSyncedIds.add(prop.id);
+        this.remoteSyncedIds.add(prop.slug);
       }
     } catch (err) {
       console.warn('Auto-sync local published properties deferred:', err);
@@ -211,7 +222,8 @@ class PropertyService {
           view_count, inquiry_count, save_count, is_featured, is_trending,
           trending_velocity_text, collections, published_at, created_at, updated_at
         `)
-        .order('published_at', { ascending: false });
+        .order('published_at', { ascending: false })
+        .range(0, 1999);
 
       if (error) {
         // Table not yet migrated or network unreachable; retain local data gracefully
@@ -279,7 +291,21 @@ class PropertyService {
           recordVersion: 1,
         }));
 
-        this.records = mappedRecords;
+        for (const r of mappedRecords) {
+          this.remoteSyncedIds.add(r.id);
+          this.remoteSyncedIds.add(ensureValidUUID(r.id));
+          if (r.slug) this.remoteSyncedIds.add(r.slug);
+        }
+
+        // Preserve any local-only records not yet synced to Supabase
+        const unsyncedLocal = this.records.filter(
+          (local) =>
+            !this.remoteSyncedIds.has(local.id) &&
+            !this.remoteSyncedIds.has(ensureValidUUID(local.id)) &&
+            !this.remoteSyncedIds.has(local.slug)
+        );
+
+        this.records = [...unsyncedLocal, ...mappedRecords];
         localStorage.setItem(STORAGE_LAST_SYNC_KEY, now.toString());
         this.notify();
         return true;
@@ -454,11 +480,22 @@ class PropertyService {
         localStorage.setItem(STORAGE_INITIALIZED_KEY, 'true');
       }
     } catch (e: any) {
-      console.error('Storage error while persisting properties:', e);
       if (e?.name === 'QuotaExceededError' || e?.code === 22) {
-        throw new Error('Local storage quota exceeded. Please reduce image sizes or remove unused drafts.');
+        // Graceful 500+ listing cache eviction: keep newest 200 items in localStorage while retaining full catalog in memory & Supabase
+        try {
+          const compactCache = data.slice(0, 200).map((item) => ({
+            ...item,
+            images: item.images?.slice(0, 4) || [],
+          }));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(compactCache));
+          localStorage.setItem(STORAGE_INITIALIZED_KEY, 'true');
+          return;
+        } catch {
+          console.warn('LocalStorage quota reached; authoritative data remains active in memory and Supabase.');
+          return;
+        }
       }
-      throw new Error(`Failed to persist property record: ${e?.message || 'Storage unavailable'}`);
+      console.warn('Storage warning while caching properties:', e);
     }
   }
 
