@@ -116,25 +116,36 @@ function stripEmojiSymbols(str: string): string {
     .replace(/[ \t]{2,}/g, ' ');
 }
 
+function stripExternalReferenceCodes(text: string): string {
+  return text
+    .replace(/\(\s*LK-\d{3,}\s*\)/gi, '')
+    .replace(/\b(?:Ref(?:erence)?\s*(?:No\.?|Code|ID)?\s*[:#-]?\s*)?LK-\d{3,}\b/gi, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function generateOwnListingRef(): string {
+  const num = Math.floor(1000 + Math.random() * 9000);
+  return `LP-${num}`;
+}
+
 function splitListingSections(rawText: string): {
   titleCandidate: string | null;
-  listingRef: string | null;
   cleanDescription: string;
   cleanAdditionalInfo: string;
 } {
-  const normalized = stripEmojiSymbols(rawText.replace(/\\n/g, '\n').replace(/\r\n/g, '\n')).trim();
+  const normalized = stripExternalReferenceCodes(
+    stripEmojiSymbols(rawText.replace(/\\n/g, '\n').replace(/\r\n/g, '\n'))
+  );
   const lines = normalized.split('\n').map((l) => l.trim());
-
-  // Extract Reference Code like (LK-000286)
-  const refMatch = normalized.match(/\((LK-\d{4,})\)|\b(LK-\d{4,})\b/i);
-  const listingRef = refMatch ? (refMatch[1] || refMatch[2]).toUpperCase() : null;
 
   // Title Candidate: First non-empty line under 180 chars (excluding section headers)
   const firstNonEmpty = lines.find((l) => l.length > 0) || '';
   const isHeaderLine = /^(property description|property overview|additional information)/i.test(firstNonEmpty);
   const titleCandidate =
     firstNonEmpty && !isHeaderLine && firstNonEmpty.length < 180 && !firstNonEmpty.includes('http')
-      ? firstNonEmpty
+      ? stripExternalReferenceCodes(firstNonEmpty)
       : null;
 
   // Locate major section headers
@@ -163,26 +174,21 @@ function splitListingSections(rawText: string): {
       : normalized;
   }
 
-  // Strip standalone (LK-000xxx) reference line from description prose
-  cleanDescription = cleanDescription
-    .replace(/^\s*\(LK-\d+\)\s*/gim, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  cleanDescription = stripExternalReferenceCodes(cleanDescription);
 
   let cleanAdditionalInfo = '';
   if (addInfoHeaderIdx !== -1) {
     const start = normalized.indexOf('\n', addInfoHeaderIdx + 1);
     const bodyStart = start !== -1 ? start + 1 : addInfoHeaderIdx + 'Additional Information'.length;
-    cleanAdditionalInfo = normalized
-      .slice(bodyStart)
-      .replace(/^\s*~\s*/gm, '• ')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
+    cleanAdditionalInfo = stripExternalReferenceCodes(
+      normalized
+        .slice(bodyStart)
+        .replace(/^\s*~\s*/gm, '• ')
+    );
   }
 
   return {
     titleCandidate,
-    listingRef,
     cleanDescription,
     cleanAdditionalInfo,
   };
@@ -428,7 +434,7 @@ export function parseHeuristic(
       landExcerpt = `Land Area (Perches): ${pVal}`;
     }
   } else {
-    const acreMatch = rawText.match(/(\d+(?:\.\d+)?)\s*(?:acres?|අක්කර)\b/i);
+    const acreMatch = rawText.match(/(\d+(?:\.\d+)?)[\s-]*(?:acres?|අක්කර)\b/i);
     const perchMatch = rawText.match(/(\d+(?:\.\d+)?)\s*(?:perch|perches|p\b|පර්චස්)\b/i);
     if (acreMatch && perchMatch) {
       const aVal = parseFloat(acreMatch[1]);
@@ -601,19 +607,21 @@ export function parseHeuristic(
     });
   }
 
-  if (sections.listingRef) {
-    fields.push({
-      fieldKey: 'listingRef',
-      fieldLabel: 'Listing Reference',
-      category: 'core',
-      currentValue: currentForm.listingRef || '',
-      proposedValue: sections.listingRef,
-      sourceExcerpt: sections.listingRef,
-      method: 'heuristic',
-      confidence: 'high',
-      selectedToApply: true,
-    });
-  }
+  const existingOwnRef =
+    currentForm.listingRef && /^LP-/i.test(currentForm.listingRef) ? currentForm.listingRef : null;
+  const assignedListingRef = existingOwnRef || generateOwnListingRef();
+
+  fields.push({
+    fieldKey: 'listingRef',
+    fieldLabel: 'Listing Reference',
+    category: 'core',
+    currentValue: currentForm.listingRef || '',
+    proposedValue: assignedListingRef,
+    sourceExcerpt: 'Auto-assigned LP-xxxx reference',
+    method: 'heuristic',
+    confidence: 'high',
+    selectedToApply: true,
+  });
 
   if (proposedPurpose) {
     fields.push({

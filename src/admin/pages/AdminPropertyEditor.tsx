@@ -75,8 +75,10 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
       typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
         ? crypto.randomUUID()
         : `prop-${Date.now()}`;
+    const newListingRef = `LP-${Math.floor(1000 + Math.random() * 9000)}`;
     return {
       id: newId,
+      listingRef: newListingRef,
       slug: '',
       title: '',
       purpose: 'buy' as PropertyPurpose,
@@ -362,11 +364,21 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
           next.amenities = Array.from(new Set([...(next.amenities || []), ...item.proposedValue]));
         } else {
           (next as any)[item.fieldKey] = item.proposedValue;
-          if (item.fieldKey === 'title' && !next.slug) {
+          if (item.fieldKey === 'title' && (!isEditing || !next.slug)) {
             next.slug = String(item.proposedValue)
               .toLowerCase()
               .replace(/[^a-z0-9]+/g, '-')
               .replace(/^-|-$/g, '');
+          }
+          if (item.fieldKey === 'type' && item.proposedValue === 'land') {
+            next.specs = {
+              ...next.specs,
+              bedrooms: undefined,
+              bathrooms: undefined,
+              sqft: undefined,
+              floorAreaSqFt: undefined,
+              furnishing: undefined,
+            };
           }
         }
       });
