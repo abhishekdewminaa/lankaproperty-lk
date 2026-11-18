@@ -44,8 +44,7 @@ export function PropertyCard({ property, priority = false, variant = 'grid' }: P
   };
 
   const getTenureLabel = (type: string) => {
-    if (type === 'apartment') return 'Condominium Deed';
-    return 'Freehold Title';
+    return getCategoryLabel(type);
   };
 
   const handleCardClick = () => {

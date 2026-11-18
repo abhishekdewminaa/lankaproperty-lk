@@ -59,16 +59,17 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const formatPrice = (priceLkr: number, compact = false): string => {
     if (currency === 'LKR') {
+      const roundedLkr = Math.round(priceLkr);
       if (compact) {
-        if (priceLkr >= 1000000000) {
-          return `Rs. ${(priceLkr / 1000000000).toFixed(1)}B`;
+        if (roundedLkr >= 1000000000) {
+          return `Rs. ${(roundedLkr / 1000000000).toFixed(1)}B`;
         }
-        if (priceLkr >= 1000000) {
-          return `Rs. ${(priceLkr / 1000000).toFixed(1)}M`;
+        if (roundedLkr >= 1000000) {
+          return `Rs. ${(roundedLkr / 1000000).toFixed(1)}M`;
         }
-        return `Rs. ${priceLkr.toLocaleString('en-US')}`;
+        return `Rs. ${roundedLkr.toLocaleString('en-US')}`;
       }
-      return `Rs. ${priceLkr.toLocaleString('en-US')}`;
+      return `Rs. ${roundedLkr.toLocaleString('en-US')}`;
     }
 
     const converted = priceLkr / currencyConfig.rateToLkr;

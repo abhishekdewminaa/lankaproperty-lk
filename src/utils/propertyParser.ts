@@ -109,13 +109,20 @@ function extractOverviewKeyValues(rawText: string): Record<string, string> {
 /**
  * Helper: Split raw listing dump into clean Description prose & formatted Additional Information
  */
+function stripEmojiSymbols(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}✔✅✓☑️⭐✨🔥💎📍🏡🏠🏢📞☎️💰💵🏷️🔹🔸▪️▫️►▸]/gu, '')
+    .replace(/[ \t]{2,}/g, ' ');
+}
+
 function splitListingSections(rawText: string): {
   titleCandidate: string | null;
   listingRef: string | null;
   cleanDescription: string;
   cleanAdditionalInfo: string;
 } {
-  const normalized = rawText.replace(/\\n/g, '\n').replace(/\r\n/g, '\n').trim();
+  const normalized = stripEmojiSymbols(rawText.replace(/\\n/g, '\n').replace(/\r\n/g, '\n')).trim();
   const lines = normalized.split('\n').map((l) => l.trim());
 
   // Extract Reference Code like (LK-000286)
