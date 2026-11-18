@@ -95,9 +95,10 @@ function buildInitialAuthoritativeRecords(): AdminPropertyRecord[] {
       ? 'archived'
       : 'published';
 
-    const isTrending = index === 0 || index === 1 || index === 4 || index === 6;
+    const isTrending = Boolean(p.isTrending || index === 0 || index === 1 || index === 4 || index === 6);
     const trendingVelocityText =
-      index === 0
+      (p as any).trendingVelocityText ||
+      (index === 0
         ? 'Viewed 420+ times this week'
         : index === 1
         ? '4 Inquiries in 24 hours'
@@ -105,7 +106,7 @@ function buildInitialAuthoritativeRecords(): AdminPropertyRecord[] {
         ? 'High Demand in Colombo 07'
         : index === 6
         ? 'Fastest Selling Beachfront'
-        : undefined;
+        : undefined);
 
     const collections: ('featured' | 'trending' | 'architectural' | 'land' | 'signature')[] = [];
     if (p.isFeatured) collections.push('featured');
@@ -413,10 +414,20 @@ class PropertyService {
           if (Array.isArray(parsed)) {
             // Validate all records
             const validRecords = parsed.filter(isValidPropertyRecord);
+            const initialSeeds = buildInitialAuthoritativeRecords();
+            const existingIds = new Set(validRecords.map((r) => r.id));
+            const existingSlugs = new Set(validRecords.map((r) => r.slug));
+
+            // Merge any authoritative seed records that are missing from client localStorage
+            const missingSeeds = initialSeeds.filter(
+              (seed) => !existingIds.has(seed.id) && !existingSlugs.has(seed.slug)
+            );
+            const mergedRecords = [...validRecords, ...missingSeeds];
+
             // If store was explicitly initialized, honor valid records and sync updated seed images
             if (isInitialized) {
               const seedMap = new Map(PROPERTIES_DATA.map((p) => [p.id, p]));
-              return validRecords.map((rec) => {
+              return mergedRecords.map((rec) => {
                 const seed = seedMap.get(rec.id);
                 if (seed && seed.images && seed.images.length > rec.images.length) {
                   return { ...rec, images: seed.images };
@@ -424,8 +435,8 @@ class PropertyService {
                 return rec;
               });
             }
-            if (validRecords.length > 0) {
-              return validRecords;
+            if (mergedRecords.length > 0) {
+              return mergedRecords;
             }
           }
         }
