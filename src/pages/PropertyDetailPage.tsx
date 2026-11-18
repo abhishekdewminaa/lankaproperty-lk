@@ -38,15 +38,32 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
       setLoading(false);
     }
 
-    // Always query or verify with Supabase
-    propertyService.getPropertyBySlug(slug, { allowDraft: isPreviewParam }).then((fetched) => {
+    // Safety timeout so mobile connections never stay stuck on spinner
+    const safetyTimer = setTimeout(() => {
       if (isCurrent) {
-        if (fetched) {
-          setProperty(fetched);
-        }
+        const retryLocal = propertyService.findPropertyInMemory(slug);
+        if (retryLocal) setProperty(retryLocal);
         setLoading(false);
       }
-    });
+    }, 4500);
+
+    // Query or verify with active Supabase cloud catalog
+    propertyService
+      .getPropertyBySlug(slug, { allowDraft: true })
+      .then((fetched) => {
+        if (isCurrent) {
+          if (fetched) {
+            setProperty(fetched);
+          }
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isCurrent) setLoading(false);
+      })
+      .finally(() => {
+        clearTimeout(safetyTimer);
+      });
 
     const unsub = propertyService.subscribe(() => {
       if (!isCurrent) return;
@@ -59,6 +76,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
 
     return () => {
       isCurrent = false;
+      clearTimeout(safetyTimer);
       unsub();
     };
   }, [slug, isPreviewParam]);

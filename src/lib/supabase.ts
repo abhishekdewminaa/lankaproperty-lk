@@ -10,15 +10,17 @@ const getEnvVar = (name: string): string => {
   return '';
 };
 
-const supabaseUrl =
-  getEnvVar('VITE_SUPABASE_URL') ||
-  getEnvVar('SUPABASE_URL') ||
-  'https://xmvhnzuidwpwvdnyydio.supabase.co';
+const AUTHORITATIVE_SUPABASE_URL = 'https://xmvhnzuidwpwvdnyydio.supabase.co';
+const AUTHORITATIVE_SUPABASE_ANON_KEY = 'sb_publishable_2LUs3ORDsu4TrHUQOlsXyw_xP9KgxP9';
 
-const supabaseAnonKey =
-  getEnvVar('VITE_SUPABASE_ANON_KEY') ||
-  getEnvVar('SUPABASE_ANON_KEY') ||
-  'sb_publishable_2LUs3ORDsu4TrHUQOlsXyw_xP9KgxP9';
+const rawEnvUrl = getEnvVar('VITE_SUPABASE_URL') || getEnvVar('SUPABASE_URL');
+const rawEnvKey = getEnvVar('VITE_SUPABASE_ANON_KEY') || getEnvVar('SUPABASE_ANON_KEY');
+
+// Guard against retired/deleted project URLs (e.g. rnedttrpovxswnraezas) injected by stale Hostinger hPanel env vars
+const isActiveProductionProject = Boolean(rawEnvUrl && rawEnvUrl.includes('xmvhnzuidwpwvdnyydio.supabase.co'));
+
+const supabaseUrl = isActiveProductionProject ? rawEnvUrl : AUTHORITATIVE_SUPABASE_URL;
+const supabaseAnonKey = isActiveProductionProject && rawEnvKey ? rawEnvKey : AUTHORITATIVE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

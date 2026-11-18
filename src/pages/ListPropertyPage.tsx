@@ -262,7 +262,7 @@ export function ListPropertyPage() {
     setCompressionStats(null);
 
     try {
-      const summary = await compressImagesBatch(selectedFiles, 1920, 0.82);
+      const summary = await compressImagesBatch(selectedFiles, 1280, 0.65);
       const rawUrls = summary.results.map((r) => r.dataUrl);
       const hostedUrls = await uploadBatchPropertyPhotosToHostinger(rawUrls);
 

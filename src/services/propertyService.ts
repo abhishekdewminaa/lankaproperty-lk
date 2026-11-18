@@ -3,12 +3,13 @@ import { PROPERTIES_DATA } from '../data/properties';
 import { AdminPropertyRecord, PublicationStatus } from '../admin/types/admin';
 import { calculateHaversineDistanceKm, DEFAULT_COLOMBO_COORDINATES } from '../data/landmarks';
 import { supabase } from '../lib/supabase';
+import { uploadBatchPropertyPhotosToSupabase } from './mediaStorageService';
 
 const STORAGE_KEY = 'lankaproperty_authoritative_properties_v3';
 const LEGACY_STORAGE_KEYS = ['lankaproperty_authoritative_properties', 'lankaproperty_authoritative_properties_v2'];
 const STORAGE_INITIALIZED_KEY = 'lankaproperty_store_initialized_v3';
 const STORAGE_LAST_SYNC_KEY = 'lankaproperty_supabase_last_sync_v3';
-const SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5-minute cache TTL
+const SYNC_COOLDOWN_MS = 15 * 1000; // 15-second near-real-time cross-device sync TTL
 
 /**
  * Guarantees that any string ID conforms to an RFC-4122 UUID v4 shape for PostgreSQL
@@ -156,11 +157,15 @@ class PropertyService {
   private isDemoPersistence = true;
 
   constructor() {
+    for (const seed of PROPERTIES_DATA) {
+      this.remoteSyncedIds.add(seed.id);
+      this.remoteSyncedIds.add(ensureValidUUID(seed.id));
+      if (seed.slug) this.remoteSyncedIds.add(seed.slug);
+    }
     this.records = this.loadFromStorage();
     if (typeof window !== 'undefined') {
-      const isOnlyDemoData = this.records.length <= PROPERTIES_DATA.length;
-      this.syncWithSupabase(isOnlyDemoData).then(() => {
-        // Only sync local delta records that are not yet present in Supabase
+      this.syncWithSupabase(true).then(() => {
+        // Push any local delta records that are not yet present in Supabase
         this.syncLocalPublishedPropertiesToSupabase();
       });
     }
@@ -169,7 +174,7 @@ class PropertyService {
   /**
    * Delta Self-Healing Sync (Scalable to 500+ properties):
    * Only pushes local published records that are NOT yet present in Supabase,
-   * avoiding redundant N-row upserts on every page load.
+   * and automatically converts any local base64 images to Supabase Storage CDN WebP URLs.
    */
   public async syncLocalPublishedPropertiesToSupabase(): Promise<void> {
     if (typeof window === 'undefined') return;
@@ -177,18 +182,16 @@ class PropertyService {
       const unsyncedPublished = this.records.filter(
         (p) =>
           p.publicationStatus === 'published' &&
-          !this.remoteSyncedIds.has(p.id) &&
-          !this.remoteSyncedIds.has(ensureValidUUID(p.id)) &&
-          !this.remoteSyncedIds.has(p.slug)
+          ((!this.remoteSyncedIds.has(p.id) &&
+            !this.remoteSyncedIds.has(ensureValidUUID(p.id)) &&
+            !this.remoteSyncedIds.has(p.slug)) ||
+            (Array.isArray(p.images) && p.images.some((img) => typeof img === 'string' && img.startsWith('data:image/'))))
       );
       for (const prop of unsyncedPublished) {
-        const validId = ensureValidUUID(prop.id);
-        if (prop.id !== validId) {
-          prop.id = validId;
-        }
         await this.syncSinglePropertyToSupabase(prop);
         this.remoteSyncedIds.add(prop.id);
-        this.remoteSyncedIds.add(prop.slug);
+        this.remoteSyncedIds.add(ensureValidUUID(prop.id));
+        if (prop.slug) this.remoteSyncedIds.add(prop.slug);
       }
     } catch (err) {
       console.warn('Auto-sync local published properties deferred:', err);
@@ -371,34 +374,45 @@ class PropertyService {
 
   private async syncSinglePropertyToSupabase(r: AdminPropertyRecord): Promise<void> {
     try {
-      const validId = ensureValidUUID(r.id);
+      let resolvedImages = Array.isArray(r.images) ? [...r.images] : [];
+      if (resolvedImages.some((img) => typeof img === 'string' && img.startsWith('data:image/'))) {
+        resolvedImages = await uploadBatchPropertyPhotosToSupabase(resolvedImages);
+        r.images = resolvedImages;
+        const idx = this.records.findIndex((item) => item.id === r.id || item.slug === r.slug);
+        if (idx !== -1) {
+          this.records[idx] = { ...this.records[idx], images: resolvedImages };
+          this.persistToStorage(this.records);
+        }
+      }
+
+      const validId = r.id || ensureValidUUID(r.slug || r.title);
       const row = {
         id: validId,
-        listing_ref: r.listingRef || r.id,
-        slug: r.slug,
-        title: r.title,
-        description: r.description || '',
+        listing_ref: r.listingRef || validId,
+        slug: (r.slug || r.title || validId).slice(0, 240),
+        title: (r.title || 'Property Listing').slice(0, 240),
+        description: (r.description || '').slice(0, 11900),
         property_type: r.type || 'house',
         purpose: r.purpose || 'buy',
-        publication_status: r.publicationStatus || 'published',
-        status: r.status || 'active',
-        price_lkr: r.priceLkr || 0,
+        publication_status: r.publicationStatus === 'published' ? 'published' : 'published',
+        status: r.publicationStatus && r.publicationStatus !== 'published' ? r.publicationStatus : (r.status || 'active'),
+        price_lkr: Math.max(0, Number(r.priceLkr) || 0),
         price_unit: r.priceUnit || 'total',
         is_negotiable: Boolean(r.isNegotiable),
         price_on_request: Boolean(r.priceOnRequest),
         city: r.location?.city || 'Colombo',
         district: r.location?.district || 'Colombo',
         address: r.location?.address || `${r.location?.city || ''}, ${r.location?.district || ''}`.trim() || 'Sri Lanka',
-        latitude: r.location?.coordinates?.lat || null,
-        longitude: r.location?.coordinates?.lng || null,
+        latitude: r.location?.coordinates?.lat ?? r.location?.coordinates?.latitude ?? null,
+        longitude: r.location?.coordinates?.lng ?? r.location?.coordinates?.longitude ?? null,
         bedrooms: Number(r.specs?.bedrooms) || null,
         bathrooms: Number(r.specs?.bathrooms) || null,
         sqft: Number(r.specs?.sqft || (r.specs as any)?.floorAreaSqFt) || null,
         land_perches: Number(r.specs?.landPerches) || null,
         floors: Number((r.specs as any)?.floors) || null,
         parking_spaces: Number(r.specs?.parkingSpaces) || null,
-        hero_image: r.images?.[0] || null,
-        images: r.images || [],
+        hero_image: resolvedImages[0] || null,
+        images: resolvedImages,
         floor_plans: r.floorPlans || [],
         amenities: r.amenities || [],
         assigned_agent_name: r.agent?.name || 'Mr Lalith Ranatunga',
@@ -411,6 +425,9 @@ class PropertyService {
       const { error } = await supabase.from('properties').upsert(row, { onConflict: 'id' });
       if (error) {
         console.warn('Supabase upsert note for property:', r.slug, error.message);
+      } else {
+        this.remoteSyncedIds.add(validId);
+        if (r.slug) this.remoteSyncedIds.add(r.slug);
       }
     } catch (err) {
       console.warn('Background Supabase upsert deferred:', err);
@@ -442,37 +459,62 @@ class PropertyService {
   private loadFromStorage(): AdminPropertyRecord[] {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
-        // Purge stale legacy cache keys so returning mobile/desktop browsers load fresh Supabase WebP URLs
+        const seedIds = new Set(PROPERTIES_DATA.map((p) => p.id));
+        const seedSlugs = new Set(PROPERTIES_DATA.map((p) => p.slug));
+        const rescuedCustomRecords: AdminPropertyRecord[] = [];
+
+        // Rescue any user-created custom listings from legacy storage keys before purging
         for (const oldKey of LEGACY_STORAGE_KEYS) {
-          if (localStorage.getItem(oldKey)) {
+          const oldRaw = localStorage.getItem(oldKey);
+          if (oldRaw) {
+            try {
+              const oldParsed = JSON.parse(oldRaw);
+              if (Array.isArray(oldParsed)) {
+                for (const item of oldParsed) {
+                  if (isValidPropertyRecord(item) && !seedIds.has(item.id) && !seedSlugs.has(item.slug)) {
+                    rescuedCustomRecords.push(item);
+                  }
+                }
+              }
+            } catch {}
             localStorage.removeItem(oldKey);
           }
         }
+
         const isInitialized = localStorage.getItem(STORAGE_INITIALIZED_KEY) === 'true';
         const stored = localStorage.getItem(STORAGE_KEY);
 
-        if (stored) {
-          const parsed = JSON.parse(stored);
+        if (stored || rescuedCustomRecords.length > 0) {
+          const parsed = stored ? JSON.parse(stored) : [];
           if (Array.isArray(parsed)) {
-            // Validate all records
-            const validRecords = parsed.filter(isValidPropertyRecord);
+            // Validate all records and merge rescued custom records
+            const validRecords = [...rescuedCustomRecords, ...parsed.filter(isValidPropertyRecord)];
+            const seenIds = new Set<string>();
+            const seenSlugs = new Set<string>();
+            const dedupedValid: AdminPropertyRecord[] = [];
+            for (const rec of validRecords) {
+              if (!seenIds.has(rec.id) && !seenSlugs.has(rec.slug)) {
+                seenIds.add(rec.id);
+                seenSlugs.add(rec.slug);
+                dedupedValid.push(rec);
+              }
+            }
+
             const initialSeeds = buildInitialAuthoritativeRecords();
-            const existingIds = new Set(validRecords.map((r) => r.id));
-            const existingSlugs = new Set(validRecords.map((r) => r.slug));
-
-            // Merge any authoritative seed records that are missing from client localStorage
             const missingSeeds = initialSeeds.filter(
-              (seed) => !existingIds.has(seed.id) && !existingSlugs.has(seed.slug)
+              (seed) => !seenIds.has(seed.id) && !seenSlugs.has(seed.slug)
             );
-            const mergedRecords = [...validRecords, ...missingSeeds];
+            const mergedRecords = [...dedupedValid, ...missingSeeds];
 
-            // If store was explicitly initialized, honor valid records and ensure seed property images stay up to date
-            if (isInitialized) {
+            if (rescuedCustomRecords.length > 0) {
+              this.persistToStorage(mergedRecords);
+            }
+
+            if (isInitialized || rescuedCustomRecords.length > 0) {
               const seedMap = new Map(PROPERTIES_DATA.map((p) => [p.id, p]));
               return mergedRecords.map((rec) => {
                 const seed = seedMap.get(rec.id);
                 if (seed && seed.images && seed.images.length > 0) {
-                  // Prefer updated seed images (e.g. Supabase Storage WebP URLs)
                   return { ...rec, images: seed.images };
                 }
                 return rec;
@@ -781,11 +823,8 @@ class PropertyService {
 
       const normalizedSlug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
       const cleanRaw = decoded.toLowerCase().replace(/^\/+|\/+$/g, '').trim();
+      const safeId = cleanRaw.replace(/[^a-z0-9_-]/g, '');
       const validUUID = ensureValidUUID(cleanRaw);
-
-      // Extract significant keywords for fuzzy title matching in database
-      const tokens = normalizedSlug.split('-').filter((t) => t.length > 3).slice(0, 3);
-      const titleSearch = tokens.length > 0 ? tokens.join('%') : normalizedSlug;
 
       try {
         const selectFields = `
@@ -798,29 +837,15 @@ class PropertyService {
           trending_velocity_text, collections, published_at, created_at, updated_at
         `;
 
-        // Stage 1: Exact Slug, Direct UUID, or Listing Reference match
+        // Single-roundtrip combined match: Exact Slug, Direct ID/UUID, Partial Slug, or Listing Reference
         let { data, error } = await supabase
           .from('properties')
           .select(selectFields)
-          .or(`slug.eq.${normalizedSlug},id.eq.${validUUID},listing_ref.ilike.%${cleanRaw}%`)
+          .or(`slug.eq.${normalizedSlug},id.eq.${safeId},id.eq.${validUUID},slug.ilike.%${normalizedSlug}%,listing_ref.ilike.%${safeId}%`)
           .limit(1)
           .maybeSingle();
 
-        // Stage 2: Partial Slug match if exact match not found
-        if (!data) {
-          const res = await supabase
-            .from('properties')
-            .select(selectFields)
-            .or(`slug.ilike.${normalizedSlug}%,slug.ilike.%${normalizedSlug}%`)
-            .limit(1)
-            .maybeSingle();
-          if (res.data) {
-            data = res.data;
-            error = res.error;
-          }
-        }
-
-        // Stage 3: Title Keyword matching fallback
+        // Fallback: Title Keyword matching if slug was truncated
         if (!data) {
           const tokens = normalizedSlug.split('-').filter((t) => t.length > 3).slice(0, 4);
           if (tokens.length > 0) {
