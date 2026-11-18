@@ -41,3 +41,31 @@ export function getPriceUnitLabel(unit: PriceUnit): string {
       return 'total';
   }
 }
+
+/**
+ * Normalizes any Sri Lankan or international phone/WhatsApp number into E.164 digits
+ * required by https://wa.me/<digits> (e.g. "077 123 4567" -> "94771234567").
+ */
+export function normalizeSriLankaWhatsApp(primary?: string, fallback?: string): string {
+  const pickDigits = (val?: string) => (val || '').replace(/[^0-9]/g, '');
+  let digits = pickDigits(primary);
+  if (digits.length < 7) {
+    digits = pickDigits(fallback);
+  }
+  if (!digits) return '';
+
+  // Strip international "00" prefix (e.g. 0094771234567 -> 94771234567)
+  if (digits.startsWith('00')) {
+    digits = digits.slice(2);
+  }
+
+  // Convert local Sri Lankan 10-digit number starting with 0 (e.g. 0771234567 -> 94771234567)
+  if (digits.startsWith('0') && digits.length === 10) {
+    digits = `94${digits.slice(1)}`;
+  } else if (digits.length === 9 && !digits.startsWith('94')) {
+    // Handle 9-digit mobile/landline without leading 0 (e.g. 771234567 -> 94771234567)
+    digits = `94${digits}`;
+  }
+
+  return digits;
+}

@@ -11,6 +11,7 @@ import { GalleryLightbox } from '../components/GalleryLightbox';
 import { InquiryModal } from '../components/InquiryModal';
 import { PropertyCard } from '../components/PropertyCard';
 import { SeoHead } from '../components/SeoHead';
+import { normalizeSriLankaWhatsApp } from '../utils/formatters';
 
 interface PropertyDetailPageProps {
   slug: string;
@@ -314,14 +315,24 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
     setTimeout(() => setCompareMessage(null), 3000);
   };
 
+  const sellerWhatsAppDigits = normalizeSriLankaWhatsApp(
+    property.agent.whatsapp,
+    property.agent.phone
+  );
+  const sellerDisplayPhone =
+    property.agent.phone || property.agent.whatsapp || '';
+
   const handleWhatsApp = () => {
+    if (!sellerWhatsAppDigits) {
+      setInquiryModalOpen(true);
+      return;
+    }
+    const priceText =
+      property.priceLkr > 0 ? formatPrice(property.priceLkr, false) : 'Price on Request';
     const text = encodeURIComponent(
-      `Hello ${property.agent.name}, I would like to inquire about "${cleanTitle}" (Ref: ${cleanRef}) in ${property.location.city}. Link: ${window.location.href}`
+      `Hello ${property.agent.name || 'Seller'},\nI am interested in your property on LankaProperty.lk:\n\n*${cleanTitle}*\nRef: ${cleanRef}\nLocation: ${formattedLocation}\nPrice: ${priceText}\n\nLink: ${window.location.href}`
     );
-    window.open(
-      `https://wa.me/${property.agent.whatsapp.replace(/[^0-9]/g, '')}?text=${text}`,
-      '_blank'
-    );
+    window.open(`https://wa.me/${sellerWhatsAppDigits}?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
   const hasFloorPlans = Boolean(property.floorPlans && property.floorPlans.length > 0);
@@ -1015,15 +1026,15 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
                 onClick={handleWhatsApp}
                 className="w-full py-3 px-4 bg-[#128C7E] hover:bg-[#075E54] text-white font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer text-center"
               >
-                WhatsApp Agent
+                {sellerWhatsAppDigits ? 'WhatsApp Seller' : 'WhatsApp Inquiry'}
               </button>
 
-              {property.agent.phone && (
+              {sellerDisplayPhone && (
                 <a
-                  href={`tel:${property.agent.phone.replace(/[^0-9+]/g, '')}`}
+                  href={`tel:${sellerDisplayPhone.replace(/[^0-9+]/g, '')}`}
                   className="block w-full py-2.5 px-4 border border-[#DDE5DF] bg-white text-[#18251E] hover:border-[#103D2C] font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors text-center"
                 >
-                  Call {property.agent.phone}
+                  Call {sellerDisplayPhone}
                 </a>
               )}
             </div>
@@ -1104,7 +1115,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
         propertyTitle={cleanTitle}
         agentName={property.agent.name}
         agentPhone={property.agent.phone}
-        agentWhatsapp={property.agent.whatsapp}
+        agentWhatsapp={sellerWhatsAppDigits || property.agent.whatsapp || property.agent.phone}
       />
     </div>
   );

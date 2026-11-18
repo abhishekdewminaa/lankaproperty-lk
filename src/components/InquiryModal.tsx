@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { InquiryFormData } from '../types/property';
 import { inquiryService } from '../services/inquiryService';
+import { normalizeSriLankaWhatsApp } from '../utils/formatters';
 
 interface InquiryModalProps {
   isOpen: boolean;
@@ -71,10 +72,12 @@ export function InquiryModal({
   };
 
   const handleWhatsAppDirect = () => {
+    const waDigits = normalizeSriLankaWhatsApp(agentWhatsapp, agentPhone);
+    if (!waDigits) return;
     const text = encodeURIComponent(
       `Hello ${agentName}, I am inquiring regarding "${propertyTitle}" on LankaProperty.lk. Could you please share further details? URL: ${window.location.href}`
     );
-    window.open(`https://wa.me/${agentWhatsapp.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
+    window.open(`https://wa.me/${waDigits}?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
   return (

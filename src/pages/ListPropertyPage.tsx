@@ -10,6 +10,7 @@ import { compressImagesBatch, formatBytes } from '../utils/imageCompressor';
 import { uploadBatchPropertyPhotosToHostinger } from '../services/mediaStorageService';
 import { advertisingPackageService, AdvertisedPackage } from '../services/advertisingPackageService';
 import { ensureValidUUID } from '../services/propertyService';
+import { normalizeSriLankaWhatsApp } from '../utils/formatters';
 
 interface ListingDraft {
   purpose: PropertyPurpose;
@@ -440,7 +441,7 @@ export function ListPropertyPage() {
         name: draft.contactName || 'Property Owner',
         role: draft.advertiserRole,
         phone: draft.contactPhone || '+94 77 123 4567',
-        whatsapp: (draft.contactPhone || '94771234567').replace(/[^0-9]/g, ''),
+        whatsapp: normalizeSriLankaWhatsApp(draft.contactPhone, '94771234567'),
       },
       publishedDate: new Date().toISOString().split('T')[0],
     };
