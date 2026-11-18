@@ -1271,6 +1271,7 @@ export function AdminProperties() {
               <ul className="list-disc list-inside space-y-0.5 text-[11px] text-[#7A2E2E] pl-1">
                 <li>Removed permanently from public search and homepage collections</li>
                 <li>Database row deleted from Supabase PostgreSQL (<code>public.properties</code>)</li>
+                <li>Uploaded listing photos deleted from Supabase Storage (<code>property-images</code>)</li>
                 <li>Associated buyer inquiries cascade-deleted to prevent orphaned records</li>
                 <li>Local storage cache flushed across mobile and desktop devices</li>
               </ul>

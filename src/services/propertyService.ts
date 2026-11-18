@@ -434,11 +434,78 @@ class PropertyService {
     }
   }
 
+  private extractSupabaseStoragePaths(urls: string[]): string[] {
+    const marker = '/storage/v1/object/public/property-images/';
+    const paths = new Set<string>();
+    for (const url of urls) {
+      if (!url || typeof url !== 'string') continue;
+      const idx = url.indexOf(marker);
+      if (idx !== -1) {
+        const rawPath = url.slice(idx + marker.length).split('?')[0];
+        if (rawPath && rawPath.startsWith('listings/')) {
+          paths.add(decodeURIComponent(rawPath));
+        }
+      }
+    }
+    return Array.from(paths);
+  }
+
+  private async deletePropertyImagesFromSupabase(
+    target: AdminPropertyRecord | undefined
+  ): Promise<{ deletedCount: number; error?: string }> {
+    if (!target) return { deletedCount: 0 };
+
+    const candidateUrls = [
+      ...(Array.isArray(target.images) ? target.images : []),
+      ...(Array.isArray(target.floorPlans) ? target.floorPlans : []),
+    ];
+    const candidatePaths = this.extractSupabaseStoragePaths(candidateUrls);
+    if (candidatePaths.length === 0) return { deletedCount: 0 };
+
+    // Avoid deleting any image still referenced by another active listing
+    const referencedByOthers = new Set<string>();
+    for (const other of this.records) {
+      const otherUrls = [
+        ...(Array.isArray(other.images) ? other.images : []),
+        ...(Array.isArray(other.floorPlans) ? other.floorPlans : []),
+      ];
+      for (const p of this.extractSupabaseStoragePaths(otherUrls)) {
+        referencedByOthers.add(p);
+      }
+    }
+
+    const pathsToDelete = candidatePaths.filter((p) => !referencedByOthers.has(p));
+    if (pathsToDelete.length === 0) return { deletedCount: 0 };
+
+    try {
+      const { error } = await supabase.storage
+        .from('property-images')
+        .remove(pathsToDelete);
+      if (error) {
+        console.warn('Supabase storage delete error:', error.message);
+        return { deletedCount: 0, error: error.message };
+      }
+      return { deletedCount: pathsToDelete.length };
+    } catch (err: any) {
+      console.warn('Supabase storage delete deferred:', err);
+      return { deletedCount: 0, error: err?.message || 'Storage delete error' };
+    }
+  }
+
   private async deletePropertyFromSupabase(id: string, slug?: string): Promise<{ success: boolean; error?: string }> {
     try {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const validUuid = ensureValidUUID(id);
-      const filters = [`id.eq.${id}`, `id.eq.${validUuid}`];
+      const filters: string[] = [];
+      if (uuidRegex.test(id)) filters.push(`id.eq.${id}`);
+      if (uuidRegex.test(validUuid) && !filters.includes(`id.eq.${validUuid}`)) {
+        filters.push(`id.eq.${validUuid}`);
+      }
       if (slug) filters.push(`slug.eq.${slug}`);
+
+      if (filters.length === 0) {
+        return { success: false, error: 'No valid identifier for Supabase delete' };
+      }
 
       const { error } = await supabase
         .from('properties')
@@ -1138,7 +1205,7 @@ class PropertyService {
       .sort((a, b) => a.distanceKm - b.distanceKm);
   }
 
-  async deleteProperty(id: string): Promise<{ success: boolean; supabaseDeleted: boolean; message?: string }> {
+  async deleteProperty(id: string): Promise<{ success: boolean; supabaseDeleted: boolean; imagesDeleted?: number; message?: string }> {
     const target = this.records.find((p) => p.id === id || p.slug === id);
     const slug = target?.slug;
     const beforeCount = this.records.length;
@@ -1149,14 +1216,21 @@ class PropertyService {
       this.remoteSyncedIds.delete(id);
       if (slug) this.remoteSyncedIds.delete(slug);
 
+      // Immediately persist local removal & notify all UI subscribers
       this.notify();
 
-      const dbRes = await this.deletePropertyFromSupabase(id, slug);
+      // Delete database row and Supabase Storage images in parallel
+      const [dbRes, imgRes] = await Promise.all([
+        this.deletePropertyFromSupabase(id, slug),
+        this.deletePropertyImagesFromSupabase(target),
+      ]);
+
       return {
         success: true,
         supabaseDeleted: dbRes.success,
+        imagesDeleted: imgRes.deletedCount,
         message: dbRes.success
-          ? 'Property permanently deleted from database and marketplace.'
+          ? `Property and ${imgRes.deletedCount} storage image(s) permanently deleted from Supabase.`
           : `Removed locally. Supabase note: ${dbRes.error || 'Check RLS policy'}`,
       };
     }

@@ -51,6 +51,14 @@ USING (
     AND lower(storage.extension(name)) IN ('webp', 'jpg', 'jpeg', 'png', 'avif')
 );
 
+DROP POLICY IF EXISTS "Anyone can delete property images" ON storage.objects;
+CREATE POLICY "Anyone can delete property images"
+ON storage.objects FOR DELETE
+USING (
+    bucket_id = 'property-images'
+    AND (storage.foldername(name))[1] = 'listings'
+);
+
 -- 3. ENABLE ROW-LEVEL SECURITY ON ALL PUBLIC TABLES
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.properties ENABLE ROW LEVEL SECURITY;
