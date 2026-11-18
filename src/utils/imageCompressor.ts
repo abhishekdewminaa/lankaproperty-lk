@@ -2,11 +2,11 @@
  * Universal Client-Side Image Compression Engine
  * 
  * Compresses property photographs in the browser prior to upload or storage:
- * - Resizes images exceeding max dimensions (1920x1080 optimal for Retina/4K displays)
- * - Converts to optimized WebP (with fallback to high-efficiency JPEG) at 0.82 quality
+ * - Resizes images exceeding max dimensions (1280px max width/height for mobile & desktop)
+ * - Converts to optimized WebP (with fallback to high-efficiency JPEG) at 0.65 quality
  * - Strips camera EXIF metadata blobs
- * - Reduces typical 5MB-12MB camera files down to ~150KB-250KB (95%+ storage/bandwidth reduction)
- * - Guarantees zero cost on cloud storage tiers like Supabase Free Tier
+ * - Reduces typical 5MB-12MB camera files down to ~40KB-120KB (97%+ storage/bandwidth reduction)
+ * - Minimizes Supabase Storage & Egress usage
  */
 
 export interface CompressionResult {
@@ -40,8 +40,8 @@ export function formatBytes(bytes: number): string {
  */
 export async function compressImage(
   file: File,
-  maxDimension = 1920,
-  quality = 0.82
+  maxDimension = 1280,
+  quality = 0.65
 ): Promise<CompressionResult> {
   return new Promise((resolve, reject) => {
     // If not an image, reject
