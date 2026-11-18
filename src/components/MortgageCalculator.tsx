@@ -156,14 +156,14 @@ export const MortgageCalculator: React.FC<MortgageCalculatorProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DDE5DF] pb-4">
         <div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#176B45]">
-            Sri Lankan Banking Benchmark
+            Home Loan Estimator
           </span>
-          <h3 className="text-xl font-extrabold text-[#103D2C] mt-0.5">
-            Home Loan & Mortgage Calculator
+          <h3 className="text-lg font-bold text-[#103D2C] mt-0.5">
+            Monthly Mortgage Calculator
           </h3>
         </div>
         <div className="text-xs text-[#5F6B63]">
-          Official Central Bank of Sri Lanka (CBSL) Compliant Calculations
+          Compare Sri Lankan bank interest rates & tenures
         </div>
       </div>
 

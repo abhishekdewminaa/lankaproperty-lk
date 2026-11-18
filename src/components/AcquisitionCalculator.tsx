@@ -73,15 +73,15 @@ export const AcquisitionCalculator: React.FC<AcquisitionCalculatorProps> = ({ pr
  return (
  <div className="bg-[#F5F8F5] border border-[#DDE5DF] rounded-[4px] p-6 space-y-6">
  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DDE5DF] pb-4">
- <div>
- <span className="text-[11px] font-bold uppercase tracking-wider text-[#176B45] flex items-center gap-1.5">
- <Calculator className="w-3.5 h-3.5" />
- Statutory Valuation Tool
- </span>
- <h3 className="text-xl font-extrabold text-[#103D2C] mt-0.5">
- Acquisition Cost & Stamp Duty Estimator
- </h3>
- </div>
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#176B45] flex items-center gap-1.5">
+            <Calculator className="w-3.5 h-3.5" />
+            Stamp Duty & Transfer Costs
+          </span>
+          <h3 className="text-lg font-bold text-[#103D2C] mt-0.5">
+            Purchase & Legal Cost Breakdown
+          </h3>
+        </div>
  <div className="text-xs text-[#5F6B63]">
  Values in <span className="font-bold text-[#103D2C]">{currency}</span> (based on official SL statutory rates)
  </div>
