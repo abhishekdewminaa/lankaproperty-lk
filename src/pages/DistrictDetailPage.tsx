@@ -229,11 +229,11 @@ export function DistrictDetailPage({ districtSlug }: DistrictDetailPageProps) {
               className="text-xs font-bold px-3 py-1.5 bg-[#FAFBF9] border border-[#DDE5DF] rounded-[2px] text-[#18251E] focus:outline-none focus:border-[#176B45]"
             >
               <option value="all">All Categories</option>
-              <option value="villa">Villas</option>
-              <option value="house">Houses</option>
-              <option value="apartment">Apartments</option>
-              <option value="land">Land Plots</option>
-              <option value="commercial">Commercial</option>
+              <option value="land">Land</option>
+              <option value="house">House</option>
+              <option value="apartment">Apartment</option>
+              <option value="hotel">Hotel</option>
+              <option value="business">Business</option>
             </select>
           </div>
         </div>

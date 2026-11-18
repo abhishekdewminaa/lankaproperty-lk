@@ -86,7 +86,13 @@ export function AdminProperties() {
         if (!matches) return false;
       }
       if (statusFilter !== 'all' && p.publicationStatus !== statusFilter) return false;
-      if (typeFilter !== 'all' && p.type !== typeFilter) return false;
+      if (typeFilter !== 'all') {
+        if (typeFilter === 'business') {
+          if (p.type !== 'business' && p.type !== 'commercial') return false;
+        } else if (p.type !== typeFilter) {
+          return false;
+        }
+      }
       if (purposeFilter !== 'all' && p.purpose !== purposeFilter) return false;
       if (collectionFilter !== 'all') {
         if (!p.collections.includes(collectionFilter as any)) return false;
@@ -313,11 +319,12 @@ export function AdminProperties() {
               onChange={(e) => setTypeFilter(e.target.value)}
               className="px-3 py-2 bg-white border border-[#DDE5DF] rounded-[3px] text-xs font-semibold text-[#18251E] focus:outline-none focus:border-[#176B45]"
             >
-              <option value="all">All Types</option>
-              <option value="house">Houses & Villas</option>
-              <option value="apartment">Apartments</option>
-              <option value="land">Land Plots</option>
-              <option value="commercial">Commercial</option>
+              <option value="all">All Categories</option>
+              <option value="land">Land</option>
+              <option value="house">House</option>
+              <option value="apartment">Apartment</option>
+              <option value="hotel">Hotel</option>
+              <option value="business">Business</option>
             </select>
 
             <select
@@ -475,7 +482,7 @@ export function AdminProperties() {
                         </div>
                       </div>
                       <span className="text-[10px] uppercase font-semibold text-white/80">
-                        {p.type}
+                        {p.type === 'commercial' ? 'Business' : p.type}
                       </span>
                     </div>
                   </div>
@@ -724,7 +731,9 @@ export function AdminProperties() {
                       <span className="text-[11px] font-bold uppercase tracking-wider text-[#176B45] block">
                         {p.purpose.toUpperCase()}
                       </span>
-                      <span className="text-[11px] text-[#5F6B63] capitalize">{p.type}</span>
+                      <span className="text-[11px] text-[#5F6B63] capitalize">
+                        {p.type === 'commercial' ? 'Business' : p.type}
+                      </span>
                     </td>
 
                     {/* Valuation */}
@@ -1093,7 +1102,7 @@ export function AdminProperties() {
                     {formatPriceLkr(selectedDetailsProperty.priceLkr, selectedDetailsProperty.priceUnit, true)}
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#176B45]">
-                    {selectedDetailsProperty.purpose.toUpperCase()} · {selectedDetailsProperty.type.toUpperCase()}
+                    {selectedDetailsProperty.purpose.toUpperCase()} · {(selectedDetailsProperty.type === 'commercial' ? 'BUSINESS' : selectedDetailsProperty.type).toUpperCase()}
                   </span>
                 </div>
               </div>

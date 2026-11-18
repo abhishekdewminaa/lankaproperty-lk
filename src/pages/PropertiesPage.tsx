@@ -423,10 +423,11 @@ export function PropertiesPage() {
                 className="w-full h-10 px-3 text-xs bg-[#F5F8F5] border border-[#DDE5DF] rounded-[2px] font-bold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none"
               >
                 <option value="">All Categories</option>
-                <option value="house">Houses & Villas</option>
-                <option value="apartment">Condominiums</option>
-                <option value="land">Residential & Beach Land</option>
-                <option value="commercial">Commercial Buildings</option>
+                <option value="land">Land</option>
+                <option value="house">House</option>
+                <option value="apartment">Apartment</option>
+                <option value="hotel">Hotel</option>
+                <option value="business">Business</option>
               </select>
             </div>
 

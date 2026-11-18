@@ -633,12 +633,13 @@ export function ListPropertyPage() {
               </div>
 
               {/* Property Category Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 {[
-                  { id: 'house', label: 'House / Villa', sub: 'Standalone bungalows & estates' },
-                  { id: 'apartment', label: 'Apartment', sub: 'Condominiums & penthouses' },
-                  { id: 'land', label: 'Land / Plot', sub: 'Residential & beachfront plots' },
-                  { id: 'commercial', label: 'Commercial', sub: 'Offices, hotels & retail' },
+                  { id: 'land', label: 'Land', sub: 'Residential, agricultural & beach plots' },
+                  { id: 'house', label: 'House', sub: 'Standalone houses, villas & bungalows' },
+                  { id: 'apartment', label: 'Apartment', sub: 'Condominiums & luxury suites' },
+                  { id: 'hotel', label: 'Hotel', sub: 'Boutique hotels, resorts & guesthouses' },
+                  { id: 'business', label: 'Business', sub: 'Commercial & enterprise units' },
                 ].map((item) => (
                   <button
                     type="button"

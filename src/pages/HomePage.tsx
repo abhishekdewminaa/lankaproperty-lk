@@ -92,7 +92,7 @@ export function HomePage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Authoritative Featured & Trending Properties
-  const [featuredFilter, setFeaturedFilter] = useState<'all' | 'house' | 'apartment' | 'land' | 'commercial'>('all');
+  const [featuredFilter, setFeaturedFilter] = useState<'all' | 'land' | 'house' | 'apartment' | 'hotel' | 'business' | 'commercial'>('all');
   const [featuredLayout, setFeaturedLayout] = useState<PropertyCardVariant>('compact');
 
   const featuredProperties = useMemo(() => {
@@ -104,20 +104,24 @@ export function HomePage() {
     if (featuredFilter === 'land') {
       return featuredProperties.filter((p) => p.type === 'land' || p.purpose === 'land');
     }
+    if (featuredFilter === 'business') {
+      return featuredProperties.filter((p) => p.type === 'business' || p.type === 'commercial');
+    }
     return featuredProperties.filter((p) => p.type === featuredFilter);
   }, [featuredProperties, featuredFilter]);
 
   const featuredCounts = useMemo(() => {
     return {
       all: featuredProperties.length,
+      land: featuredProperties.filter((p) => p.type === 'land' || p.purpose === 'land').length,
       house: featuredProperties.filter((p) => p.type === 'house').length,
       apartment: featuredProperties.filter((p) => p.type === 'apartment').length,
-      land: featuredProperties.filter((p) => p.type === 'land' || p.purpose === 'land').length,
-      commercial: featuredProperties.filter((p) => p.type === 'commercial').length,
+      hotel: featuredProperties.filter((p) => p.type === 'hotel').length,
+      business: featuredProperties.filter((p) => p.type === 'business' || p.type === 'commercial').length,
     };
   }, [featuredProperties]);
 
-  const [trendingFilter, setTrendingFilter] = useState<'all' | 'house' | 'apartment' | 'land' | 'commercial'>('all');
+  const [trendingFilter, setTrendingFilter] = useState<'all' | 'land' | 'house' | 'apartment' | 'hotel' | 'business' | 'commercial'>('all');
   const [trendingLayout, setTrendingLayout] = useState<PropertyCardVariant>('compact');
 
   const trendingProperties = useMemo(() => {
@@ -129,16 +133,20 @@ export function HomePage() {
     if (trendingFilter === 'land') {
       return trendingProperties.filter((p) => p.type === 'land' || p.purpose === 'land');
     }
+    if (trendingFilter === 'business') {
+      return trendingProperties.filter((p) => p.type === 'business' || p.type === 'commercial');
+    }
     return trendingProperties.filter((p) => p.type === trendingFilter);
   }, [trendingProperties, trendingFilter]);
 
   const trendingCounts = useMemo(() => {
     return {
       all: trendingProperties.length,
+      land: trendingProperties.filter((p) => p.type === 'land' || p.purpose === 'land').length,
       house: trendingProperties.filter((p) => p.type === 'house').length,
       apartment: trendingProperties.filter((p) => p.type === 'apartment').length,
-      land: trendingProperties.filter((p) => p.type === 'land' || p.purpose === 'land').length,
-      commercial: trendingProperties.filter((p) => p.type === 'commercial').length,
+      hotel: trendingProperties.filter((p) => p.type === 'hotel').length,
+      business: trendingProperties.filter((p) => p.type === 'business' || p.type === 'commercial').length,
     };
   }, [trendingProperties]);
 
@@ -864,10 +872,11 @@ export function HomePage() {
                     className="w-full h-11 px-3 text-xs bg-[#F8FAF8] border border-[#DDE5DF] rounded-[3px] font-bold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none disabled:bg-[#EAEAEA] disabled:text-[#888888] transition-colors"
                   >
                     <option value="all">All Categories</option>
-                    <option value="house">Villas & Houses</option>
-                    <option value="apartment">Condominiums</option>
-                    <option value="commercial">Commercial</option>
-                    <option value="land">Land Plots</option>
+                    <option value="land">Land</option>
+                    <option value="house">House</option>
+                    <option value="apartment">Apartment</option>
+                    <option value="hotel">Hotel</option>
+                    <option value="business">Business</option>
                   </select>
                 </div>
 
@@ -1003,10 +1012,11 @@ export function HomePage() {
             <div className="flex flex-wrap items-center gap-1.5 bg-white p-1 rounded-[2px] border border-[#DDE5DF] shadow-2xs">
               {[
                 { key: 'all', label: `All (${featuredCounts.all})` },
-                { key: 'house', label: `Houses & Villas (${featuredCounts.house})` },
-                { key: 'apartment', label: `Condominiums (${featuredCounts.apartment})` },
                 { key: 'land', label: `Land (${featuredCounts.land})` },
-                { key: 'commercial', label: `Commercial (${featuredCounts.commercial})` },
+                { key: 'house', label: `House (${featuredCounts.house})` },
+                { key: 'apartment', label: `Apartment (${featuredCounts.apartment})` },
+                { key: 'hotel', label: `Hotel (${featuredCounts.hotel})` },
+                { key: 'business', label: `Business (${featuredCounts.business})` },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -1484,10 +1494,11 @@ export function HomePage() {
             <div className="flex flex-wrap items-center gap-1.5 bg-[#FAFBF9] p-1 rounded-[2px] border border-[#DDE5DF] shadow-2xs">
               {[
                 { key: 'all', label: `All (${trendingCounts.all})` },
-                { key: 'house', label: `Houses & Villas (${trendingCounts.house})` },
-                { key: 'apartment', label: `Condominiums (${trendingCounts.apartment})` },
                 { key: 'land', label: `Land (${trendingCounts.land})` },
-                { key: 'commercial', label: `Commercial (${trendingCounts.commercial})` },
+                { key: 'house', label: `House (${trendingCounts.house})` },
+                { key: 'apartment', label: `Apartment (${trendingCounts.apartment})` },
+                { key: 'hotel', label: `Hotel (${trendingCounts.hotel})` },
+                { key: 'business', label: `Business (${trendingCounts.business})` },
               ].map((tab) => (
                 <button
                   key={tab.key}

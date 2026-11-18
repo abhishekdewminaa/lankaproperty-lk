@@ -167,11 +167,12 @@ export function SearchPanel({ initialPurpose = 'buy', className = '' }: SearchPa
               onChange={(e) => setPropertyType(e.target.value)}
               className="w-full px-3 py-2.5 text-sm bg-white border border-[#DDE5DF] rounded-[3px] text-[#18251E] focus:border-[#176B45] focus:outline-none focus:ring-1 focus:ring-[#176B45]"
             >
-              <option value="all">All Property Types</option>
-              <option value="house">Houses & Villas</option>
-              <option value="apartment">Apartments & Penthouses</option>
-              <option value="commercial">Commercial</option>
-              <option value="land">Residential & Beach Land</option>
+              <option value="all">All Categories</option>
+              <option value="land">Land</option>
+              <option value="house">House</option>
+              <option value="apartment">Apartment</option>
+              <option value="hotel">Hotel</option>
+              <option value="business">Business</option>
             </select>
           </div>
 

@@ -26,8 +26,21 @@ export function PropertyCard({ property, priority = false, variant = 'grid' }: P
   const getPurposeLabel = (purpose: string, type: string) => {
     if (purpose === 'land' || type === 'land') return 'Land';
     if (purpose === 'rent') return 'For Rent';
-    if (type === 'commercial') return 'Commercial';
+    if (type === 'hotel') return 'Hotel';
+    if (type === 'business' || type === 'commercial') return 'Business';
     return 'For Sale';
+  };
+
+  const getCategoryLabel = (type: string) => {
+    switch (type) {
+      case 'land': return 'Land';
+      case 'house': return 'House';
+      case 'apartment': return 'Apartment';
+      case 'hotel': return 'Hotel';
+      case 'business':
+      case 'commercial': return 'Business';
+      default: return 'Property';
+    }
   };
 
   const getTenureLabel = (type: string) => {
@@ -181,7 +194,7 @@ export function PropertyCard({ property, priority = false, variant = 'grid' }: P
       ) : (
         <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-[#F5F8F5] text-[#5F6B63]">
           <span className="text-[11px] font-bold tracking-widest uppercase text-[#103D2C]">
-            {property.type.toUpperCase()} · {property.location.city}
+            {getCategoryLabel(property.type).toUpperCase()} · {property.location.city}
           </span>
         </div>
       )}

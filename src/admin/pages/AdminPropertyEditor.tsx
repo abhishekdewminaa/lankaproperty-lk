@@ -441,11 +441,11 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
         errors.images = 'At least 1 cover photo is required to publish to marketplace.';
       }
 
-      if (formData.type !== 'land') {
+      if (formData.type === 'house' || formData.type === 'apartment') {
         if (formData.specs.bedrooms === undefined) {
           errors['specs.bedrooms'] = 'Bedrooms count is required for residential properties.';
         }
-      } else {
+      } else if (formData.type === 'land') {
         if (!formData.specs.landPerches || formData.specs.landPerches <= 0) {
           errors['specs.landPerches'] = 'Land extent in perches is required for land parcels.';
         }
@@ -1282,10 +1282,11 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
                 highlightedFields.has('type') ? 'bg-[#E8F3EC]' : 'bg-white'
               } font-medium`}
             >
-              <option value="house">House & Villa</option>
+              <option value="land">Land</option>
+              <option value="house">House</option>
               <option value="apartment">Apartment</option>
-              <option value="land">Land Plot</option>
-              <option value="commercial">Commercial Property</option>
+              <option value="hotel">Hotel</option>
+              <option value="business">Business</option>
             </select>
           </div>
 

@@ -19,7 +19,15 @@ DO $$ BEGIN
         CREATE TYPE listing_status AS ENUM ('draft', 'pending_review', 'published', 'sold', 'archived', 'rejected');
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'property_category') THEN
-        CREATE TYPE property_category AS ENUM ('house', 'apartment', 'land', 'commercial', 'villa');
+        CREATE TYPE property_category AS ENUM ('land', 'house', 'apartment', 'hotel', 'business', 'commercial', 'villa');
+    ELSE
+        BEGIN
+            ALTER TYPE property_category ADD VALUE IF NOT EXISTS 'land';
+            ALTER TYPE property_category ADD VALUE IF NOT EXISTS 'hotel';
+            ALTER TYPE property_category ADD VALUE IF NOT EXISTS 'business';
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END;
     END IF;
 END $$;
 

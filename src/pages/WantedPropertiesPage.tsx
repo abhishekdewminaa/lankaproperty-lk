@@ -259,11 +259,12 @@ export function WantedPropertiesPage() {
                 onChange={(e) => setSelectedType(e.target.value)}
                 className="w-full px-3 py-2 border border-[#DDE5DF] rounded-[2px] bg-white focus:outline-none focus:border-[#103D2C]"
               >
-                <option value="all">All Types</option>
-                <option value="house">House / Residential Villa</option>
-                <option value="apartment">Apartment / Condominium</option>
-                <option value="land">Bare Land / Estate</option>
-                <option value="commercial">Commercial / Industrial</option>
+                <option value="all">All Categories</option>
+                <option value="land">Land</option>
+                <option value="house">House</option>
+                <option value="apartment">Apartment</option>
+                <option value="hotel">Hotel</option>
+                <option value="business">Business</option>
               </select>
             </div>
 
@@ -569,10 +570,11 @@ export function WantedPropertiesPage() {
                       onChange={(e) => setPostPropType(e.target.value as any)}
                       className="w-full px-3 py-2 border border-[#DDE5DF] rounded-[2px] bg-white focus:outline-none focus:border-[#103D2C]"
                     >
-                      <option value="house">House / Residential Villa</option>
-                      <option value="apartment">Apartment / Condominium</option>
-                      <option value="land">Bare Land / Estate</option>
-                      <option value="commercial">Commercial / Industrial Property</option>
+                      <option value="land">Land</option>
+                      <option value="house">House</option>
+                      <option value="apartment">Apartment</option>
+                      <option value="hotel">Hotel</option>
+                      <option value="business">Business</option>
                     </select>
                   </div>
 

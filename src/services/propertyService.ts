@@ -558,10 +558,12 @@ class PropertyService {
   getPublicCategoryCounts() {
     const eligible = this.getPublicEligibleProperties();
     return {
+      land: eligible.filter((p) => p.type === 'land' || p.purpose === 'land').length,
       houses: eligible.filter((p) => p.type === 'house').length,
       apartments: eligible.filter((p) => p.type === 'apartment').length,
-      land: eligible.filter((p) => p.type === 'land' || p.purpose === 'land').length,
-      commercial: eligible.filter((p) => p.type === 'commercial').length,
+      hotels: eligible.filter((p) => p.type === 'hotel').length,
+      business: eligible.filter((p) => p.type === 'business' || p.type === 'commercial').length,
+      commercial: eligible.filter((p) => p.type === 'business' || p.type === 'commercial').length,
       developments: 12, // Authoritative development portfolio count
     };
   }
@@ -650,9 +652,17 @@ class PropertyService {
         if (!p.isFeatured && !p.collections?.includes('featured')) return false;
       }
 
-      // Type filtering (e.g. 'house', 'apartment', 'land', 'commercial')
+      // Type filtering (supports 'land', 'house', 'apartment', 'hotel', 'business', 'commercial')
       if (filters.type && filters.type !== 'all') {
-        if (p.type !== filters.type) return false;
+        const targetType = filters.type.toLowerCase();
+        const pType = (p.type || '').toLowerCase();
+        if (targetType === 'business' || targetType === 'commercial') {
+          if (pType !== 'business' && pType !== 'commercial') return false;
+        } else if (targetType === 'land') {
+          if (pType !== 'land' && p.purpose !== 'land') return false;
+        } else if (pType !== targetType) {
+          return false;
+        }
       }
 
       // District filtering

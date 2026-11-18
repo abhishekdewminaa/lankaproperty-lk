@@ -1,5 +1,5 @@
 export type PropertyPurpose = 'buy' | 'rent' | 'land';
-export type PropertyType = 'house' | 'apartment' | 'land' | 'commercial';
+export type PropertyType = 'land' | 'house' | 'apartment' | 'hotel' | 'business' | 'commercial';
 export type PriceUnit = 'total' | 'month' | 'perch';
 export type ListingStatus = 'available' | 'reserved' | 'sold';
 
