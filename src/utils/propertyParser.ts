@@ -220,23 +220,36 @@ export function parseHeuristic(
   else if (hasSinhala) detectedLanguage = 'Sinhala / English';
   else if (hasTamil) detectedLanguage = 'Tamil / English';
 
-  // 1. Transaction Purpose & Price Unit
+  // 1. Transaction Purpose & Price Unit (Check Headline/Overview first so "Estate for Sale ... monthly income" stays For Sale)
   let proposedPurpose: 'buy' | 'rent' | 'land' | null = null;
   let proposedPriceUnit: 'total' | 'perch' | 'month' | null = null;
   let purposeExcerpt = '';
   const purposeConfidence: ExtractionConfidence = 'high';
 
-  if (
-    /\b(?:for rent|rental|monthly rent|to let|lease|කුලියට|வாடகைக்கு)\b/i.test(rawText) ||
-    /\b(?:per month|\/month|p\.m\.|pm)\b/i.test(rawText)
+  const headlineForPurpose = `${sections.titleCandidate || ''} ${rawText.split(/\r?\n/).slice(0, 2).join(' ')}`;
+  const headlineIsSale = /\b(?:for sale|selling|විකිණීමට|விற்பனைக்கு)\b/i.test(headlineForPurpose);
+  const headlineIsRent = /\b(?:for rent|to rent|for lease|long[- ]?term lease|to let|monthly rent|කුලියට|வாடகைக்கு)\b/i.test(headlineForPurpose);
+
+  if (headlineIsRent && !headlineIsSale) {
+    proposedPurpose = 'rent';
+    proposedPriceUnit = 'month';
+    const match = headlineForPurpose.match(/\b(?:for rent|to rent|for lease|long[- ]?term lease|to let|monthly rent|කුලියට|வாடகைக்கு)\b/i);
+    purposeExcerpt = match ? match[0] : 'Rent keyword';
+  } else if (headlineIsSale) {
+    proposedPurpose = 'buy';
+    proposedPriceUnit = /\b(?:per perch|\/perch|perch price)\b/i.test(rawText) ? 'perch' : 'total';
+    const match = headlineForPurpose.match(/\b(?:for sale|selling|විකිණීමට|விற்பனைக்கு)\b/i);
+    purposeExcerpt = match ? match[0] : 'Sale keyword';
+  } else if (
+    /\b(?:for rent|monthly rent|to let|for lease|long[- ]?term lease|කුලියට|வாடகைக்கு)\b/i.test(rawText)
   ) {
     proposedPurpose = 'rent';
     proposedPriceUnit = 'month';
-    const match = rawText.match(/\b(?:for rent|rental|to let|lease|කුලියට|per month|\/month)\b/i);
+    const match = rawText.match(/\b(?:for rent|monthly rent|to let|for lease|long[- ]?term lease|කුලියට|வாடகைக்கு)\b/i);
     purposeExcerpt = match ? match[0] : 'Rent keyword';
   } else if (/\b(?:for sale|sale|selling|විකිණීමට|விற்பனைக்கு)\b/i.test(rawText)) {
     proposedPurpose = 'buy';
-    proposedPriceUnit = 'total';
+    proposedPriceUnit = /\b(?:per perch|\/perch|perch price)\b/i.test(rawText) ? 'perch' : 'total';
     const match = rawText.match(/\b(?:for sale|sale|selling|විකිණීමට|விற்பனைக்கு)\b/i);
     purposeExcerpt = match ? match[0] : 'Sale keyword';
   } else if (
