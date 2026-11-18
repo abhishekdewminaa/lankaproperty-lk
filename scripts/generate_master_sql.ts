@@ -121,5 +121,5 @@ ON CONFLICT (id) DO UPDATE SET
 `;
 }
 
-fs.writeFileSync('supabase/migrations/04_SEED_ALL_16_PROPERTIES.sql', sql, 'utf8');
-console.log(`Generated supabase/migrations/04_SEED_ALL_16_PROPERTIES.sql (${PROPERTIES_DATA.length} properties, CDN base: ${SUPABASE_STORAGE_URL})`);
+fs.writeFileSync('supabase/migrations/04_🌱_SEED_ALL_16_PROPERTIES.sql', sql, 'utf8');
+console.log(`Generated supabase/migrations/04_🌱_SEED_ALL_16_PROPERTIES.sql (${PROPERTIES_DATA.length} properties, CDN base: ${SUPABASE_STORAGE_URL})`);
