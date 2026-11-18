@@ -456,7 +456,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
       />
 
       {/* Top Breadcrumb Bar */}
-      <div className="bg-[#FAFBF9] border-b border-[#DDE5DF] py-3 text-xs text-[#5F6B63]">
+      <div className="bg-[#FAFBF9] border-b border-[#DDE5DF] py-3 text-xs text-[#5F6B63] max-sm:[zoom:0.9]">
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 min-w-0 overflow-hidden">
             <button
@@ -494,7 +494,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
         </div>
       </div>
 
-      <main className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-10 pt-6 sm:pt-8 space-y-6 sm:space-y-8">
+      <main className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-10 pt-6 sm:pt-8 space-y-6 sm:space-y-8 max-sm:[zoom:0.9]">
         {showAsDraftPreview && (
           <div className="bg-[#103D2C] text-white p-4 rounded-[3px] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
