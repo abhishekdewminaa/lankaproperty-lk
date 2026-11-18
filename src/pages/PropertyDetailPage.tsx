@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Share2, Maximize2, Heart, Scale, Phone, Mail } from 'lucide-react';
 import { useRouter } from '../hooks/useRouter';
 import { propertyService } from '../services/propertyService';
 import { AdminPropertyRecord } from '../admin/types/admin';
@@ -17,20 +16,14 @@ interface PropertyDetailPageProps {
   slug: string;
 }
 
-/**
- * Strips WhatsApp/AI emoji clutter and decorative symbols from listing text
- */
 function stripEmojiSlop(input: string): string {
   if (!input) return '';
   return input
-    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}✔✅✓☑️⭐✨🔥💎📍🏡🏠🏢📞☎️💰💵🏷️🔹🔸▪️▫️►▸]/gu, '')
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}✔✅✓☑️⭐✨🔥💎📍🏡🏠🏢📞☎️💰💵🏷️🔹🔸▪️▫️►▸→←↗↓]/gu, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
 }
 
-/**
- * Returns a clean, human-readable reference code (never a raw 36-char UUID)
- */
 function formatCleanReference(property: AdminPropertyRecord): string {
   const ref = property.listingRef || '';
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(ref);
@@ -42,9 +35,6 @@ function formatCleanReference(property: AdminPropertyRecord): string {
   return `LP-${distCode}-${shortCode}`;
 }
 
-/**
- * Formats category type label cleanly
- */
 function formatCategoryName(type: string): string {
   switch ((type || '').toLowerCase()) {
     case 'land':
@@ -63,9 +53,6 @@ function formatCategoryName(type: string): string {
   }
 }
 
-/**
- * Merges and deduplicates description and additionalInfo so pasted ads never repeat paragraphs or show emoji slop
- */
 function buildCleanContentSections(description?: string, additionalInfo?: string): {
   paragraphs: string[];
   highlights: string[];
@@ -88,15 +75,17 @@ function buildCleanContentSections(description?: string, additionalInfo?: string
     const cleaned = stripEmojiSlop(rawLine.replace(/^[-•*]\s*/, '')).trim();
     if (!cleaned || cleaned.length < 3) continue;
 
-    // Skip generic AI/template header labels
-    if (/^(property highlights|additional architectural details|key features|luxury living|overview):?$/i.test(cleaned)) {
+    if (
+      /^(property highlights|additional architectural details|key features|luxury living|overview):?$/i.test(
+        cleaned
+      )
+    ) {
       continue;
     }
 
     const fingerprint = cleaned.toLowerCase().replace(/[^a-z0-9]/g, '');
     if (!fingerprint || seenFingerprints.has(fingerprint)) continue;
 
-    // Also check if this line is already a substring of an existing paragraph
     let isRedundantSubstring = false;
     for (const existing of seenFingerprints) {
       if (existing.length > 25 && fingerprint.length > 25) {
@@ -250,10 +239,12 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
   const cleanTitle = stripEmojiSlop(property.title);
   const cleanRef = formatCleanReference(property);
   const categoryLabel = formatCategoryName(property.type);
-  const { paragraphs, highlights } = buildCleanContentSections(property.description, property.additionalInfo);
+  const { paragraphs, highlights } = buildCleanContentSections(
+    property.description,
+    property.additionalInfo
+  );
   const cleanMaterialSpecs = property.materialSpecs ? stripEmojiSlop(property.materialSpecs) : '';
 
-  // Deduplicate location string so "Dehiwala, Dehiwala, Colombo" never happens
   const locationParts = [
     property.location.address ? stripEmojiSlop(property.location.address) : '',
     property.location.city ? stripEmojiSlop(property.location.city) : '',
@@ -299,11 +290,13 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
   };
 
   const handleShareToWhatsApp = () => {
-    const priceText = property.priceLkr > 0 ? formatPrice(property.priceLkr, false) : 'Price on Request';
+    const priceText =
+      property.priceLkr > 0 ? formatPrice(property.priceLkr, false) : 'Price on Request';
     const specsArr: string[] = [];
     if (property.specs.bedrooms) specsArr.push(`${property.specs.bedrooms} Beds`);
     if (property.specs.bathrooms) specsArr.push(`${property.specs.bathrooms} Baths`);
-    if (property.specs.floorAreaSqFt) specsArr.push(`${property.specs.floorAreaSqFt.toLocaleString()} sq ft`);
+    if (property.specs.floorAreaSqFt)
+      specsArr.push(`${property.specs.floorAreaSqFt.toLocaleString()} sq ft`);
     if (property.specs.landPerches) specsArr.push(`${property.specs.landPerches} Perches`);
     const specsStr = specsArr.length > 0 ? ` | ${specsArr.join(' · ')}` : '';
 
@@ -315,7 +308,9 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
 
   const handleCompareClick = () => {
     const added = addToCompare(property);
-    setCompareMessage(added ? 'Added to property comparison (Max 3)' : 'Removed from comparison');
+    setCompareMessage(
+      added ? 'Added to property comparison (Max 3)' : 'Removed from comparison'
+    );
     setTimeout(() => setCompareMessage(null), 3000);
   };
 
@@ -323,7 +318,10 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
     const text = encodeURIComponent(
       `Hello ${property.agent.name}, I would like to inquire about "${cleanTitle}" (Ref: ${cleanRef}) in ${property.location.city}. Link: ${window.location.href}`
     );
-    window.open(`https://wa.me/${property.agent.whatsapp.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
+    window.open(
+      `https://wa.me/${property.agent.whatsapp.replace(/[^0-9]/g, '')}?text=${text}`,
+      '_blank'
+    );
   };
 
   const hasFloorPlans = Boolean(property.floorPlans && property.floorPlans.length > 0);
@@ -348,18 +346,29 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
     }
   };
 
-  // Build structured specification items
   const specItems: { label: string; value: string }[] = [];
-  if (property.type !== 'land' && property.specs.bedrooms !== undefined && property.specs.bedrooms > 0) {
+  if (
+    property.type !== 'land' &&
+    property.specs.bedrooms !== undefined &&
+    property.specs.bedrooms > 0
+  ) {
     specItems.push({
       label: 'Bedrooms',
-      value: `${property.specs.bedrooms} ${property.specs.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}`,
+      value: `${property.specs.bedrooms} ${
+        property.specs.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'
+      }`,
     });
   }
-  if (property.type !== 'land' && property.specs.bathrooms !== undefined && property.specs.bathrooms > 0) {
+  if (
+    property.type !== 'land' &&
+    property.specs.bathrooms !== undefined &&
+    property.specs.bathrooms > 0
+  ) {
     specItems.push({
       label: 'Bathrooms',
-      value: `${property.specs.bathrooms} ${property.specs.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}`,
+      value: `${property.specs.bathrooms} ${
+        property.specs.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'
+      }`,
     });
   }
   if (property.specs.floorAreaSqFt !== undefined && property.specs.floorAreaSqFt > 0) {
@@ -383,7 +392,9 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
   if (property.specs.parkingSpaces !== undefined && property.specs.parkingSpaces > 0) {
     specItems.push({
       label: 'Parking',
-      value: `${property.specs.parkingSpaces} ${property.specs.parkingSpaces === 1 ? 'Space' : 'Spaces'}`,
+      value: `${property.specs.parkingSpaces} ${
+        property.specs.parkingSpaces === 1 ? 'Space' : 'Spaces'
+      }`,
     });
   }
   if (property.specs.yearBuilt) {
@@ -397,7 +408,9 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
     <div className="bg-white min-h-screen pb-28 lg:pb-20">
       <SeoHead
         title={`${cleanTitle} in ${property.location.city}, ${property.location.district} | LankaProperty.lk`}
-        description={`${paragraphs[0] ? paragraphs[0].slice(0, 155) : cleanTitle} — Located in ${property.location.city}, ${property.location.district}, Sri Lanka.`}
+        description={`${
+          paragraphs[0] ? paragraphs[0].slice(0, 155) : cleanTitle
+        } — Located in ${property.location.city}, ${property.location.district}, Sri Lanka.`}
         canonicalPath={`/properties/${property.slug}`}
         ogImage={property.images[0]}
         ogType="product"
@@ -435,16 +448,24 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
       <div className="bg-[#FAFBF9] border-b border-[#DDE5DF] py-3 text-xs text-[#5F6B63]">
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-            <button onClick={() => navigate('/')} className="hover:text-[#18251E] shrink-0 cursor-pointer">
+            <button
+              onClick={() => navigate('/')}
+              className="hover:text-[#18251E] shrink-0 cursor-pointer"
+            >
               Home
             </button>
             <span className="text-[#DDE5DF]">/</span>
-            <button onClick={() => navigate('/properties')} className="hover:text-[#18251E] shrink-0 cursor-pointer">
+            <button
+              onClick={() => navigate('/properties')}
+              className="hover:text-[#18251E] shrink-0 cursor-pointer"
+            >
               Properties
             </button>
             <span className="text-[#DDE5DF]">/</span>
             <button
-              onClick={() => navigate(`/properties?district=${encodeURIComponent(property.location.district)}`)}
+              onClick={() =>
+                navigate(`/properties?district=${encodeURIComponent(property.location.district)}`)
+              }
               className="hover:text-[#18251E] shrink-0 cursor-pointer"
             >
               {property.location.district}
@@ -455,15 +476,14 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
 
           <button
             onClick={() => navigate('/properties')}
-            className="hidden sm:inline-flex items-center gap-1.5 font-semibold text-[#103D2C] hover:text-[#176B45] shrink-0 cursor-pointer"
+            className="hidden sm:inline-block font-bold text-[#103D2C] hover:text-[#176B45] shrink-0 cursor-pointer"
           >
-            <span>← Back to Listings</span>
+            Back to Listings
           </button>
         </div>
       </div>
 
       <main className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-10 pt-6 sm:pt-8 space-y-6 sm:space-y-8">
-        {/* Administrative Draft Preview Banner */}
         {showAsDraftPreview && (
           <div className="bg-[#103D2C] text-white p-4 rounded-[3px] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
@@ -500,18 +520,14 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
                   Negotiable
                 </span>
               )}
-              <span className="text-xs text-[#5F6B63] font-medium">
-                Ref: {cleanRef}
-              </span>
+              <span className="text-xs text-[#5F6B63] font-medium">Ref: {cleanRef}</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl lg:text-[34px] font-bold text-[#18251E] tracking-tight leading-snug">
               {cleanTitle}
             </h1>
 
-            <p className="text-sm text-[#5F6B63] font-medium">
-              {formattedLocation}
-            </p>
+            <p className="text-sm text-[#5F6B63] font-medium">{formattedLocation}</p>
           </div>
 
           {/* Asking Price & Action Buttons */}
@@ -536,50 +552,46 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
               )}
             </div>
 
-            {/* Responsive Action Buttons Bar (Never Overflows on Mobile) */}
+            {/* Clean Typographic Action Buttons (Zero Icons) */}
             <div className="grid grid-cols-4 sm:flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => toggleSave(property.id)}
-                className={`px-3 py-2 text-xs font-semibold rounded-[3px] border transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+                className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[3px] border transition-colors cursor-pointer text-center ${
                   saved
                     ? 'bg-[#C93636] text-white border-[#C93636]'
-                    : 'bg-white text-[#18251E] border-[#DDE5DF] hover:bg-[#F5F8F5]'
+                    : 'bg-white text-[#18251E] border-[#DDE5DF] hover:border-[#103D2C]'
                 }`}
               >
-                <Heart className={`w-3.5 h-3.5 ${saved ? 'fill-white' : ''}`} />
-                <span>{saved ? 'Saved' : 'Save'}</span>
+                {saved ? 'Saved' : 'Save'}
               </button>
 
               <button
                 type="button"
                 onClick={handleCompareClick}
-                className={`px-3 py-2 text-xs font-semibold rounded-[3px] border transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+                className={`px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[3px] border transition-colors cursor-pointer text-center ${
                   compared
                     ? 'bg-[#103D2C] text-white border-[#103D2C]'
-                    : 'bg-white text-[#18251E] border-[#DDE5DF] hover:bg-[#F5F8F5]'
+                    : 'bg-white text-[#18251E] border-[#DDE5DF] hover:border-[#103D2C]'
                 }`}
               >
-                <Scale className="w-3.5 h-3.5" />
-                <span>Compare</span>
+                {compared ? 'Comparing' : 'Compare'}
               </button>
 
               <button
                 type="button"
                 onClick={handleShareToWhatsApp}
-                className="px-3 py-2 text-xs font-semibold rounded-[3px] bg-[#128C7E] hover:bg-[#075E54] text-white transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                className="px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[3px] bg-[#128C7E] hover:bg-[#075E54] text-white transition-colors cursor-pointer text-center"
               >
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span>WhatsApp</span>
+                WhatsApp
               </button>
 
               <button
                 type="button"
                 onClick={handleShare}
-                className="px-3 py-2 text-xs font-semibold rounded-[3px] border border-[#DDE5DF] bg-white text-[#18251E] hover:bg-[#F5F8F5] transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                className="px-3.5 py-2 text-xs font-bold uppercase tracking-wider rounded-[3px] border border-[#DDE5DF] bg-white text-[#18251E] hover:border-[#103D2C] transition-colors cursor-pointer text-center"
               >
-                <Share2 className="w-3.5 h-3.5 text-[#5F6B63]" />
-                <span>{copiedShare ? 'Copied' : 'Share'}</span>
+                {copiedShare ? 'Copied' : 'Share'}
               </button>
             </div>
 
@@ -618,7 +630,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
         )}
 
         {/* =========================================================================
-            PHOTO GALLERY (CLEAN BENTO MOSAIC + THUMBNAIL STRIP)
+            PHOTO GALLERY
             ========================================================================= */}
         <section aria-label="Property Gallery" className="space-y-3">
           {activeMediaTab === 'photos' ? (
@@ -653,14 +665,13 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
                       setSelectedPhotoIndex(0);
                       setLightboxOpen(true);
                     }}
-                    className="absolute bottom-3 right-3 px-3.5 py-2 bg-black/75 hover:bg-black text-white text-xs font-semibold rounded-[3px] backdrop-blur-xs flex items-center gap-2 transition-colors cursor-pointer"
+                    className="absolute bottom-3 right-3 px-3.5 py-2 bg-black/75 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-[3px] backdrop-blur-xs transition-colors cursor-pointer"
                   >
-                    <Maximize2 className="w-3.5 h-3.5" />
-                    <span>View All {property.images.length} Photos</span>
+                    View All {property.images.length} Photos
                   </button>
                 </div>
 
-                {/* Secondary Side Photos (2 stacked on Desktop if 3+ photos) */}
+                {/* Secondary Side Photos */}
                 {property.images.length >= 3 && (
                   <div className="hidden md:grid md:col-span-4 grid-rows-2 gap-3">
                     {property.images.slice(1, 3).map((img, idx) => (
@@ -812,9 +823,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
 
               {highlights.length > 0 && (
                 <div className="pt-2 space-y-3">
-                  <h3 className="text-sm font-bold text-[#18251E]">
-                    Key Highlights
-                  </h3>
+                  <h3 className="text-sm font-bold text-[#18251E]">Key Highlights</h3>
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm text-[#2C3A32]">
                     {highlights.map((item, idx) => (
                       <li
@@ -834,24 +843,20 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
                   <h3 className="text-xs uppercase font-bold tracking-wider text-[#103D2C]">
                     Construction & Finishes
                   </h3>
-                  <p className="text-sm text-[#5F6B63] leading-relaxed">
-                    {cleanMaterialSpecs}
-                  </p>
+                  <p className="text-sm text-[#5F6B63] leading-relaxed">{cleanMaterialSpecs}</p>
                 </div>
               )}
 
               {property.videoUrl && (
                 <div className="p-4 bg-[#E8F3EC] border border-[#176B45]/30 rounded-[3px] flex items-center justify-between gap-3">
-                  <span className="text-sm font-bold text-[#103D2C]">
-                    Property Video Tour
-                  </span>
+                  <span className="text-sm font-bold text-[#103D2C]">Property Video Tour</span>
                   <a
                     href={property.videoUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs font-bold uppercase tracking-wider text-[#103D2C] hover:underline"
                   >
-                    Watch Video →
+                    Watch Video
                   </a>
                 </div>
               )}
@@ -995,39 +1000,38 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
               </div>
             </div>
 
-            {/* Contact CTAs */}
+            {/* Contact CTAs (Zero Icons) */}
             <div className="space-y-2.5">
               <button
                 type="button"
                 onClick={() => setInquiryModalOpen(true)}
-                className="w-full py-3 px-4 bg-[#103D2C] hover:bg-[#176B45] text-white font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 bg-[#103D2C] hover:bg-[#176B45] text-white font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer text-center"
               >
-                <Mail className="w-4 h-4" />
-                <span>Send Inquiry</span>
+                Send Inquiry
               </button>
 
               <button
                 type="button"
                 onClick={handleWhatsApp}
-                className="w-full py-3 px-4 bg-[#128C7E] hover:bg-[#075E54] text-white font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 bg-[#128C7E] hover:bg-[#075E54] text-white font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer text-center"
               >
-                <MessageCircle className="w-4 h-4" />
-                <span>WhatsApp Agent</span>
+                WhatsApp Agent
               </button>
 
               {property.agent.phone && (
                 <a
                   href={`tel:${property.agent.phone.replace(/[^0-9+]/g, '')}`}
-                  className="w-full py-2.5 px-4 border border-[#DDE5DF] bg-white text-[#18251E] hover:bg-[#F5F8F5] font-semibold text-xs uppercase tracking-wider rounded-[3px] transition-colors flex items-center justify-center gap-2"
+                  className="block w-full py-2.5 px-4 border border-[#DDE5DF] bg-white text-[#18251E] hover:border-[#103D2C] font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors text-center"
                 >
-                  <Phone className="w-3.5 h-3.5 text-[#103D2C]" />
-                  <span>Call {property.agent.phone}</span>
+                  Call {property.agent.phone}
                 </a>
               )}
             </div>
 
             <div className="pt-3 border-t border-[#DDE5DF] flex items-center justify-between text-[11px] text-[#5F6B63]">
-              <span>Reference: <strong className="text-[#18251E]">{cleanRef}</strong></span>
+              <span>
+                Reference: <strong className="text-[#18251E]">{cleanRef}</strong>
+              </span>
               <span>Listed: {property.publishedDate}</span>
             </div>
           </aside>
@@ -1044,7 +1048,7 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
                 onClick={() => navigate(`/properties?district=${property.location.district}`)}
                 className="text-xs font-bold uppercase tracking-wider text-[#103D2C] hover:text-[#176B45] cursor-pointer"
               >
-                View All →
+                View All in {property.location.district}
               </button>
             </div>
 
@@ -1072,10 +1076,9 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
           <button
             type="button"
             onClick={handleWhatsApp}
-            className="px-3.5 py-2.5 bg-[#128C7E] text-white text-xs font-bold uppercase rounded-[3px] cursor-pointer flex items-center gap-1.5"
+            className="px-3.5 py-2.5 bg-[#128C7E] text-white text-xs font-bold uppercase rounded-[3px] cursor-pointer"
           >
-            <MessageCircle className="w-3.5 h-3.5" />
-            <span>WhatsApp</span>
+            WhatsApp
           </button>
           <button
             type="button"
@@ -1087,7 +1090,6 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
         </div>
       </div>
 
-      {/* Lightbox Component for up to 20 Photos */}
       <GalleryLightbox
         images={activeGalleryImages}
         initialIndex={selectedPhotoIndex}
@@ -1096,7 +1098,6 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
         title={cleanTitle}
       />
 
-      {/* Contact Broker Inquiry Modal */}
       <InquiryModal
         isOpen={inquiryModalOpen}
         onClose={() => setInquiryModalOpen(false)}

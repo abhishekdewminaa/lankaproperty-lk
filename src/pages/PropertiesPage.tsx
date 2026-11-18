@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from '../hooks/useRouter';
-import { Property, PropertyPurpose, PropertyType } from '../types/property';
 import { PropertyCard } from '../components/PropertyCard';
 import { SeoHead } from '../components/SeoHead';
 import { propertyService } from '../services/propertyService';
@@ -8,26 +7,39 @@ import { SRI_LANKA_DISTRICTS, getCitiesForDistrict } from '../data/locations';
 import { calculateHaversineDistanceKm } from '../data/landmarks';
 import { useCurrency } from '../context/CurrencyContext';
 import { useCompare } from '../context/CompareContext';
-import {
-  SlidersHorizontal,
-  X,
-  RotateCcw,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  LayoutGrid,
-  List,
-  Scale,
-  Check,
-} from 'lucide-react';
+
+function cleanText(input: string): string {
+  if (!input) return '';
+  return input
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}✔✅✓☑️⭐✨🔥💎📍🏡🏠🏢📞☎️💰💵🏷️🔹🔸▪️▫️►▸→←↗↓]/gu, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function getCategoryLabel(type: string): string {
+  switch ((type || '').toLowerCase()) {
+    case 'land':
+      return 'Land';
+    case 'house':
+      return 'House';
+    case 'apartment':
+      return 'Apartment';
+    case 'hotel':
+      return 'Hotel';
+    case 'business':
+    case 'commercial':
+      return 'Business';
+    default:
+      return 'Property';
+  }
+}
 
 export function PropertiesPage() {
   const { searchParams, navigate } = useRouter();
   const { formatPrice, currency } = useCurrency();
   const { isInCompare, addToCompare } = useCompare();
 
-  // View Mode: 'grid' (spacious 3-col) | 'dossier' (wide horizontal magazine spread)
-  const [viewMode, setViewMode] = useState<'grid' | 'dossier'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [storeVersion, setStoreVersion] = useState(0);
 
   useEffect(() => {
@@ -47,9 +59,6 @@ export function PropertiesPage() {
   const minPriceParam = searchParams.get('minPrice') || '';
   const maxPriceParam = searchParams.get('maxPrice') || '';
   const bedroomsParam = searchParams.get('bedrooms') || '';
-  const bathroomsParam = searchParams.get('bathrooms') || '';
-  const minAreaParam = searchParams.get('minArea') || '';
-  const furnishingParam = searchParams.get('furnishing') || '';
   const queryParam = searchParams.get('q') || searchParams.get('search') || '';
   const sortByParam = searchParams.get('sort') || 'newest';
   const pageParam = Math.max(1, Number(searchParams.get('page')) || 1);
@@ -70,7 +79,6 @@ export function PropertiesPage() {
   const [localQuery, setLocalQuery] = useState<string>(queryParam);
   const [sortBy, setSortBy] = useState<string>(sortByParam);
 
-  // Synchronize state whenever URL query params change
   useEffect(() => {
     setLocalPurpose(searchParams.get('purpose') || '');
     setLocalDistrict(searchParams.get('district') || '');
@@ -83,12 +91,10 @@ export function PropertiesPage() {
     setSortBy(searchParams.get('sort') || 'newest');
   }, [searchParams]);
 
-  // District city dependencies
   const availableCities = useMemo(() => {
     return getCitiesForDistrict(localDistrict);
   }, [localDistrict]);
 
-  // Apply filters to URL and reset pagination to page 1
   const applyFilters = (overrides: Record<string, string> = {}) => {
     const params = new URLSearchParams();
 
@@ -134,7 +140,6 @@ export function PropertiesPage() {
     navigate('/properties');
   };
 
-  // Authoritative published listings
   const filteredProperties = useMemo(() => {
     let result = propertyService.getPublicEligibleProperties();
 
@@ -142,16 +147,26 @@ export function PropertiesPage() {
       result = result.filter((p) => p.isFeatured);
     }
     if (purposeParam && purposeParam !== 'all') {
-      result = result.filter((p) => p.purpose === purposeParam);
+      if (purposeParam === 'land') {
+        result = result.filter((p) => p.type === 'land' || p.purpose === 'land');
+      } else {
+        result = result.filter((p) => p.purpose === purposeParam);
+      }
     }
     if (districtParam) {
-      result = result.filter((p) => p.location.district.toLowerCase() === districtParam.toLowerCase());
+      result = result.filter(
+        (p) => p.location.district.toLowerCase() === districtParam.toLowerCase()
+      );
     }
     if (cityParam) {
       result = result.filter((p) => p.location.city.toLowerCase() === cityParam.toLowerCase());
     }
     if (typeParam && typeParam !== 'all') {
-      result = result.filter((p) => p.type === typeParam);
+      result = result.filter((p) =>
+        typeParam === 'business'
+          ? p.type === 'business' || p.type === 'commercial'
+          : p.type === typeParam
+      );
     }
     if (minPriceParam) {
       result = result.filter((p) => p.priceLkr >= Number(minPriceParam));
@@ -173,7 +188,6 @@ export function PropertiesPage() {
       );
     }
 
-    // Proximity calculation if coordinates are present
     if (latParam && lngParam) {
       result = result
         .map((p) => {
@@ -196,11 +210,11 @@ export function PropertiesPage() {
       }
     }
 
-    // Sort order
     return [...result].sort((a, b) => {
       if (sortBy === 'price_asc') return a.priceLkr - b.priceLkr;
       if (sortBy === 'price_desc') return b.priceLkr - a.priceLkr;
-      if (sortBy === 'area_desc') return (b.specs.floorAreaSqFt || 0) - (a.specs.floorAreaSqFt || 0);
+      if (sortBy === 'area_desc')
+        return (b.specs.floorAreaSqFt || 0) - (a.specs.floorAreaSqFt || 0);
       return new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime();
     });
   }, [
@@ -222,11 +236,13 @@ export function PropertiesPage() {
     storeVersion,
   ]);
 
-  // Pagination (9 items per page)
   const pageSize = 9;
   const totalPages = Math.max(1, Math.ceil(filteredProperties.length / pageSize));
   const currentPage = Math.min(pageParam, totalPages);
-  const pagedProperties = filteredProperties.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pagedProperties = filteredProperties.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const activeFilterCount = [
     purposeParam,
@@ -241,25 +257,35 @@ export function PropertiesPage() {
   ].filter(Boolean).length;
 
   const dynamicSeoTitle = [
-    localType ? `${localType.charAt(0).toUpperCase() + localType.slice(1)}s` : 'Properties',
-    localPurpose === 'rent' ? 'for Rent' : localPurpose === 'land' ? '& Land Plots' : 'for Sale & Rent',
+    localType ? `${getCategoryLabel(localType)} Properties` : 'Properties',
+    localPurpose === 'rent' ? 'for Rent' : 'for Sale & Rent',
     localCity ? `in ${localCity},` : '',
-    localDistrict ? `${localDistrict} District, Sri Lanka` : 'in Sri Lanka (All 25 Districts)',
+    localDistrict ? `${localDistrict} District, Sri Lanka` : 'in Sri Lanka',
   ]
     .filter(Boolean)
     .join(' ');
 
   return (
-    <div className="bg-[#FFFFFF] min-h-screen pb-20">
+    <div className="bg-white min-h-screen pb-20">
       <SeoHead
         title={`${dynamicSeoTitle} | LankaProperty.lk`}
-        description={`Browse ${filteredProperties.length} verified ${dynamicSeoTitle.toLowerCase()} with clear title deeds, transparent LKR/USD valuations, and direct owner or agent WhatsApp contact.`}
-        canonicalPath={localDistrict ? `/properties?district=${encodeURIComponent(localDistrict)}` : '/properties'}
-        geoPlacename={localDistrict ? `${localCity ? `${localCity}, ` : ''}${localDistrict}, Sri Lanka` : 'Colombo, Sri Lanka'}
+        description={`Browse ${filteredProperties.length} verified ${dynamicSeoTitle.toLowerCase()} across Sri Lanka with direct owner and agent contact.`}
+        canonicalPath={
+          localDistrict
+            ? `/properties?district=${encodeURIComponent(localDistrict)}`
+            : '/properties'
+        }
+        geoPlacename={
+          localDistrict
+            ? `${localCity ? `${localCity}, ` : ''}${localDistrict}, Sri Lanka`
+            : 'Colombo, Sri Lanka'
+        }
         jsonLd={{
           '@type': 'CollectionPage',
           name: dynamicSeoTitle,
-          url: `https://lankaproperty.lk/properties${localDistrict ? `?district=${encodeURIComponent(localDistrict)}` : ''}`,
+          url: `https://lankaproperty.lk/properties${
+            localDistrict ? `?district=${encodeURIComponent(localDistrict)}` : ''
+          }`,
           mainEntity: {
             '@type': 'ItemList',
             numberOfItems: filteredProperties.length,
@@ -276,25 +302,22 @@ export function PropertiesPage() {
       {/* =========================================================================
           PAGE HEADER BANNER
           ========================================================================= */}
-      <section className="bg-[#F5F8F5] border-b border-[#DDE5DF] py-10 sm:py-14">
+      <section className="bg-[#FAFBF9] border-b border-[#DDE5DF] py-8 sm:py-12">
         <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
-              <div className="flex items-center gap-2">
-                <span className="w-5 h-[2px] bg-[#176B45]" />
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#176B45]">
-                  MARKETPLACE INVENTORY · SRI LANKA
-                </span>
-              </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-[46px] font-extrabold text-[#103D2C] tracking-tight leading-[1.1]">
-                Sri Lanka Architectural Properties
+              <span className="text-xs font-bold uppercase tracking-wider text-[#176B45] block">
+                Sri Lanka Property Directory
+              </span>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#103D2C] tracking-tight leading-tight">
+                {dynamicSeoTitle}
               </h1>
-              <p className="text-sm sm:text-base text-[#5F6B63] leading-relaxed">
-                Explore authenticated freehold residences, beachfront land plots, and luxury condominium assets across prime Sri Lankan destinations.
+              <p className="text-sm text-[#5F6B63] leading-relaxed">
+                Browse verified land, houses, apartments, hotels, and business properties across all 25 districts of Sri Lanka.
               </p>
             </div>
 
-            {/* Search Input & Live Stats */}
+            {/* Search Input & Live Count */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
               <form
                 onSubmit={(e) => {
@@ -307,23 +330,23 @@ export function PropertiesPage() {
                   type="text"
                   value={localQuery}
                   onChange={(e) => setLocalQuery(e.target.value)}
-                  placeholder="Search city, neighborhood, or title..."
-                  className="w-full h-10 pl-3.5 pr-20 bg-white border border-[#DDE5DF] rounded-[2px] text-xs font-semibold text-[#18251E] focus:outline-none focus:border-[#103D2C] shadow-2xs"
+                  placeholder="Search city, road, or keyword..."
+                  className="w-full h-10 pl-3.5 pr-20 bg-white border border-[#DDE5DF] rounded-[3px] text-xs font-semibold text-[#18251E] focus:outline-none focus:border-[#103D2C]"
                 />
                 <button
                   type="submit"
-                  className="absolute right-1 px-3 h-8 bg-[#103D2C] hover:bg-[#176B45] text-white text-[10px] font-extrabold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer"
+                  className="absolute right-1 px-3.5 h-8 bg-[#103D2C] hover:bg-[#176B45] text-white text-[11px] font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer"
                 >
                   Search
                 </button>
               </form>
 
-              <div className="bg-white border border-[#DDE5DF] px-4 py-2 rounded-[2px] shadow-2xs text-right shrink-0">
-                <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#5F6B63] block">
-                  ACTIVE PORTFOLIO
+              <div className="bg-white border border-[#DDE5DF] px-4 py-2 rounded-[3px] text-right shrink-0">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-[#5F6B63] block">
+                  Available Listings
                 </span>
                 <span className="text-base font-extrabold text-[#103D2C] tabular-nums">
-                  {filteredProperties.length} Verified
+                  {filteredProperties.length} Properties
                 </span>
               </div>
             </div>
@@ -332,17 +355,19 @@ export function PropertiesPage() {
       </section>
 
       {/* =========================================================================
-          FULL-WIDTH TOP ARCHITECTURAL FILTER COMMAND BAR
-          Replaces awkward left sidebar with clean, comprehensive horizontal controls
+          TOP FILTER BAR
           ========================================================================= */}
-      <section className="bg-white border-b border-[#DDE5DF] py-5 sticky top-[72px] z-30 shadow-[0_2px_12px_rgba(0,0,0,0.03)] backdrop-blur-md bg-white/95">
+      <section className="bg-white border-b border-[#DDE5DF] py-5 sticky top-[64px] z-30 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
         <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12 space-y-4">
-          {/* Row 1: Primary Architectural Dropdowns */}
+          {/* Primary Filter Dropdowns */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* 1. Purpose */}
             <div>
-              <label htmlFor="filter-purpose" className="block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B63] mb-1">
-                Transaction Purpose
+              <label
+                htmlFor="filter-purpose"
+                className="block text-[10px] font-bold uppercase tracking-wider text-[#5F6B63] mb-1"
+              >
+                Purpose
               </label>
               <select
                 id="filter-purpose"
@@ -351,19 +376,22 @@ export function PropertiesPage() {
                   setLocalPurpose(e.target.value);
                   applyFilters({ purpose: e.target.value });
                 }}
-                className="w-full h-10 px-3 text-xs bg-[#F5F8F5] border border-[#DDE5DF] rounded-[2px] font-bold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none"
+                className="w-full h-10 px-3 text-xs bg-[#FAFBF9] border border-[#DDE5DF] rounded-[3px] font-semibold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none"
               >
-                <option value="">All Purposes</option>
-                <option value="buy">Buy Freehold</option>
-                <option value="rent">Long-Term Rent</option>
-                <option value="land">Land Parcels</option>
+                <option value="">All Listings</option>
+                <option value="buy">For Sale</option>
+                <option value="rent">For Rent</option>
+                <option value="land">Land</option>
               </select>
             </div>
 
             {/* 2. District */}
             <div>
-              <label htmlFor="filter-district" className="block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B63] mb-1">
-                District / Region
+              <label
+                htmlFor="filter-district"
+                className="block text-[10px] font-bold uppercase tracking-wider text-[#5F6B63] mb-1"
+              >
+                District
               </label>
               <select
                 id="filter-district"
@@ -373,9 +401,9 @@ export function PropertiesPage() {
                   setLocalCity('');
                   applyFilters({ district: e.target.value, city: '' });
                 }}
-                className="w-full h-10 px-3 text-xs bg-[#F5F8F5] border border-[#DDE5DF] rounded-[2px] font-bold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none"
+                className="w-full h-10 px-3 text-xs bg-[#FAFBF9] border border-[#DDE5DF] rounded-[3px] font-semibold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none"
               >
-                <option value="">All Sri Lanka</option>
+                <option value="">All 25 Districts</option>
                 {SRI_LANKA_DISTRICTS.map((d) => (
                   <option key={d.district} value={d.district}>
                     {d.district}
@@ -384,10 +412,13 @@ export function PropertiesPage() {
               </select>
             </div>
 
-            {/* 3. City (Dependent) */}
+            {/* 3. City */}
             <div>
-              <label htmlFor="filter-city" className="block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B63] mb-1">
-                City / Enclave
+              <label
+                htmlFor="filter-city"
+                className="block text-[10px] font-bold uppercase tracking-wider text-[#5F6B63] mb-1"
+              >
+                City / Town
               </label>
               <select
                 id="filter-city"
@@ -397,7 +428,7 @@ export function PropertiesPage() {
                   setLocalCity(e.target.value);
                   applyFilters({ city: e.target.value });
                 }}
-                className="w-full h-10 px-3 text-xs bg-[#F5F8F5] border border-[#DDE5DF] rounded-[2px] font-bold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none disabled:bg-[#EAEAEA] disabled:text-[#888888]"
+                className="w-full h-10 px-3 text-xs bg-[#FAFBF9] border border-[#DDE5DF] rounded-[3px] font-semibold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none disabled:opacity-60"
               >
                 <option value="">{localDistrict ? 'All Cities' : 'Select District First'}</option>
                 {availableCities.map((c) => (
@@ -410,8 +441,11 @@ export function PropertiesPage() {
 
             {/* 4. Category */}
             <div>
-              <label htmlFor="filter-type" className="block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B63] mb-1">
-                Property Category
+              <label
+                htmlFor="filter-type"
+                className="block text-[10px] font-bold uppercase tracking-wider text-[#5F6B63] mb-1"
+              >
+                Category
               </label>
               <select
                 id="filter-type"
@@ -420,7 +454,7 @@ export function PropertiesPage() {
                   setLocalType(e.target.value);
                   applyFilters({ type: e.target.value });
                 }}
-                className="w-full h-10 px-3 text-xs bg-[#F5F8F5] border border-[#DDE5DF] rounded-[2px] font-bold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none"
+                className="w-full h-10 px-3 text-xs bg-[#FAFBF9] border border-[#DDE5DF] rounded-[3px] font-semibold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none"
               >
                 <option value="">All Categories</option>
                 <option value="land">Land</option>
@@ -431,10 +465,13 @@ export function PropertiesPage() {
               </select>
             </div>
 
-            {/* 5. Budget Tier */}
+            {/* 5. Price Range */}
             <div>
-              <label htmlFor="filter-budget" className="block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B63] mb-1">
-                Budget Threshold
+              <label
+                htmlFor="filter-budget"
+                className="block text-[10px] font-bold uppercase tracking-wider text-[#5F6B63] mb-1"
+              >
+                Price Range
               </label>
               <select
                 id="filter-budget"
@@ -452,21 +489,24 @@ export function PropertiesPage() {
                     applyFilters({ minPrice: min || '', maxPrice: max || '' });
                   }
                 }}
-                className="w-full h-10 px-3 text-xs bg-[#F5F8F5] border border-[#DDE5DF] rounded-[2px] font-bold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none"
+                className="w-full h-10 px-3 text-xs bg-[#FAFBF9] border border-[#DDE5DF] rounded-[3px] font-semibold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none"
               >
-                <option value="">Any Budget</option>
+                <option value="">Any Price</option>
                 <option value="0-25000000">Under Rs. 25M</option>
                 <option value="25000000-50000000">Rs. 25M – 50M</option>
                 <option value="50000000-100000000">Rs. 50M – 100M</option>
                 <option value="100000000-250000000">Rs. 100M – 250M</option>
-                <option value="250000000-">Rs. 250M+</option>
+                <option value="250000000-">Above Rs. 250M</option>
               </select>
             </div>
 
             {/* 6. Bedrooms */}
             <div>
-              <label htmlFor="filter-bedrooms" className="block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B63] mb-1">
-                Minimum Bedrooms
+              <label
+                htmlFor="filter-bedrooms"
+                className="block text-[10px] font-bold uppercase tracking-wider text-[#5F6B63] mb-1"
+              >
+                Bedrooms
               </label>
               <select
                 id="filter-bedrooms"
@@ -476,7 +516,7 @@ export function PropertiesPage() {
                   setLocalBedrooms(e.target.value);
                   applyFilters({ bedrooms: e.target.value });
                 }}
-                className="w-full h-10 px-3 text-xs bg-[#F5F8F5] border border-[#DDE5DF] rounded-[2px] font-bold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none disabled:bg-[#EAEAEA] disabled:text-[#888888]"
+                className="w-full h-10 px-3 text-xs bg-[#FAFBF9] border border-[#DDE5DF] rounded-[3px] font-semibold text-[#18251E] focus:bg-white focus:border-[#103D2C] focus:outline-none disabled:opacity-60"
               >
                 <option value="">Any Bedrooms</option>
                 <option value="1">1+ Bedrooms</option>
@@ -488,207 +528,93 @@ export function PropertiesPage() {
             </div>
           </div>
 
-          {/* Row 2: Quick Curated Filter Chips & Clear */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#DDE5DF]/60">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B63] mr-1">
-                CURATED COLLECTIONS:
+          {/* Row 2: Quick Category & District Filter Pills */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-[#DDE5DF]/60">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#5F6B63] mr-1">
+                Quick Filter:
               </span>
-              <button
-                type="button"
-                onClick={() => applyFilters({ type: 'apartment' })}
-                className={`px-3 py-1 text-xs rounded-[2px] border transition-colors cursor-pointer ${
-                  localType === 'apartment'
-                    ? 'bg-[#103D2C] text-white border-[#103D2C] font-bold'
-                    : 'bg-[#F5F8F5] text-[#18251E] border-[#DDE5DF] hover:bg-[#E8F3EC]'
-                }`}
-              >
-                Freehold Condominiums (CMA Act)
-              </button>
-              <button
-                type="button"
-                onClick={() => applyFilters({ district: 'Galle' })}
-                className={`px-3 py-1 text-xs rounded-[2px] border transition-colors cursor-pointer ${
-                  localDistrict === 'Galle'
-                    ? 'bg-[#103D2C] text-white border-[#103D2C] font-bold'
-                    : 'bg-[#F5F8F5] text-[#18251E] border-[#DDE5DF] hover:bg-[#E8F3EC]'
-                }`}
-              >
-                Southern Beachfront & Galle
-              </button>
-              <button
-                type="button"
-                onClick={() => applyFilters({ district: 'Colombo', q: 'Cinnamon Gardens' })}
-                className="px-3 py-1 text-xs bg-[#F5F8F5] text-[#18251E] border border-[#DDE5DF] hover:bg-[#E8F3EC] rounded-[2px] transition-colors cursor-pointer"
-              >
-                Colombo 07 Estates
-              </button>
-              <button
-                type="button"
-                onClick={() => applyFilters({ type: 'land' })}
-                className={`px-3 py-1 text-xs rounded-[2px] border transition-colors cursor-pointer ${
-                  localType === 'land'
-                    ? 'bg-[#103D2C] text-white border-[#103D2C] font-bold'
-                    : 'bg-[#F5F8F5] text-[#18251E] border-[#DDE5DF] hover:bg-[#E8F3EC]'
-                }`}
-              >
-                Coastal Land Plots
-              </button>
+              {[
+                { label: 'All', type: '' },
+                { label: 'Land', type: 'land' },
+                { label: 'House', type: 'house' },
+                { label: 'Apartment', type: 'apartment' },
+                { label: 'Hotel', type: 'hotel' },
+                { label: 'Business', type: 'business' },
+              ].map((chip) => {
+                const isActive = (localType || '') === chip.type;
+                return (
+                  <button
+                    key={chip.label}
+                    type="button"
+                    onClick={() => {
+                      setLocalType(chip.type);
+                      applyFilters({ type: chip.type });
+                    }}
+                    className={`px-3 py-1 text-xs rounded-[3px] border transition-colors cursor-pointer ${
+                      isActive
+                        ? 'bg-[#103D2C] text-white border-[#103D2C] font-bold'
+                        : 'bg-[#FAFBF9] text-[#18251E] border-[#DDE5DF] hover:border-[#103D2C]'
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Reset All */}
             {activeFilterCount > 0 && (
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#C93636] hover:text-[#A92828] uppercase tracking-wider cursor-pointer"
+                className="text-xs font-bold text-[#C93636] hover:underline uppercase tracking-wider cursor-pointer"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset All ({activeFilterCount})</span>
+                Clear All Filters ({activeFilterCount})
               </button>
             )}
           </div>
-
-          {/* Active Filter Tags Strip (matching screenshot: ACTIVE FILTERS: Purpose: BUY x | Clear All) */}
-          {activeFilterCount > 0 && (
-            <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-[#DDE5DF]/60 text-xs">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B63]">
-                ACTIVE FILTERS:
-              </span>
-              {purposeParam && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLocalPurpose('');
-                    applyFilters({ purpose: '' });
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#E8F3EC] text-[#103D2C] font-bold rounded-[2px] border border-[#176B45]/30 hover:bg-[#D4E8DC] transition-colors cursor-pointer"
-                >
-                  <span>Purpose: {purposeParam.toUpperCase()}</span>
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-              {districtParam && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLocalDistrict('');
-                    setLocalCity('');
-                    applyFilters({ district: '', city: '' });
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#E8F3EC] text-[#103D2C] font-bold rounded-[2px] border border-[#176B45]/30 hover:bg-[#D4E8DC] transition-colors cursor-pointer"
-                >
-                  <span>District: {districtParam}</span>
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-              {cityParam && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLocalCity('');
-                    applyFilters({ city: '' });
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#E8F3EC] text-[#103D2C] font-bold rounded-[2px] border border-[#176B45]/30 hover:bg-[#D4E8DC] transition-colors cursor-pointer"
-                >
-                  <span>City: {cityParam}</span>
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-              {typeParam && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLocalType('');
-                    applyFilters({ type: '' });
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#E8F3EC] text-[#103D2C] font-bold rounded-[2px] border border-[#176B45]/30 hover:bg-[#D4E8DC] transition-colors cursor-pointer"
-                >
-                  <span>Category: {typeParam.toUpperCase()}</span>
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-              {queryParam && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLocalQuery('');
-                    applyFilters({ q: '' });
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#E8F3EC] text-[#103D2C] font-bold rounded-[2px] border border-[#176B45]/30 hover:bg-[#D4E8DC] transition-colors cursor-pointer"
-                >
-                  <span>Search: "{queryParam}"</span>
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-              {bedroomsParam && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLocalBedrooms('');
-                    applyFilters({ bedrooms: '' });
-                  }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#E8F3EC] text-[#103D2C] font-bold rounded-[2px] border border-[#176B45]/30 hover:bg-[#D4E8DC] transition-colors cursor-pointer"
-                >
-                  <span>{bedroomsParam}+ Beds</span>
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="text-xs font-bold text-[#C93636] hover:underline uppercase tracking-wider ml-2 cursor-pointer"
-              >
-                Clear All
-              </button>
-            </div>
-          )}
         </div>
       </section>
 
       {/* =========================================================================
-          RESULTS CONTROL TOOLBAR & VIEW MODE SWITCHER
+          RESULTS CONTROL TOOLBAR
           ========================================================================= */}
       <section className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12 pt-8 pb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DDE5DF]">
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-[#103D2C] tracking-tight">
-              Marketplace Portfolio ({filteredProperties.length})
+            <h2 className="text-lg sm:text-xl font-bold text-[#103D2C] tracking-tight">
+              Showing {filteredProperties.length} Properties
             </h2>
             <p className="text-xs text-[#5F6B63] mt-0.5">
-              Showing page {currentPage} of {totalPages} · Price values in <span className="font-bold text-[#103D2C]">{currency}</span>
+              Page {currentPage} of {totalPages} · Prices displayed in{' '}
+              <span className="font-bold text-[#103D2C]">{currency}</span>
             </p>
           </div>
 
-          {/* Controls: View Mode & Sort */}
           <div className="flex items-center gap-3">
             {/* View Mode Switcher */}
-            <div className="flex items-center bg-[#F5F8F5] border border-[#DDE5DF] p-1 rounded-[2px]">
+            <div className="flex items-center bg-[#FAFBF9] border border-[#DDE5DF] p-1 rounded-[3px]">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
                   viewMode === 'grid'
                     ? 'bg-[#103D2C] text-white'
                     : 'text-[#5F6B63] hover:text-[#18251E]'
                 }`}
-                title="3-Column Grid View"
               >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Grid</span>
+                Grid View
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode('dossier')}
-                className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors flex items-center gap-1.5 cursor-pointer ${
-                  viewMode === 'dossier'
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${
+                  viewMode === 'list'
                     ? 'bg-[#103D2C] text-white'
                     : 'text-[#5F6B63] hover:text-[#18251E]'
                 }`}
-                title="Architectural Dossier List View"
               >
-                <List className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Dossier List</span>
+                List View
               </button>
             </div>
 
@@ -699,37 +625,34 @@ export function PropertiesPage() {
                 setSortBy(e.target.value);
                 applyFilters({ sort: e.target.value });
               }}
-              className="h-9 px-3 text-xs bg-white border border-[#DDE5DF] rounded-[2px] font-bold text-[#18251E] focus:border-[#103D2C] focus:outline-none"
+              className="h-9 px-3 text-xs bg-white border border-[#DDE5DF] rounded-[3px] font-semibold text-[#18251E] focus:border-[#103D2C] focus:outline-none"
             >
               <option value="newest">Newest First</option>
               <option value="price_asc">Price: Low to High</option>
               <option value="price_desc">Price: High to Low</option>
-              <option value="area_desc">Floor Area: Largest</option>
+              <option value="area_desc">Area: Largest First</option>
             </select>
           </div>
         </div>
       </section>
 
       {/* =========================================================================
-          MAIN PROPERTY INVENTORY DISPLAY
+          MAIN PROPERTY LISTINGS DISPLAY
           ========================================================================= */}
       <main className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12">
         {(nearMeParam || landmarkParam) && (
-          <div className="mb-6 p-4 bg-[#E8F3EC] border border-[#176B45]/40 rounded-[2px] flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#176B45] animate-pulse" />
-              <span className="font-bold text-[#103D2C]">
-                {landmarkParam
-                  ? `Showing properties sorted by proximity to landmark: ${landmarkParam}`
-                  : `Showing properties sorted by proximity to current GPS coordinates`}
-              </span>
-            </div>
+          <div className="mb-6 p-4 bg-[#E8F3EC] border border-[#176B45]/40 rounded-[3px] flex flex-wrap items-center justify-between gap-3 text-xs">
+            <span className="font-bold text-[#103D2C]">
+              {landmarkParam
+                ? `Showing properties near: ${landmarkParam}`
+                : `Showing properties sorted by distance from your location`}
+            </span>
             <button
               type="button"
               onClick={() => navigate('/properties')}
               className="text-xs font-bold text-[#176B45] hover:underline cursor-pointer"
             >
-              Reset Proximity Filter ✕
+              Clear Location Filter
             </button>
           </div>
         )}
@@ -737,33 +660,37 @@ export function PropertiesPage() {
         {pagedProperties.length > 0 ? (
           <>
             {viewMode === 'grid' ? (
-              /* Spacious 3-Column Grid View */
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {pagedProperties.map((property) => (
                   <PropertyCard key={property.id} property={property} />
                 ))}
               </div>
             ) : (
-              /* Architectural Dossier List View (Wide horizontal cards) */
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {pagedProperties.map((property) => {
                   const compared = isInCompare(property.id);
+                  const cleanTitle = cleanText(property.title);
+                  const cleanDesc = cleanText(property.description);
                   return (
                     <article
                       key={property.id}
                       onClick={() => navigate(`/properties/${property.slug}`)}
-                      className="group bg-white border border-[#DDE5DF] hover:border-[#103D2C] rounded-[3px] overflow-hidden shadow-2xs hover:shadow-[0_6px_24px_rgba(0,0,0,0.06)] transition-[border-color,box-shadow] duration-200 cursor-pointer grid grid-cols-1 md:grid-cols-12 gap-0"
+                      className="group bg-white border border-[#DDE5DF] hover:border-[#103D2C] rounded-[4px] overflow-hidden shadow-2xs transition-all cursor-pointer grid grid-cols-1 md:grid-cols-12 gap-0"
                     >
-                      {/* Left: 16:10 Photo (5 cols) */}
                       <div className="md:col-span-5 relative aspect-16/10 md:aspect-auto overflow-hidden bg-[#F5F8F5]">
                         <img
                           src={property.images[0]}
-                          alt={property.title}
+                          alt={cleanTitle}
                           onError={(e) => {
                             const imgEl = e.currentTarget;
                             const filename = imgEl.src.split('/').pop() || '';
-                            const fallback = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80';
-                            if (imgEl.src.includes('supabase.co') && filename && !imgEl.dataset.triedLocal) {
+                            const fallback =
+                              'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80';
+                            if (
+                              imgEl.src.includes('supabase.co') &&
+                              filename &&
+                              !imgEl.dataset.triedLocal
+                            ) {
                               imgEl.dataset.triedLocal = 'true';
                               imgEl.src = `/uploads/properties/${filename}`;
                             } else if (imgEl.src !== fallback) {
@@ -773,79 +700,95 @@ export function PropertiesPage() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                         />
                         <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                          <span className="px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider bg-white/95 text-[#103D2C] rounded-[2px] shadow-xs">
-                            {property.purpose.toUpperCase()}
+                          <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[#103D2C] text-white rounded-[2px]">
+                            {getCategoryLabel(property.type)}
                           </span>
-                          <span className="px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider bg-[#103D2C]/90 text-white rounded-[2px]">
-                            {property.type === 'apartment' ? 'Condominium Title' : 'Freehold Title'}
+                          <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-white/95 text-[#103D2C] rounded-[2px]">
+                            {property.purpose === 'rent' ? 'For Rent' : 'For Sale'}
                           </span>
                         </div>
                       </div>
 
-                      {/* Right: Detailed Architectural Dossier Specs (7 cols) */}
-                      <div className="md:col-span-7 p-6 sm:p-7 flex flex-col justify-between space-y-4">
+                      <div className="md:col-span-7 p-6 flex flex-col justify-between space-y-4">
                         <div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] uppercase font-extrabold tracking-wider text-[#176B45]">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold uppercase tracking-wider text-[#176B45]">
                               {property.location.city}, {property.location.district}
                             </span>
-                            <span className="text-xs text-[#5F6B63] tabular-nums font-medium">
-                              Ref: {property.listingRef || 'LP-SRI-2026'}
-                            </span>
+                            {property.listingRef && (
+                              <span className="text-[#5F6B63] tabular-nums font-medium">
+                                Ref: {property.listingRef}
+                              </span>
+                            )}
                           </div>
 
-                          <h3 className="text-xl sm:text-2xl font-extrabold text-[#18251E] group-hover:text-[#103D2C] transition-colors mt-1 leading-snug">
-                            {property.title}
+                          <h3 className="text-xl font-bold text-[#18251E] group-hover:text-[#103D2C] transition-colors mt-1 leading-snug">
+                            {cleanTitle}
                           </h3>
 
                           <p className="text-xs sm:text-sm text-[#5F6B63] mt-2 line-clamp-2 leading-relaxed">
-                            {property.description}
+                            {cleanDesc}
                           </p>
 
-                          {/* Specifications Grid */}
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-[#DDE5DF]">
                             <div>
-                              <span className="text-[10px] uppercase font-bold text-[#5F6B63] block">Bedrooms</span>
-                              <span className="text-sm font-extrabold text-[#18251E] tabular-nums">
+                              <span className="text-[10px] uppercase font-bold text-[#5F6B63] block">
+                                Bedrooms
+                              </span>
+                              <span className="text-sm font-bold text-[#18251E] tabular-nums">
                                 {property.specs.bedrooms ? `${property.specs.bedrooms} Beds` : '—'}
                               </span>
                             </div>
                             <div>
-                              <span className="text-[10px] uppercase font-bold text-[#5F6B63] block">Bathrooms</span>
-                              <span className="text-sm font-extrabold text-[#18251E] tabular-nums">
-                                {property.specs.bathrooms ? `${property.specs.bathrooms} Baths` : '—'}
+                              <span className="text-[10px] uppercase font-bold text-[#5F6B63] block">
+                                Bathrooms
+                              </span>
+                              <span className="text-sm font-bold text-[#18251E] tabular-nums">
+                                {property.specs.bathrooms
+                                  ? `${property.specs.bathrooms} Baths`
+                                  : '—'}
                               </span>
                             </div>
                             <div>
-                              <span className="text-[10px] uppercase font-bold text-[#5F6B63] block">Floor Area</span>
-                              <span className="text-sm font-extrabold text-[#18251E] tabular-nums">
-                                {property.specs.floorAreaSqFt ? `${property.specs.floorAreaSqFt.toLocaleString()} sq.ft.` : '—'}
+                              <span className="text-[10px] uppercase font-bold text-[#5F6B63] block">
+                                Floor Area
+                              </span>
+                              <span className="text-sm font-bold text-[#18251E] tabular-nums">
+                                {property.specs.floorAreaSqFt
+                                  ? `${property.specs.floorAreaSqFt.toLocaleString()} sq ft`
+                                  : '—'}
                               </span>
                             </div>
                             <div>
-                              <span className="text-[10px] uppercase font-bold text-[#5F6B63] block">Land Extent</span>
-                              <span className="text-sm font-extrabold text-[#18251E] tabular-nums">
-                                {property.specs.landPerches ? `${property.specs.landPerches} Perches` : property.specs.landAcres ? `${property.specs.landAcres} Acres` : '—'}
+                              <span className="text-[10px] uppercase font-bold text-[#5F6B63] block">
+                                Land Area
+                              </span>
+                              <span className="text-sm font-bold text-[#18251E] tabular-nums">
+                                {property.specs.landPerches
+                                  ? `${property.specs.landPerches} Perches`
+                                  : property.specs.landAcres
+                                  ? `${property.specs.landAcres} Acres`
+                                  : '—'}
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Footer Strip */}
                         <div className="pt-4 border-t border-[#DDE5DF] flex flex-wrap items-center justify-between gap-4">
                           <div>
-                            <span className="text-[10px] uppercase font-extrabold text-[#5F6B63] block">
-                              VALUATION
+                            <span className="text-[10px] uppercase font-bold text-[#5F6B63] block">
+                              Price
                             </span>
-                            <div className="text-2xl font-extrabold text-[#103D2C] tabular-nums">
-                              {formatPrice(property.priceLkr)}
-                              {property.purpose === 'rent' && <span className="text-xs text-[#5F6B63] font-normal ml-1">/ month</span>}
+                            <div className="text-xl sm:text-2xl font-extrabold text-[#103D2C] tabular-nums">
+                              {property.priceLkr > 0
+                                ? formatPrice(property.priceLkr)
+                                : 'Price on Request'}
+                              {property.purpose === 'rent' && property.priceLkr > 0 && (
+                                <span className="text-xs text-[#5F6B63] font-normal ml-1">
+                                  / month
+                                </span>
+                              )}
                             </div>
-                            {currency !== 'LKR' && (
-                              <span className="text-xs text-[#5F6B63] tabular-nums block">
-                                Rs. {(property.priceLkr / 1000000).toFixed(1)}M LKR
-                              </span>
-                            )}
                           </div>
 
                           <div className="flex items-center gap-2">
@@ -855,17 +798,16 @@ export function PropertiesPage() {
                                 e.stopPropagation();
                                 addToCompare(property);
                               }}
-                              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-[2px] border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                              className={`px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-[3px] border transition-colors cursor-pointer ${
                                 compared
                                   ? 'bg-[#103D2C] text-white border-[#103D2C]'
                                   : 'bg-white text-[#18251E] border-[#DDE5DF] hover:bg-[#F5F8F5]'
                               }`}
                             >
-                              <Scale className="w-3.5 h-3.5" />
-                              <span>{compared ? 'In Compare' : 'Compare'}</span>
+                              {compared ? 'Comparing' : 'Compare'}
                             </button>
-                            <span className="px-4 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-extrabold uppercase tracking-wider rounded-[2px] transition-colors">
-                              View Dossier →
+                            <span className="px-4 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors">
+                              View Details
                             </span>
                           </div>
                         </div>
@@ -878,14 +820,17 @@ export function PropertiesPage() {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <nav aria-label="Pagination" className="pt-12 flex items-center justify-between border-t border-[#DDE5DF] mt-12">
+              <nav
+                aria-label="Pagination"
+                className="pt-10 flex items-center justify-between border-t border-[#DDE5DF] mt-10"
+              >
                 <button
                   type="button"
                   onClick={() => applyFilters({ page: String(currentPage - 1) })}
                   disabled={currentPage <= 1}
-                  className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-[2px] border border-[#DDE5DF] text-[#18251E] hover:bg-[#F5F8F5] disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                  className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-[3px] border border-[#DDE5DF] text-[#18251E] hover:bg-[#F5F8F5] disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
                 >
-                  ← Previous
+                  Previous
                 </button>
 
                 <div className="flex items-center gap-1.5 text-xs font-bold tabular-nums">
@@ -894,7 +839,7 @@ export function PropertiesPage() {
                       key={pNum}
                       type="button"
                       onClick={() => applyFilters({ page: String(pNum) })}
-                      className={`w-8 h-8 rounded-[2px] text-xs font-bold transition-colors ${
+                      className={`w-8 h-8 rounded-[3px] text-xs font-bold transition-colors cursor-pointer ${
                         currentPage === pNum
                           ? 'bg-[#103D2C] text-white'
                           : 'bg-white text-[#18251E] border border-[#DDE5DF] hover:bg-[#F5F8F5]'
@@ -909,32 +854,30 @@ export function PropertiesPage() {
                   type="button"
                   onClick={() => applyFilters({ page: String(currentPage + 1) })}
                   disabled={currentPage >= totalPages}
-                  className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-[2px] border border-[#DDE5DF] text-[#18251E] hover:bg-[#F5F8F5] disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                  className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-[3px] border border-[#DDE5DF] text-[#18251E] hover:bg-[#F5F8F5] disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
                 >
-                  Next →
+                  Next
                 </button>
               </nav>
             )}
           </>
         ) : (
-          /* Helpful Empty State */
-          <div className="py-20 text-center bg-[#F5F8F5] border border-[#DDE5DF] rounded-[3px] p-8 space-y-4">
-            <div className="w-12 h-12 bg-white border border-[#DDE5DF] text-[#176B45] rounded-[3px] flex items-center justify-center mx-auto shadow-xs">
-              <SlidersHorizontal className="w-6 h-6 stroke-[1.8]" />
-            </div>
+          <div className="py-16 text-center bg-[#FAFBF9] border border-[#DDE5DF] rounded-[4px] p-8 space-y-4">
             <div className="space-y-1.5 max-w-md mx-auto">
-              <h3 className="text-xl font-extrabold text-[#18251E]">No properties match your filter criteria</h3>
+              <h3 className="text-lg font-bold text-[#18251E]">
+                No properties match your selected filters
+              </h3>
               <p className="text-xs text-[#5F6B63] leading-relaxed">
-                Try broadening your budget thresholds, removing specific bedroom or district constraints, or clearing all filters to view all available Sri Lankan listings.
+                Try adjusting your price range, category, or district filters, or reset all filters to view all available listings.
               </p>
             </div>
-            <div className="pt-2 flex items-center justify-center gap-3">
+            <div className="pt-2">
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="px-5 py-2.5 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-extrabold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer"
+                className="px-5 py-2.5 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer"
               >
-                Clear All Filters
+                Reset All Filters
               </button>
             </div>
           </div>

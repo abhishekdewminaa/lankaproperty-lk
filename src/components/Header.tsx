@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { motion, useScroll, useSpring } from 'motion/react';
-import { Heart, Menu, X, ArrowUpRight, Home, Globe, Scale } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { useRouter } from '../hooks/useRouter';
 import { useSavedProperties } from '../hooks/useSavedProperties';
@@ -46,7 +45,6 @@ export function Header({ isHomePage = false }: HeaderProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Lock background scroll when mobile menu is open
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -92,19 +90,14 @@ export function Header({ isHomePage = false }: HeaderProps) {
       isActive: pathname === '/wanted-properties',
     },
     {
-      label: '25 Districts & Cities',
-      href: '/#district-cadastral-explorer',
+      label: 'Districts',
+      href: '/#district-directory',
       isActive: pathname.startsWith('/districts'),
     },
     {
       label: 'Advertising Packages',
       href: '/advertising-packages',
       isActive: pathname === '/advertising-packages',
-    },
-    {
-      label: 'Private Office',
-      href: '/#private-office',
-      isActive: false,
     },
   ];
 
@@ -130,7 +123,6 @@ export function Header({ isHomePage = false }: HeaderProps) {
   const currencyOptions: CurrencyCode[] = ['LKR', 'USD', 'GBP', 'EUR', 'AUD'];
 
   const isTransparent = isHomePage && !isScrolled;
-  const isDarkHomeScrolled = isHomePage && isScrolled;
 
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
@@ -148,25 +140,25 @@ export function Header({ isHomePage = false }: HeaderProps) {
           isHomePage
             ? `fixed top-0 left-0 right-0 ${
                 isTransparent
-                  ? 'bg-transparent border-b border-white/15 text-white'
-                  : 'bg-[#0B2519]/92 backdrop-blur-md border-b border-[#176B45]/40 text-white shadow-lg'
+                  ? 'bg-[#0B2519]/85 backdrop-blur-md border-b border-white/15 text-white'
+                  : 'bg-[#0B2519]/95 backdrop-blur-md border-b border-[#176B45]/40 text-white shadow-lg'
               }`
             : `sticky top-0 bg-white border-b border-[#DDE5DF] text-[#18251E] ${
                 isScrolled ? 'shadow-[0_2px_10px_rgba(0,0,0,0.06)]' : ''
               }`
         }`}
       >
-        <div className="max-w-[1720px] w-full h-full mx-auto px-3 sm:px-5 lg:px-6 2xl:px-8 flex items-center justify-between gap-1.5 xl:gap-3 2xl:gap-4">
-          {/* Left: Brand Wordmark (reacts smoothly on hover, click, and scroll) */}
+        <div className="max-w-[1440px] w-full h-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-2 xl:gap-4">
+          {/* Left: Brand Wordmark */}
           <button
             onClick={() => handleNav('/')}
-            className="flex items-center text-left focus-visible:outline-2 focus-visible:outline-[#176B45] rounded-[2px] cursor-pointer shrink-0 mr-3 xl:mr-5 2xl:mr-8"
+            className="flex items-center text-left focus-visible:outline-2 focus-visible:outline-[#176B45] rounded-[2px] cursor-pointer shrink-0"
           >
             <BrandLogo variant={isHomePage ? 'dark' : 'light'} isCompact={isScrolled} />
           </button>
 
-          {/* Centre: Navigation Links (Desktop - all full section words preserved) */}
-          <nav className="hidden xl:flex items-center gap-2 2xl:gap-3.5 text-[12px] 2xl:text-[13.5px] font-semibold shrink-0">
+          {/* Centre: Navigation Links */}
+          <nav className="hidden xl:flex items-center gap-5 2xl:gap-6 text-[13px] font-semibold shrink-0">
             {navLinks.map((link) => (
               <button
                 key={link.label}
@@ -195,25 +187,24 @@ export function Header({ isHomePage = false }: HeaderProps) {
             ))}
           </nav>
 
-          {/* Right: Actions Group (shrink-0 & flex-nowrap to guarantee Register is NEVER hidden) */}
-          <div className="flex items-center gap-1.5 sm:gap-2 xl:gap-2.5 shrink-0 flex-nowrap">
+          {/* Right: Actions Group */}
+          <div className="flex items-center gap-2 shrink-0 flex-nowrap">
             {/* Currency Switcher */}
             <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setCurrencyMenuOpen(!currencyMenuOpen)}
-                className={`flex items-center gap-1 px-2 py-1.5 text-xs font-bold uppercase rounded-[2px] border transition-colors cursor-pointer shrink-0 ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold uppercase rounded-[3px] border transition-colors cursor-pointer shrink-0 ${
                   isHomePage
                     ? 'bg-white/10 text-white border-white/25 hover:bg-white/20'
-                    : 'bg-white text-[#18251E] border-[#DDE5DF] hover:text-[#176B45] hover:bg-[#F5F8F5]'
+                    : 'bg-white text-[#18251E] border-[#DDE5DF] hover:border-[#103D2C] hover:bg-[#F5F8F5]'
                 }`}
-                title="Switch Currency for diaspora and foreign valuation"
                 aria-expanded={currencyMenuOpen}
               >
-                <Globe
-                  className={`w-3.5 h-3.5 ${isHomePage ? 'text-[#9FE3B8]' : 'text-[#176B45]'}`}
-                />
-                <span className={isHomePage ? 'text-white font-black' : 'text-[#103D2C] font-bold'}>
+                <span className={isHomePage ? 'text-white/75 font-semibold' : 'text-[#5F6B63] font-semibold'}>
+                  Currency:
+                </span>
+                <span className={isHomePage ? 'text-white font-bold' : 'text-[#103D2C] font-bold'}>
                   {currency}
                 </span>
               </button>
@@ -221,7 +212,7 @@ export function Header({ isHomePage = false }: HeaderProps) {
               {currencyMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setCurrencyMenuOpen(false)} />
-                  <div className="absolute right-0 mt-1.5 w-44 bg-white border border-[#DDE5DF] rounded-[2px] shadow-xl py-1 z-40 text-[#18251E]">
+                  <div className="absolute right-0 mt-1.5 w-44 bg-white border border-[#DDE5DF] rounded-[3px] shadow-xl py-1 z-40 text-[#18251E]">
                     <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#5F6B63] border-b border-[#DDE5DF]/60">
                       Display Currency
                     </div>
@@ -245,7 +236,7 @@ export function Header({ isHomePage = false }: HeaderProps) {
                             {code} ({cfg.symbol})
                           </span>
                           {currency === code && (
-                            <span className="text-[10px] font-semibold text-[#176B45]">Active</span>
+                            <span className="text-[10px] font-semibold text-[#176B45]">Selected</span>
                           )}
                         </button>
                       );
@@ -255,63 +246,47 @@ export function Header({ isHomePage = false }: HeaderProps) {
               )}
             </div>
 
-            {/* Compare Trigger (shows when items are in compare tray) */}
+            {/* Compare Trigger */}
             {compareItems.length > 0 && (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className={`relative flex items-center gap-1 px-2 py-1.5 text-xs font-semibold rounded-[2px] transition-colors cursor-pointer border shrink-0 ${
+                className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-[3px] transition-colors cursor-pointer border shrink-0 ${
                   isHomePage
                     ? 'bg-white/10 text-white border-white/25 hover:bg-white/20'
                     : 'bg-[#E8F3EC] text-[#103D2C] hover:bg-[#d5e8dc] border-[#176B45]/30'
                 }`}
-                title="Open Comparison Dossier"
-                aria-label={`Compare ${compareItems.length} properties`}
               >
-                <Scale
-                  className={`w-3.5 h-3.5 ${isHomePage ? 'text-[#9FE3B8]' : 'text-[#176B45]'}`}
-                />
-                <span className="hidden xl:inline">Compare</span>
-                <span className="inline-flex items-center justify-center text-[10px] font-bold w-4 h-4 bg-[#176B45] text-white rounded-[2px] tabular-nums">
+                <span>Compare</span>
+                <span className="inline-flex items-center justify-center text-[10px] font-bold px-1.5 h-4 bg-[#176B45] text-white rounded-[2px] tabular-nums">
                   {compareItems.length}
                 </span>
               </button>
             )}
 
-            {/* Saved Link with Heart Icon */}
+            {/* Saved Link */}
             <button
               onClick={() => handleNav('/saved')}
-              className={`relative flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold transition-colors duration-150 rounded-[2px] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#176B45] shrink-0 ${
+              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold transition-colors duration-150 rounded-[3px] border cursor-pointer shrink-0 ${
                 isHomePage
-                  ? 'text-white hover:bg-white/10'
+                  ? 'text-white border-white/25 bg-white/10 hover:bg-white/20'
                   : pathname === '/saved'
-                  ? 'text-[#176B45] bg-[#E8F3EC]'
-                  : 'text-[#18251E] hover:text-[#176B45] hover:bg-[#F5F8F5]'
+                  ? 'text-[#176B45] bg-[#E8F3EC] border-[#176B45]/30'
+                  : 'text-[#18251E] border-[#DDE5DF] hover:border-[#103D2C] hover:bg-[#F5F8F5]'
               }`}
-              title="Saved Properties"
-              aria-label={`Saved properties: ${savedCount} saved`}
             >
-              <Heart
-                className={`w-3.5 h-3.5 transition-colors duration-150 ${
-                  savedCount > 0
-                    ? 'fill-[#C93636] text-[#C93636]'
-                    : isHomePage
-                    ? 'text-white'
-                    : 'text-[#5F6B63]'
-                }`}
-              />
-              <span className="hidden xl:inline">Saved</span>
+              <span>Saved</span>
               {savedCount > 0 && (
-                <span className="inline-flex items-center justify-center text-[10px] font-bold min-w-4 h-4 px-1 bg-[#176B45] text-white rounded-[2px] tabular-nums">
+                <span className="inline-flex items-center justify-center text-[10px] font-bold px-1.5 h-4 bg-[#176B45] text-white rounded-[2px] tabular-nums">
                   {savedCount}
                 </span>
               )}
             </button>
 
-            {/* Logged-In User Badge & Dashboard Link */}
+            {/* Logged-In User or Auth Actions */}
             {portalUser ? (
               <div className="hidden sm:flex items-center gap-1.5 shrink-0">
                 <span
-                  className={`text-xs px-2.5 py-1.5 font-bold rounded-[2px] border ${
+                  className={`text-xs px-2.5 py-1.5 font-bold rounded-[3px] border ${
                     isHomePage
                       ? 'bg-white/10 text-white border-white/20'
                       : 'bg-[#E8F3EC] text-[#103D2C] border-[#176B45]/20'
@@ -330,32 +305,30 @@ export function Header({ isHomePage = false }: HeaderProps) {
                   onClick={() =>
                     handleNav(portalUser.role === 'agent' ? '/agent/dashboard' : '/owner/dashboard')
                   }
-                  className="px-3 py-1.5 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold rounded-[2px] transition-colors cursor-pointer"
+                  className="px-3 py-1.5 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold rounded-[3px] transition-colors cursor-pointer"
                 >
-                  My Dashboard →
+                  Dashboard
                 </button>
                 <button
                   onClick={() => userPortalService.logout()}
-                  className={`text-xs font-semibold transition-colors cursor-pointer px-1 ${
+                  className={`text-xs font-semibold transition-colors cursor-pointer px-1.5 ${
                     isHomePage ? 'text-white/80 hover:text-white' : 'text-[#5F6B63] hover:text-[#C93636]'
                   }`}
-                  title="Sign out of portal"
                 >
                   Logout
                 </button>
               </div>
             ) : (
-              <div className="hidden sm:flex items-center gap-1.5 xl:gap-2 shrink-0 flex-nowrap">
-                {/* POST YOUR PROPERTY FREE */}
+              <div className="hidden sm:flex items-center gap-2 shrink-0 flex-nowrap">
                 <button
                   onClick={() => handleNav('/list-property')}
-                  className={`px-2.5 xl:px-3.5 py-1.5 text-[11px] xl:text-xs font-extrabold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer shadow-xs whitespace-nowrap shrink-0 ${
+                  className={`px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                     isHomePage
                       ? 'bg-[#176B45] hover:bg-[#115236] text-white border border-[#9FE3B8]/30'
                       : 'bg-[#103D2C] hover:bg-[#176B45] text-white'
                   }`}
                 >
-                  Post Your Property Free
+                  Post Property Free
                 </button>
 
                 {/* Login Dropdown */}
@@ -366,7 +339,7 @@ export function Header({ isHomePage = false }: HeaderProps) {
                       setLoginMenuOpen(!loginMenuOpen);
                       setRegisterMenuOpen(false);
                     }}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-[2px] border transition-colors cursor-pointer whitespace-nowrap ${
+                    className={`px-3 py-1.5 text-xs font-bold rounded-[3px] border transition-colors cursor-pointer whitespace-nowrap ${
                       isHomePage
                         ? loginMenuOpen
                           ? 'bg-white text-[#103D2C] border-white'
@@ -376,40 +349,37 @@ export function Header({ isHomePage = false }: HeaderProps) {
                         : 'bg-white text-[#103D2C] border-[#103D2C] hover:bg-[#F5F8F5]'
                     }`}
                   >
-                    <span>Login</span>
-                    <span className="text-[10px]">{loginMenuOpen ? '▲' : '▼'}</span>
+                    Login
                   </button>
 
                   {loginMenuOpen && (
                     <>
                       <div className="fixed inset-0 z-30" onClick={() => setLoginMenuOpen(false)} />
-                      <div className="absolute right-0 mt-1.5 w-56 bg-white border border-[#DDE5DF] rounded-[2px] shadow-xl py-1 z-40 text-[#18251E]">
+                      <div className="absolute right-0 mt-1.5 w-52 bg-white border border-[#DDE5DF] rounded-[3px] shadow-xl py-1 z-40 text-[#18251E]">
                         <button
                           onClick={() => {
                             setLoginMenuOpen(false);
                             handleNav('/auth?mode=login&role=owner');
                           }}
-                          className="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#18251E] hover:bg-[#F5F8F5] hover:text-[#103D2C] flex items-center justify-between cursor-pointer"
+                          className="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#18251E] hover:bg-[#F5F8F5] hover:text-[#103D2C] block cursor-pointer"
                         >
-                          <span>Property Owner Login</span>
-                          <span className="text-xs text-[#5F6B63]">→</span>
+                          Property Owner Login
                         </button>
                         <button
                           onClick={() => {
                             setLoginMenuOpen(false);
                             handleNav('/auth?mode=login&role=agent');
                           }}
-                          className="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#18251E] hover:bg-[#F5F8F5] hover:text-[#103D2C] flex items-center justify-between cursor-pointer"
+                          className="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#18251E] hover:bg-[#F5F8F5] hover:text-[#103D2C] block cursor-pointer"
                         >
-                          <span>Real Estate Agent Login</span>
-                          <span className="text-xs text-[#5F6B63]">→</span>
+                          Real Estate Agent Login
                         </button>
                       </div>
                     </>
                   )}
                 </div>
 
-                {/* Register Dropdown (Prominent & NEVER Hidden) */}
+                {/* Register Dropdown */}
                 <div className="relative shrink-0">
                   <button
                     type="button"
@@ -417,18 +387,17 @@ export function Header({ isHomePage = false }: HeaderProps) {
                       setRegisterMenuOpen(!registerMenuOpen);
                       setLoginMenuOpen(false);
                     }}
-                    className={`flex items-center gap-1 px-2.5 xl:px-3 py-1.5 text-xs font-extrabold rounded-[2px] border transition-colors cursor-pointer whitespace-nowrap shadow-xs ${
+                    className={`px-3 py-1.5 text-xs font-bold rounded-[3px] border transition-colors cursor-pointer whitespace-nowrap ${
                       isHomePage
                         ? registerMenuOpen
-                          ? 'bg-[#FA541C] text-white border-[#FA541C]'
+                          ? 'bg-[#176B45] text-white border-[#176B45]'
                           : 'bg-white text-[#103D2C] border-white hover:bg-neutral-100'
                         : registerMenuOpen
                         ? 'bg-[#103D2C] text-white border-[#103D2C]'
                         : 'bg-[#103D2C] text-white border-[#103D2C] hover:bg-[#176B45]'
                     }`}
                   >
-                    <span>Register</span>
-                    <span className="text-[10px]">{registerMenuOpen ? '▲' : '▼'}</span>
+                    Register
                   </button>
 
                   {registerMenuOpen && (
@@ -437,26 +406,24 @@ export function Header({ isHomePage = false }: HeaderProps) {
                         className="fixed inset-0 z-30"
                         onClick={() => setRegisterMenuOpen(false)}
                       />
-                      <div className="absolute right-0 mt-1.5 w-60 bg-white border border-[#DDE5DF] rounded-[2px] shadow-xl py-1 z-40 text-[#18251E]">
+                      <div className="absolute right-0 mt-1.5 w-56 bg-white border border-[#DDE5DF] rounded-[3px] shadow-xl py-1 z-40 text-[#18251E]">
                         <button
                           onClick={() => {
                             setRegisterMenuOpen(false);
                             handleNav('/auth?mode=register&role=owner');
                           }}
-                          className="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#18251E] hover:bg-[#F5F8F5] hover:text-[#103D2C] flex items-center justify-between cursor-pointer"
+                          className="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#18251E] hover:bg-[#F5F8F5] hover:text-[#103D2C] block cursor-pointer"
                         >
-                          <span>Property Owner Registration</span>
-                          <span className="text-xs text-[#5F6B63]">→</span>
+                          Property Owner Registration
                         </button>
                         <button
                           onClick={() => {
                             setRegisterMenuOpen(false);
                             handleNav('/auth?mode=register&role=agent');
                           }}
-                          className="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#18251E] hover:bg-[#F5F8F5] hover:text-[#103D2C] flex items-center justify-between cursor-pointer"
+                          className="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#18251E] hover:bg-[#F5F8F5] hover:text-[#103D2C] block cursor-pointer"
                         >
-                          <span>Real Estate Agent Registration</span>
-                          <span className="text-xs text-[#5F6B63]">→</span>
+                          Real Estate Agent Registration
                         </button>
                       </div>
                     </>
@@ -465,18 +432,18 @@ export function Header({ isHomePage = false }: HeaderProps) {
               </div>
             )}
 
-            {/* Mobile / Tablet Menu Toggle Button (appears when nav collapses on < xl) */}
+            {/* Mobile / Tablet Menu Toggle Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className={`xl:hidden p-2 rounded-[2px] focus-visible:outline-2 focus-visible:outline-[#176B45] cursor-pointer shrink-0 ${
+              className={`xl:hidden px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-[3px] border cursor-pointer shrink-0 ${
                 isHomePage
-                  ? 'text-white hover:bg-white/10'
-                  : 'text-[#18251E] hover:text-[#176B45] hover:bg-[#F5F8F5]'
+                  ? 'text-white border-white/30 bg-white/10 hover:bg-white/20'
+                  : 'text-[#18251E] border-[#DDE5DF] bg-[#F5F8F5] hover:border-[#103D2C]'
               }`}
               aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? 'Close' : 'Menu'}
             </button>
           </div>
         </div>
@@ -506,16 +473,15 @@ export function Header({ isHomePage = false }: HeaderProps) {
           />
 
           {/* Drawer Content */}
-          <div className="relative ml-auto w-full max-w-xs sm:max-w-sm bg-white h-full shadow-2xl flex flex-col justify-between p-6 z-10">
+          <div className="relative ml-auto w-full max-w-xs sm:max-w-sm bg-white h-full shadow-2xl flex flex-col justify-between p-6 z-10 overflow-y-auto">
             <div>
-              <div className="flex items-center justify-between pb-6 border-b border-[#DDE5DF]">
+              <div className="flex items-center justify-between pb-5 border-b border-[#DDE5DF]">
                 <BrandLogo variant="light" size="sm" />
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-2 text-[#5F6B63] hover:text-[#18251E] rounded-[2px] focus-visible:outline-2 focus-visible:outline-[#176B45] cursor-pointer"
-                  aria-label="Close menu"
+                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#5F6B63] hover:text-[#18251E] border border-[#DDE5DF] rounded-[3px] cursor-pointer"
                 >
-                  <X className="w-6 h-6" />
+                  Close
                 </button>
               </div>
 
@@ -529,7 +495,7 @@ export function Header({ isHomePage = false }: HeaderProps) {
                     <button
                       key={code}
                       onClick={() => setCurrency(code)}
-                      className={`py-1.5 text-xs font-bold rounded-[2px] transition-[background-color,border-color] duration-150 border ${
+                      className={`py-1.5 text-xs font-bold rounded-[3px] transition-colors border ${
                         currency === code
                           ? 'bg-[#103D2C] text-white border-[#103D2C]'
                           : 'bg-[#F5F8F5] text-[#18251E] border-[#DDE5DF]'
@@ -541,10 +507,10 @@ export function Header({ isHomePage = false }: HeaderProps) {
                 </div>
               </div>
 
-              <div className="py-4 space-y-1.5">
+              <div className="py-4 space-y-1">
                 <button
                   onClick={() => handleNav('/')}
-                  className={`w-full text-left px-3 py-2 text-base font-semibold rounded-[2px] transition-[background-color] duration-150 ${
+                  className={`w-full text-left px-3 py-2 text-sm font-semibold rounded-[3px] transition-colors ${
                     pathname === '/' ? 'text-[#176B45] bg-[#E8F3EC]' : 'text-[#18251E] hover:bg-[#F5F8F5]'
                   }`}
                 >
@@ -554,7 +520,7 @@ export function Header({ isHomePage = false }: HeaderProps) {
                   <button
                     key={link.label}
                     onClick={() => handleNav(link.href)}
-                    className={`w-full text-left px-3 py-2 text-base font-semibold rounded-[2px] transition-[background-color] duration-150 ${
+                    className={`w-full text-left px-3 py-2 text-sm font-semibold rounded-[3px] transition-colors ${
                       link.isActive ? 'text-[#176B45] bg-[#E8F3EC]' : 'text-[#18251E] hover:bg-[#F5F8F5]'
                     }`}
                   >
@@ -563,14 +529,11 @@ export function Header({ isHomePage = false }: HeaderProps) {
                 ))}
                 <button
                   onClick={() => handleNav('/saved')}
-                  className={`w-full flex items-center justify-between px-3 py-2 text-base font-semibold rounded-[2px] transition-[background-color] duration-150 ${
+                  className={`w-full flex items-center justify-between px-3 py-2 text-sm font-semibold rounded-[3px] transition-colors ${
                     pathname === '/saved' ? 'text-[#176B45] bg-[#E8F3EC]' : 'text-[#18251E] hover:bg-[#F5F8F5]'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-[#C93636]" />
-                    <span>Saved Properties</span>
-                  </span>
+                  <span>Saved Properties</span>
                   {savedCount > 0 && (
                     <span className="text-xs font-bold px-2 py-0.5 bg-[#176B45] text-white rounded-[2px] tabular-nums">
                       {savedCount}
@@ -584,12 +547,9 @@ export function Header({ isHomePage = false }: HeaderProps) {
                       setMobileMenuOpen(false);
                       setIsModalOpen(true);
                     }}
-                    className="w-full flex items-center justify-between px-3 py-2 text-base font-semibold rounded-[2px] text-[#103D2C] bg-[#E8F3EC]"
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold rounded-[3px] text-[#103D2C] bg-[#E8F3EC]"
                   >
-                    <span className="flex items-center gap-2">
-                      <Scale className="w-4 h-4 text-[#176B45]" />
-                      <span>Compare Dossier</span>
-                    </span>
+                    <span>Compare Properties</span>
                     <span className="text-xs font-bold px-2 py-0.5 bg-[#176B45] text-white rounded-[2px] tabular-nums">
                       {compareItems.length}
                     </span>
@@ -598,18 +558,18 @@ export function Header({ isHomePage = false }: HeaderProps) {
               </div>
             </div>
 
-            <div className="pt-6 border-t border-[#DDE5DF] space-y-2.5">
+            <div className="pt-5 border-t border-[#DDE5DF] space-y-2.5">
               {portalUser ? (
                 <>
                   <button
                     onClick={() => handleNav(portalUser.role === 'agent' ? '/agent/dashboard' : '/owner/dashboard')}
-                    className="w-full py-2.5 bg-[#103D2C] text-white font-bold text-center rounded-[2px] text-xs uppercase tracking-wider"
+                    className="w-full py-2.5 bg-[#103D2C] text-white font-bold text-center rounded-[3px] text-xs uppercase tracking-wider"
                   >
-                    Open {portalUser.role === 'agent' ? 'Agent' : 'Owner'} Dashboard →
+                    Open {portalUser.role === 'agent' ? 'Agent' : 'Owner'} Dashboard
                   </button>
                   <button
                     onClick={() => userPortalService.logout()}
-                    className="w-full py-2 bg-[#F5F8F5] border border-[#DDE5DF] text-[#C93636] font-bold text-center rounded-[2px] text-xs"
+                    className="w-full py-2 bg-[#F5F8F5] border border-[#DDE5DF] text-[#C93636] font-bold text-center rounded-[3px] text-xs"
                   >
                     Logout ({portalUser.name})
                   </button>
@@ -619,13 +579,13 @@ export function Header({ isHomePage = false }: HeaderProps) {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => handleNav('/auth?mode=login&role=owner')}
-                      className="py-2.5 bg-[#FAFBF9] border border-[#103D2C] text-[#103D2C] font-bold text-center rounded-[2px] text-xs cursor-pointer"
+                      className="py-2.5 bg-[#FAFBF9] border border-[#103D2C] text-[#103D2C] font-bold text-center rounded-[3px] text-xs cursor-pointer"
                     >
                       Owner Login
                     </button>
                     <button
                       onClick={() => handleNav('/auth?mode=login&role=agent')}
-                      className="py-2.5 bg-[#103D2C] text-white font-bold text-center rounded-[2px] text-xs cursor-pointer"
+                      className="py-2.5 bg-[#103D2C] text-white font-bold text-center rounded-[3px] text-xs cursor-pointer"
                     >
                       Agent Login
                     </button>
@@ -633,13 +593,13 @@ export function Header({ isHomePage = false }: HeaderProps) {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => handleNav('/auth?mode=register&role=owner')}
-                      className="py-2.5 bg-white border border-[#176B45] text-[#176B45] font-bold text-center rounded-[2px] text-xs cursor-pointer"
+                      className="py-2.5 bg-white border border-[#176B45] text-[#176B45] font-bold text-center rounded-[3px] text-xs cursor-pointer"
                     >
                       Owner Register
                     </button>
                     <button
                       onClick={() => handleNav('/auth?mode=register&role=agent')}
-                      className="py-2.5 bg-[#176B45] text-white font-bold text-center rounded-[2px] text-xs cursor-pointer"
+                      className="py-2.5 bg-[#176B45] text-white font-bold text-center rounded-[3px] text-xs cursor-pointer"
                     >
                       Agent Register
                     </button>
@@ -648,10 +608,9 @@ export function Header({ isHomePage = false }: HeaderProps) {
               )}
               <button
                 onClick={() => handleNav('/list-property')}
-                className="w-full py-3 bg-[#176B45] hover:bg-[#103D2C] text-white font-bold text-center rounded-[2px] flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-[background-color] duration-150 text-xs uppercase tracking-wider"
+                className="w-full py-3 bg-[#176B45] hover:bg-[#103D2C] text-white font-bold text-center rounded-[3px] cursor-pointer transition-colors text-xs uppercase tracking-wider"
               >
-                <span>Post Your Property Free</span>
-                <span className="text-xs">→</span>
+                Post Your Property Free
               </button>
             </div>
           </div>

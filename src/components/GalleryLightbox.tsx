@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface GalleryLightboxProps {
   images: string[];
@@ -36,7 +35,6 @@ export function GalleryLightbox({
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
   }, [images.length]);
 
-  // Keyboard navigation & lock scroll
   useEffect(() => {
     if (!isOpen) return;
 
@@ -56,7 +54,6 @@ export function GalleryLightbox({
     };
   }, [isOpen, onClose, handleNext, handlePrev]);
 
-  // Touch swipe support
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -102,30 +99,26 @@ export function GalleryLightbox({
         <div>
           <h2 className="text-sm sm:text-base font-bold text-white line-clamp-1">{title}</h2>
           <span className="text-xs text-white/70 tabular-nums">
-            Photo {currentIndex + 1} of {images.length} {isZoomed ? '· Zoomed (Click image to reset)' : ''}
+            Photo {currentIndex + 1} of {images.length}{' '}
+            {isZoomed ? '· Zoomed (Click image to reset)' : ''}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Zoom In/Out Toggle Button */}
           <button
             type="button"
             onClick={() => setIsZoomed((prev) => !prev)}
-            className="p-2.5 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-[3px] transition-colors focus-visible:outline-2 focus-visible:outline-white flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
-            aria-label={isZoomed ? 'Zoom out photo' : 'Zoom in photo'}
-            title={isZoomed ? 'Reset zoom' : 'Magnify image'}
+            className="px-3.5 py-2 text-white/90 hover:text-white bg-white/10 hover:bg-white/20 rounded-[3px] transition-colors text-xs font-bold uppercase tracking-wider cursor-pointer"
           >
-            {isZoomed ? <ZoomOut className="w-5 h-5" /> : <ZoomIn className="w-5 h-5" />}
-            <span className="hidden sm:inline">{isZoomed ? '100%' : 'Zoom'}</span>
+            {isZoomed ? 'Reset Zoom' : 'Zoom'}
           </button>
 
           <button
             ref={closeButtonRef}
             onClick={onClose}
-            className="p-2.5 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-[3px] transition-colors focus-visible:outline-2 focus-visible:outline-white cursor-pointer"
-            aria-label="Close photo gallery"
+            className="px-3.5 py-2 text-white/90 hover:text-white bg-white/10 hover:bg-white/20 rounded-[3px] transition-colors text-xs font-bold uppercase tracking-wider cursor-pointer"
           >
-            <X className="w-6 h-6" />
+            Close
           </button>
         </div>
       </div>
@@ -147,30 +140,28 @@ export function GalleryLightbox({
           }`}
         />
 
-        {/* Prev Button */}
         {images.length > 1 && (
           <button
             onClick={handlePrev}
-            className="absolute left-2 sm:left-4 p-3 text-white/90 hover:text-white bg-black/40 hover:bg-black/70 rounded-[3px] transition-colors focus-visible:outline-2 focus-visible:outline-white cursor-pointer"
+            className="absolute left-2 sm:left-4 px-3.5 py-2.5 text-white/90 hover:text-white bg-black/50 hover:bg-black/80 rounded-[3px] transition-colors text-xs font-bold uppercase tracking-wider cursor-pointer"
             aria-label="Previous photo"
           >
-            <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8" />
+            Prev
           </button>
         )}
 
-        {/* Next Button */}
         {images.length > 1 && (
           <button
             onClick={handleNext}
-            className="absolute right-2 sm:right-4 p-3 text-white/90 hover:text-white bg-black/40 hover:bg-black/70 rounded-[3px] transition-colors focus-visible:outline-2 focus-visible:outline-white cursor-pointer"
+            className="absolute right-2 sm:right-4 px-3.5 py-2.5 text-white/90 hover:text-white bg-black/50 hover:bg-black/80 rounded-[3px] transition-colors text-xs font-bold uppercase tracking-wider cursor-pointer"
             aria-label="Next photo"
           >
-            <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" />
+            Next
           </button>
         )}
       </div>
 
-      {/* Bottom Thumbnail Strip (Hidden if single image) */}
+      {/* Bottom Thumbnail Strip */}
       {images.length > 1 && (
         <div className="flex items-center justify-center gap-2 max-w-[1360px] mx-auto overflow-x-auto py-2 z-10">
           {images.map((img, idx) => (
@@ -180,7 +171,7 @@ export function GalleryLightbox({
                 setIsZoomed(false);
                 setCurrentIndex(idx);
               }}
-              className={`relative w-14 h-10 sm:w-20 sm:h-14 shrink-0 overflow-hidden rounded-[2px] transition-all focus-visible:outline-2 focus-visible:outline-white cursor-pointer ${
+              className={`relative w-14 h-10 sm:w-20 sm:h-14 shrink-0 overflow-hidden rounded-[2px] transition-all cursor-pointer ${
                 currentIndex === idx
                   ? 'ring-2 ring-[#176B45] opacity-100 scale-105'
                   : 'opacity-50 hover:opacity-80'
