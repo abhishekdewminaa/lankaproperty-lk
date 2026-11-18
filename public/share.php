@@ -32,8 +32,9 @@ if (!empty($slug)) {
     $supabaseUrl = 'https://rnedttrpovxswnraezas.supabase.co';
     $supabaseAnonKey = 'sb_publishable_vBaZKq7pyNXrYxRymTNdkQ_hGPZV6ca';
     
-    // Match exact slug or prefix
-    $apiUrl = $supabaseUrl . '/rest/v1/properties?or=(slug.eq.' . urlencode($slug) . ',slug.ilike.' . urlencode($slug . '%') . ')&select=*&limit=1';
+    // Match exact slug, prefix, or listing reference
+    $cleanRaw = rawurldecode($rawSlug);
+    $apiUrl = $supabaseUrl . '/rest/v1/properties?or=(slug.eq.' . urlencode($slug) . ',slug.ilike.' . urlencode($slug . '%') . ',listing_ref.ilike.*' . urlencode($cleanRaw) . '*)&select=*&limit=1';
     
     $response = null;
     if (function_exists('curl_init')) {

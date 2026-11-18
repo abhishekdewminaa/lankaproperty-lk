@@ -713,20 +713,55 @@ class PropertyService {
       const titleSearch = tokens.length > 0 ? tokens.join('%') : normalizedSlug;
 
       try {
-        const { data, error } = await supabase
+        const selectFields = `
+          id, listing_ref, slug, title, description, property_type, purpose,
+          publication_status, status, price_lkr, price_unit, negotiable,
+          price_on_request, city, district, address, latitude, longitude,
+          bedrooms, bathrooms, sqft, land_perches, floors, parking_spaces,
+          hero_image, images, floor_plans, amenities, assigned_agent_name,
+          view_count, inquiry_count, save_count, is_featured, is_trending,
+          trending_velocity_text, collections, published_at, created_at, updated_at
+        `;
+
+        // Stage 1: Exact Slug, Direct UUID, or Listing Reference match
+        let { data, error } = await supabase
           .from('properties')
-          .select(`
-            id, listing_ref, slug, title, description, property_type, purpose,
-            publication_status, status, price_lkr, price_unit, negotiable,
-            price_on_request, city, district, address, latitude, longitude,
-            bedrooms, bathrooms, sqft, land_perches, floors, parking_spaces,
-            hero_image, images, floor_plans, amenities, assigned_agent_name,
-            view_count, inquiry_count, save_count, is_featured, is_trending,
-            trending_velocity_text, collections, published_at, created_at, updated_at
-          `)
-          .or(`slug.ilike.${normalizedSlug},slug.ilike.%${normalizedSlug}%,title.ilike.%${titleSearch}%,id.eq.${validUUID}`)
+          .select(selectFields)
+          .or(`slug.eq.${normalizedSlug},id.eq.${validUUID},listing_ref.ilike.%${cleanRaw}%`)
           .limit(1)
           .maybeSingle();
+
+        // Stage 2: Partial Slug match if exact match not found
+        if (!data) {
+          const res = await supabase
+            .from('properties')
+            .select(selectFields)
+            .or(`slug.ilike.${normalizedSlug}%,slug.ilike.%${normalizedSlug}%`)
+            .limit(1)
+            .maybeSingle();
+          if (res.data) {
+            data = res.data;
+            error = res.error;
+          }
+        }
+
+        // Stage 3: Title Keyword matching fallback
+        if (!data) {
+          const tokens = normalizedSlug.split('-').filter((t) => t.length > 3).slice(0, 4);
+          if (tokens.length > 0) {
+            const titleSearch = tokens.join('%');
+            const res = await supabase
+              .from('properties')
+              .select(selectFields)
+              .ilike('title', `%${titleSearch}%`)
+              .limit(1)
+              .maybeSingle();
+            if (res.data) {
+              data = res.data;
+              error = res.error;
+            }
+          }
+        }
 
         if (data && !error) {
           const mapped: AdminPropertyRecord = {

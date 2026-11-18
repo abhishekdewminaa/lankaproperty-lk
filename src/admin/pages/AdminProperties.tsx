@@ -119,7 +119,10 @@ export function AdminProperties() {
   const handleDuplicate = (property: AdminPropertyRecord) => {
     const duplicated: AdminPropertyRecord = {
       ...property,
-      id: `prop-${Date.now()}`,
+      id:
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `prop-${Date.now()}`,
       title: `${property.title} (Draft Copy)`,
       slug: `${property.slug}-copy-${Date.now().toString().slice(-4)}`,
       publicationStatus: 'draft',

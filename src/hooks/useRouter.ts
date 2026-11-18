@@ -1,12 +1,17 @@
 import { useEffect, useState, useCallback } from 'react';
 
 export function useRouter() {
-  const [currentPath, setCurrentPath] = useState<string>(() => window.location.pathname || '/');
+  const getCleanPath = () => {
+    const raw = window.location.pathname || '/';
+    return raw.length > 1 ? raw.replace(/\/+$/, '') : raw;
+  };
+
+  const [currentPath, setCurrentPath] = useState<string>(getCleanPath);
   const [searchParams, setSearchParams] = useState<URLSearchParams>(() => new URLSearchParams(window.location.search));
 
   useEffect(() => {
     const handleLocationChange = () => {
-      setCurrentPath(window.location.pathname || '/');
+      setCurrentPath(getCleanPath());
       setSearchParams(new URLSearchParams(window.location.search));
     };
 

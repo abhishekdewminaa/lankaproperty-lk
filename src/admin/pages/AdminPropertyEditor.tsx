@@ -71,7 +71,10 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
     if (existingRecord) {
       return { ...existingRecord };
     }
-    const newId = `prop-${Date.now()}`;
+    const newId =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `prop-${Date.now()}`;
     return {
       id: newId,
       slug: '',
@@ -464,13 +467,13 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
     setIsSaving(true);
     setSaveSuccessMessage(null);
 
-    // Auto-generate slug if missing
+    // Auto-generate clean sanitized slug
+    const rawSlugCandidate = formData.slug ? formData.slug.trim() : formData.title.trim();
     const generatedSlug =
-      formData.slug ||
-      formData.title
+      rawSlugCandidate
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '') ||
+        .replace(/^-+|-+$/g, '') ||
       `property-${Date.now().toString().slice(-6)}`;
 
     const draftRecord: AdminPropertyRecord = {
@@ -507,12 +510,12 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
 
     setIsSaving(true);
 
+    const rawSlugCandidate = formData.slug ? formData.slug.trim() : formData.title.trim();
     const generatedSlug =
-      formData.slug ||
-      formData.title
+      rawSlugCandidate
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '') ||
+        .replace(/^-+|-+$/g, '') ||
       `property-${Date.now().toString().slice(-6)}`;
 
     const publishedRecord: AdminPropertyRecord = {

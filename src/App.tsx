@@ -135,7 +135,7 @@ export default function App() {
     }
 
     // Properties list / search
-    if (pathname === '/properties') {
+    if (pathname === '/properties' || pathname === '/properties/') {
       return <PropertiesPage />;
     }
 
