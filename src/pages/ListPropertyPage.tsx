@@ -523,7 +523,7 @@ export function ListPropertyPage() {
                 onClick={() => navigate(`/properties/${publishedProperty.slug}`)}
                 className="w-full sm:w-auto px-8 py-3.5 bg-[#176B45] hover:bg-[#103D2C] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer shadow-md"
               >
-                View Your Live Property Dossier →
+                View Your Live Listing
               </button>
               <button
                 onClick={() => {
@@ -595,7 +595,7 @@ export function ListPropertyPage() {
             {/* Quick Template Fill Bar */}
             <div className="bg-[#E8F3EC]/50 border border-[#176B45]/30 p-4 rounded-[2px] flex flex-wrap items-center justify-between gap-3">
               <span className="text-xs font-bold text-[#103D2C]">
-                ⚡ Quick Pre-Fill Sample Architectural Templates:
+                Quick Pre-Fill Sample Templates:
               </span>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -1028,7 +1028,7 @@ export function ListPropertyPage() {
                 {compressionStats && (
                   <div className="bg-[#E8F3EC] border border-[#176B45]/30 rounded-[2px] p-3 text-xs flex flex-wrap items-center justify-between gap-2">
                     <span className="font-bold text-[#103D2C]">
-                      ✓ {compressionStats.count} photo{compressionStats.count > 1 ? 's' : ''} compressed: {compressionStats.original} → {compressionStats.compressed} ({compressionStats.percentSaved}% bandwidth & storage saved)
+                      {compressionStats.count} photo{compressionStats.count > 1 ? 's' : ''} compressed: {compressionStats.original} {compressionStats.compressed} ({compressionStats.percentSaved}% bandwidth & storage saved)
                     </span>
                     <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#176B45] bg-white px-2 py-0.5 rounded-[2px]">
                       WebP Optimized
@@ -1163,7 +1163,7 @@ export function ListPropertyPage() {
 
                       <div className="pt-4 mt-3 border-t border-[#DDE5DF]/60 flex items-center justify-between text-xs">
                         <span className="font-semibold text-[#5F6B63]">
-                          {isSelected ? '✓ Active Selection' : 'Click to Select'}
+                          {isSelected ? 'Selected' : 'Click to Select'}
                         </span>
                         <span className={`w-4 h-4 rounded-[2px] border flex items-center justify-center text-[10px] font-bold ${
                           isSelected ? 'bg-[#176B45] text-white border-[#176B45]' : 'border-[#DDE5DF] bg-white'
@@ -1183,7 +1183,7 @@ export function ListPropertyPage() {
                   onClick={() => navigate('/advertising-packages')}
                   className="text-xs font-bold text-[#176B45] hover:underline cursor-pointer"
                 >
-                  Compare All Advertising Packages & Detailed Inclusions →
+                  Compare All Advertising Packages & Detailed Inclusions
                 </button>
               </div>
 
@@ -1287,7 +1287,7 @@ export function ListPropertyPage() {
 
                         <div className="pt-3 mt-2 border-t border-[#DDE5DF]/60 flex items-center justify-between text-[11px]">
                           <span className="font-semibold text-[#5F6B63]">
-                            {isSelected ? '✓ Included in Order' : 'Click to Add'}
+                            {isSelected ? 'Included' : 'Click to Add'}
                           </span>
                           <span
                             className={`w-3.5 h-3.5 rounded-[2px] border flex items-center justify-center text-[9px] font-bold ${
@@ -1409,7 +1409,7 @@ export function ListPropertyPage() {
                 onClick={handlePublishProperty}
                 className="w-full py-4 px-8 bg-[#176B45] hover:bg-[#103D2C] active:bg-[#0B2B1F] text-white text-sm font-bold uppercase tracking-widest rounded-[2px] transition-colors cursor-pointer shadow-md disabled:opacity-50"
               >
-                {isSubmitting ? 'Publishing Property Live...' : 'Publish Property Live to Marketplace →'}
+                {isSubmitting ? 'Publishing Property Live...' : 'Publish Property Live to Marketplace'}
               </button>
               <p className="text-[11px] text-[#5F6B63] text-center mt-2.5">
                 Zero sales commission. Your listing will immediately appear in search and the district cadastre.
@@ -1600,7 +1600,7 @@ export function ListPropertyPage() {
               onClick={handlePublishProperty}
               className="w-full py-3.5 px-4 bg-[#C93636] hover:bg-[#A92828] active:bg-[#8F2020] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer shadow-md disabled:opacity-50 text-center block"
             >
-              {isSubmitting ? 'Publishing Property...' : 'Publish Property Live →'}
+              {isSubmitting ? 'Publishing Property...' : 'Publish Property Live'}
             </button>
 
             {/* Trust Assurances */}
@@ -1670,7 +1670,7 @@ export function ListPropertyPage() {
                     }}
                     className="px-3 py-1.5 bg-[#176B45] text-white text-xs font-bold uppercase rounded-[2px] hover:bg-[#103D2C] shrink-0"
                   >
-                    View Live →
+                    View Live
                   </button>
                 </div>
               ))}

@@ -71,7 +71,7 @@ export function OwnerDashboardPage() {
           onClick={() => navigate('/auth?mode=login&role=owner')}
           className="px-6 py-2.5 bg-[#103D2C] text-white text-xs font-bold uppercase rounded-[2px]"
         >
-          Sign In as Property Owner →
+          Sign In as Property Owner
         </button>
       </div>
     );
@@ -185,7 +185,7 @@ export function OwnerDashboardPage() {
               onClick={() => setActiveTab('packages')}
               className="text-[10px] text-[#176B45] underline font-bold mt-1 cursor-pointer block"
             >
-              Upgrade Plan →
+              Upgrade Plan
             </button>
           </div>
         </div>
@@ -237,7 +237,7 @@ export function OwnerDashboardPage() {
                   onClick={() => navigate('/list-property')}
                   className="px-6 py-3 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold uppercase rounded-[2px]"
                 >
-                  Post Your First Property Free →
+                  Post Your First Property Free
                 </button>
               </div>
             ) : (
@@ -307,7 +307,7 @@ export function OwnerDashboardPage() {
                         onClick={() => navigate(`/properties/${prop.slug}`)}
                         className="text-[#176B45] hover:underline font-bold"
                       >
-                        View Live →
+                        View Live
                       </button>
                       <div className="flex items-center gap-1.5">
                         <button
@@ -416,7 +416,7 @@ export function OwnerDashboardPage() {
                             : 'bg-[#103D2C] hover:bg-[#176B45] text-white'
                         }`}
                       >
-                        {isCurrent ? 'Active Plan' : `Activate ${pkg.name} →`}
+                        {isCurrent ? 'Active Plan' : `Activate ${pkg.name}`}
                       </button>
                     </div>
                   </div>
@@ -479,7 +479,7 @@ export function OwnerDashboardPage() {
                       rel="noopener noreferrer"
                       className="px-3 py-1 bg-[#176B45] text-white font-bold rounded-[2px] text-[11px]"
                     >
-                      Reply on WhatsApp →
+                      Reply on WhatsApp
                     </a>
                   </div>
                 </div>
@@ -581,7 +581,7 @@ export function OwnerDashboardPage() {
                             ...editingProperty,
                             images: [...editingProperty.images, ...hostedUrls],
                           });
-                          setOwnerCompressionStats(`✓ ${summary.results.length} photos uploaded to Hostinger SSD (${summary.overallPercentSaved}% space saved)`);
+                          setOwnerCompressionStats(`${summary.results.length} photos uploaded to Hostinger SSD (${summary.overallPercentSaved}% space saved)`);
                         } catch (err: any) {
                           alert(`Compression failed: ${err.message}`);
                         } finally {
@@ -655,7 +655,7 @@ export function OwnerDashboardPage() {
                   type="submit"
                   className="px-6 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white font-bold rounded-[2px]"
                 >
-                  Save Changes →
+                  Save Changes
                 </button>
               </div>
             </form>
@@ -776,7 +776,7 @@ export function OwnerDashboardPage() {
                 }}
                 className="px-6 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-extrabold uppercase tracking-wider rounded-[2px] transition-colors"
               >
-                Activate Boost Placement →
+                Activate Boost Placement
               </button>
             </div>
           </div>

@@ -81,7 +81,7 @@ export function AgentDashboardPage() {
           onClick={() => navigate('/auth?mode=login&role=agent')}
           className="px-6 py-2.5 bg-[#103D2C] text-white text-xs font-bold uppercase rounded-[2px]"
         >
-          Sign In as Real Estate Agent →
+          Sign In as Real Estate Agent
         </button>
       </div>
     );
@@ -207,7 +207,7 @@ export function AgentDashboardPage() {
               onClick={() => setActiveTab('packages')}
               className="text-[10px] text-[#176B45] underline font-bold mt-1 cursor-pointer block"
             >
-              Manage Agency Plan →
+              Manage Agency Plan
             </button>
           </div>
         </div>
@@ -300,7 +300,7 @@ export function AgentDashboardPage() {
                   onClick={() => navigate('/list-property')}
                   className="px-6 py-2.5 bg-[#103D2C] text-white text-xs font-bold uppercase rounded-[2px]"
                 >
-                  List New Property Now →
+                  List New Property Now
                 </button>
               </div>
             ) : (
@@ -359,7 +359,7 @@ export function AgentDashboardPage() {
                         onClick={() => navigate(`/properties/${prop.slug}`)}
                         className="text-[#176B45] font-bold hover:underline"
                       >
-                        View Live →
+                        View Live
                       </button>
                       <div className="flex items-center gap-1.5">
                         <button
@@ -448,7 +448,7 @@ export function AgentDashboardPage() {
                       rel="noopener noreferrer"
                       className="px-3 py-1 bg-[#176B45] text-white font-bold rounded-[2px] text-[11px]"
                     >
-                      Connect on WhatsApp →
+                      Connect on WhatsApp
                     </a>
                   </div>
                 </div>
@@ -485,7 +485,7 @@ export function AgentDashboardPage() {
                         <span className="px-2 py-0.5 bg-[#E8F3EC] text-[#176B45] rounded-[2px]">{wLead.propertyType}</span>
                         {wLead.verifiedBuyer && (
                           <span className="px-2 py-0.5 bg-[#E6F3EB] text-[#176B45] border border-[#176B45]/20 rounded-[2px]">
-                            ✓ Verified Buyer
+                            Verified Buyer
                           </span>
                         )}
                         <span className="text-[#5F6B63]">Ref: {wLead.id}</span>
@@ -521,7 +521,7 @@ export function AgentDashboardPage() {
 
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-[#DDE5DF]">
                     <div className="text-xs text-[#5F6B63]">
-                      Buyer: <span className="font-bold text-[#18251E]">{wLead.buyerName}</span> ({wLead.phone}) ▪ <span className="capitalize">{wLead.buyerType.replace('_', ' ')}</span>
+                      Buyer: <span className="font-bold text-[#18251E]">{wLead.buyerName}</span> ({wLead.phone}) · <span className="capitalize">{wLead.buyerType.replace('_', ' ')}</span>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -543,7 +543,7 @@ export function AgentDashboardPage() {
                         }}
                         className="px-3 py-1.5 bg-[#103D2C] hover:bg-[#176B45] text-white font-bold rounded-[2px] text-xs transition-colors"
                       >
-                        Propose Inventory Listing →
+                        Propose Inventory Listing
                       </button>
                     </div>
                   </div>
@@ -686,7 +686,7 @@ export function AgentDashboardPage() {
                       type="submit"
                       className="px-5 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold rounded-[2px] transition-colors"
                     >
-                      Dispatch Proposal →
+                      Dispatch Proposal
                     </button>
                   </div>
                 </form>
@@ -752,7 +752,7 @@ export function AgentDashboardPage() {
                             : 'bg-[#103D2C] hover:bg-[#176B45] text-white'
                         }`}
                       >
-                        {isCurrent ? 'Active Agency Plan' : `Activate ${pkg.name} →`}
+                        {isCurrent ? 'Active Agency Plan' : `Activate ${pkg.name}`}
                       </button>
                     </div>
                   </div>
@@ -852,7 +852,7 @@ export function AgentDashboardPage() {
                             ...editingProperty,
                             images: [...editingProperty.images, ...hostedUrls],
                           });
-                          setAgentCompressionStats(`✓ ${summary.results.length} photos uploaded to Hostinger SSD (${summary.overallPercentSaved}% space saved)`);
+                          setAgentCompressionStats(`${summary.results.length} photos uploaded to Hostinger SSD (${summary.overallPercentSaved}% space saved)`);
                         } catch (err: any) {
                           alert(`Compression failed: ${err.message}`);
                         } finally {
@@ -926,7 +926,7 @@ export function AgentDashboardPage() {
                   type="submit"
                   className="px-6 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white font-bold rounded-[2px]"
                 >
-                  Save Changes →
+                  Save Changes
                 </button>
               </div>
             </form>
@@ -1047,7 +1047,7 @@ export function AgentDashboardPage() {
                 }}
                 className="px-6 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-extrabold uppercase tracking-wider rounded-[2px] transition-colors"
               >
-                Activate Boost Placement →
+                Activate Boost Placement
               </button>
             </div>
           </div>

@@ -92,19 +92,19 @@ export function AuthPortalPage() {
         </div>
 
         {/* Main Card */}
-        <div className="bg-white border border-[#DDE5DF] rounded-[2px] p-6 sm:p-10 shadow-sm space-y-6">
+        <div className="bg-white border border-[#DDE5DF] rounded-[4px] p-6 sm:p-8 shadow-2xs space-y-6">
           {/* Header Title */}
           <div className="text-center space-y-1.5 border-b border-[#DDE5DF] pb-5">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#176B45]">
-              {role === 'owner' ? 'PROPERTY OWNER DESK' : 'LICENSED AGENT & BROKER DESK'}
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#176B45]">
+              {role === 'owner' ? 'Property Owner Account' : 'Real Estate Agent Account'}
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#103D2C] tracking-tight">
-              {mode === 'login' ? 'Sign In to Your Dashboard' : 'Create Seller / Agent Account'}
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#103D2C] tracking-tight">
+              {mode === 'login' ? 'Sign In to Your Dashboard' : 'Create Your Account'}
             </h1>
             <p className="text-xs text-[#5F6B63]">
               {role === 'owner'
-                ? 'Manage your listed homes, view inquiries, and update your pricing.'
-                : 'Manage your client portfolio, agency branding, and buyer leads.'}
+                ? 'Manage your listed properties, view inquiries, and update pricing.'
+                : 'Manage your agency listings, branding, and buyer inquiries.'}
             </p>
           </div>
 
@@ -280,14 +280,11 @@ export function AuthPortalPage() {
               </label>
               <input
                 type="password"
-                placeholder="••••••••"
+                placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3.5 py-2 text-xs bg-[#FAFBF9] border border-[#DDE5DF] rounded-[2px] focus:outline-none focus:border-[#176B45] focus:bg-white"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#FAFBF9] border border-[#DDE5DF] rounded-[3px] focus:outline-none focus:border-[#103D2C] focus:bg-white"
               />
-              <span className="text-[10px] text-[#5F6B63] mt-0.5 block">
-                (Demo environment: any password is accepted)
-              </span>
             </div>
 
             {mode === 'register' && (
@@ -322,26 +319,26 @@ export function AuthPortalPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer mt-2"
+              className="w-full py-3 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer mt-2"
             >
               {loading
-                ? 'Processing...'
+                ? 'Signing In...'
                 : mode === 'login'
-                ? `Sign In as ${role === 'owner' ? 'Property Owner' : 'Real Estate Agent'} →`
-                : `Complete ${role === 'owner' ? 'Owner' : 'Agent'} Registration →`}
+                ? `Sign In as ${role === 'owner' ? 'Property Owner' : 'Real Estate Agent'}`
+                : `Create ${role === 'owner' ? 'Owner' : 'Agent'} Account`}
             </button>
           </form>
 
-          {/* 1-Click Fast Demo Accounts Section */}
+          {/* Demo Accounts Section */}
           <div className="pt-6 border-t border-[#DDE5DF] space-y-3">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#5F6B63] block text-center">
-              ⚡ 1-Click Instant Demo Login:
+              Quick Demo Sign-In
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
               <button
                 type="button"
                 onClick={() => handleDemoLogin('owner-roshan')}
-                className="p-2.5 bg-[#FAFBF9] border border-[#DDE5DF] hover:border-[#103D2C] rounded-[2px] text-left cursor-pointer transition-colors"
+                className="p-3 bg-[#FAFBF9] border border-[#DDE5DF] hover:border-[#103D2C] rounded-[3px] text-left cursor-pointer transition-colors"
               >
                 <div className="font-bold text-[#103D2C]">Dr. Roshan Senanayake</div>
                 <div className="text-[11px] text-[#5F6B63]">Property Owner · Colombo</div>
@@ -349,7 +346,7 @@ export function AuthPortalPage() {
               <button
                 type="button"
                 onClick={() => handleDemoLogin('agent-rohan')}
-                className="p-2.5 bg-[#FAFBF9] border border-[#DDE5DF] hover:border-[#103D2C] rounded-[2px] text-left cursor-pointer transition-colors"
+                className="p-3 bg-[#FAFBF9] border border-[#DDE5DF] hover:border-[#103D2C] rounded-[3px] text-left cursor-pointer transition-colors"
               >
                 <div className="font-bold text-[#103D2C]">Rohan Wijesekera</div>
                 <div className="text-[11px] text-[#5F6B63]">Colombo Premier Realty (Agent)</div>

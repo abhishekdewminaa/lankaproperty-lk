@@ -201,7 +201,7 @@ export function Header({ isHomePage = false }: HeaderProps) {
                 }`}
                 aria-expanded={currencyMenuOpen}
               >
-                <span className={isHomePage ? 'text-white/75 font-semibold' : 'text-[#5F6B63] font-semibold'}>
+                <span className={`hidden sm:inline ${isHomePage ? 'text-white/75 font-semibold' : 'text-[#5F6B63] font-semibold'}`}>
                   Currency:
                 </span>
                 <span className={isHomePage ? 'text-white font-bold' : 'text-[#103D2C] font-bold'}>
@@ -263,10 +263,10 @@ export function Header({ isHomePage = false }: HeaderProps) {
               </button>
             )}
 
-            {/* Saved Link */}
+            {/* Saved Link (hidden on < sm since it's inside Mobile Menu) */}
             <button
               onClick={() => handleNav('/saved')}
-              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold transition-colors duration-150 rounded-[3px] border cursor-pointer shrink-0 ${
+              className={`hidden sm:flex relative items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold transition-colors duration-150 rounded-[3px] border cursor-pointer shrink-0 ${
                 isHomePage
                   ? 'text-white border-white/25 bg-white/10 hover:bg-white/20'
                   : pathname === '/saved'
