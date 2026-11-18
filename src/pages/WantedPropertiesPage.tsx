@@ -152,67 +152,34 @@ export function WantedPropertiesPage() {
         keywords="wanted property sri lanka, buyer requests colombo, buyers seeking houses kandy, buyer board galle property"
       />
 
-      {/* Header Banner */}
-      <section className="bg-[#103D2C] text-white py-12 px-4 border-b border-[#18251E]">
-        <div className="max-w-7xl mx-auto space-y-4">
+      {/* Page Header Banner */}
+      <section className="bg-white border-b border-[#DDE5DF] py-10 sm:py-14">
+        <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="space-y-2 max-w-3xl">
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-                Sri Lanka Wanted Property Board
+            <div className="space-y-2 max-w-2xl">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#176B45] block">
+                Buyer Requirements
+              </span>
+              <h1 className="text-3xl sm:text-4xl font-bold text-[#103D2C] tracking-tight">
+                Wanted Properties Board
               </h1>
-              <p className="text-sm text-[#DDE5DF] leading-relaxed">
-                Pre-qualified local buyers, high-net-worth diaspora returnees, and corporate funds actively seeking properties. Have a matching listing? Submit directly to the buyer or authorized broker.
+              <p className="text-sm sm:text-base text-[#5F6B63] leading-relaxed">
+                Browse active buyer requirements across Sri Lanka. If you have a matching property, send your listing details directly to the buyer.
               </p>
             </div>
 
             <button
               onClick={() => setIsPostModalOpen(true)}
-              className="px-6 py-3 bg-[#176B45] hover:bg-[#115236] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] shadow-xs transition-colors self-start md:self-auto shrink-0 cursor-pointer"
+              className="px-6 py-3 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors self-start md:self-auto shrink-0 cursor-pointer"
             >
-              Post Wanted Property Request
+              Post Buyer Request
             </button>
-          </div>
-
-          {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-white/10 text-xs">
-            <div>
-              <div className="text-[#66C296] font-bold uppercase tracking-wider text-[10px]">
-                Active Demands
-              </div>
-              <div className="text-xl font-extrabold text-white mt-0.5">
-                {leads.length}+ Leads Active
-              </div>
-            </div>
-            <div>
-              <div className="text-[#66C296] font-bold uppercase tracking-wider text-[10px]">
-                Combined Buyer Capital
-              </div>
-              <div className="text-xl font-extrabold text-white mt-0.5">
-                Rs. 3.4B+ Allocated
-              </div>
-            </div>
-            <div>
-              <div className="text-[#66C296] font-bold uppercase tracking-wider text-[10px]">
-                Average Closing Window
-              </div>
-              <div className="text-xl font-extrabold text-white mt-0.5">
-                21 Days
-              </div>
-            </div>
-            <div>
-              <div className="text-[#66C296] font-bold uppercase tracking-wider text-[10px]">
-                Verification Standard
-              </div>
-              <div className="text-xl font-extrabold text-white mt-0.5">
-                NIC & Phone Vetted
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12 py-8 sm:py-10 space-y-6">
         {/* Filter Bar */}
         <div className="bg-white border border-[#DDE5DF] rounded-[3px] p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
@@ -342,8 +309,8 @@ export function WantedPropertiesPage() {
                       <span className="px-2 py-0.5 rounded-[2px] bg-[#103D2C] text-white">
                         {lead.district}
                       </span>
-                      <span className="px-2 py-0.5 rounded-[2px] bg-[#EAEFEA] text-[#176B45]">
-                        {lead.propertyType}
+                      <span className="px-2 py-0.5 rounded-[2px] bg-[#E8F3EC] text-[#103D2C]">
+                        {lead.propertyType === 'commercial' ? 'Business' : lead.propertyType}
                       </span>
                       {lead.verifiedBuyer && (
                         <span className="px-2 py-0.5 rounded-[2px] bg-[#E6F3EB] text-[#176B45] border border-[#176B45]/20">
