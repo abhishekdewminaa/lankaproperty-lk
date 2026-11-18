@@ -9,6 +9,7 @@ import { PropertyDetailPage } from './pages/PropertyDetailPage';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { CompareProvider } from './context/CompareContext';
 import { CompareTray } from './components/CompareTray';
+import { LaunchSplash } from './components/LaunchSplash';
 import { SuperAdminSecurityModal } from './components/SuperAdminSecurityModal';
 import { SeoHead } from './components/SeoHead';
 import { superAdminSecurityService } from './services/superAdminSecurityService';
@@ -295,6 +296,7 @@ export default function App() {
   return (
     <CurrencyProvider>
       <CompareProvider>
+        <LaunchSplash />
         <div className="min-h-screen flex flex-col bg-white text-[#18251E]">
           {/* Accessible Skip Link */}
           <a

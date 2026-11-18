@@ -116,7 +116,61 @@
     </script>
   </head>
   <body class="bg-white text-[#18251E] antialiased selection:bg-[#E8F3EC] selection:text-[#103D2C]">
-    <div id="root"></div>
+    <div id="root">
+      <!-- 0ms Pre-Boot Branded Launch Shell (replaced seamlessly when React mounts) -->
+      <style>
+        #lp-preboot {
+          position: fixed;
+          inset: 0;
+          background: #ffffff;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+          padding: 24px;
+          z-index: 9999;
+        }
+        #lp-preboot-bar-track {
+          width: 240px;
+          height: 5px;
+          background: #E8F3EC;
+          border-radius: 999px;
+          overflow: hidden;
+          margin-top: 22px;
+        }
+        #lp-preboot-bar-fill {
+          width: 45%;
+          height: 100%;
+          background: linear-gradient(90deg, #103D2C, #176B45);
+          border-radius: 999px;
+          animation: lpPrebootSlide 1.1s ease-in-out infinite;
+        }
+        @keyframes lpPrebootSlide {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(260%); }
+        }
+      </style>
+      <div id="lp-preboot" aria-label="Checking browser">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <svg viewBox="0 0 42 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:52px;height:40px;" aria-hidden="true">
+            <circle cx="17.5" cy="14.5" r="5.5" fill="#F59E0B" />
+            <path d="M4 26H16.5V19.5L26 10.5L36.5 20.5" stroke="#C93636" stroke-width="3.2" stroke-linecap="square" stroke-linejoin="miter" />
+            <path d="M12.5 16L26 4L39.5 16.5" stroke="#C93636" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M9.5 24.5C9.5 19.5 10 14.5 11.5 10.5M11.5 10.5C9 9.5 6.5 10.5 5 12M11.5 10.5C13.5 9 16 9.5 17 11M11.5 10.5C10.5 7.5 11.5 5 13.5 4" stroke="#176B45" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span style="font-size:28px;font-weight:800;letter-spacing:-0.02em;color:#103D2C;line-height:1;">
+            Lanka<span style="color:#176B45;">Property</span><span style="font-size:15px;font-weight:700;color:#5F6B63;margin-left:2px;">.lk</span>
+          </span>
+        </div>
+        <div id="lp-preboot-bar-track">
+          <div id="lp-preboot-bar-fill"></div>
+        </div>
+        <p style="margin-top:14px;font-size:13px;font-weight:600;color:#5F6B63;letter-spacing:0.01em;">
+          Checking browser...
+        </p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
