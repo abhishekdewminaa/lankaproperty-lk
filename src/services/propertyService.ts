@@ -295,21 +295,34 @@ class PropertyService {
           recordVersion: 1,
         }));
 
+        // Deduplicate remote records by normalized title + city so duplicate submissions never surface twice
+        const seenRemoteSignatures = new Set<string>();
+        const dedupedRemote: AdminPropertyRecord[] = [];
         for (const r of mappedRecords) {
+          const sig = `${(r.title || '').trim().toLowerCase()}::${(r.location?.city || '').trim().toLowerCase()}`;
+          if (seenRemoteSignatures.has(sig)) continue;
+          seenRemoteSignatures.add(sig);
+          dedupedRemote.push(r);
+        }
+
+        for (const r of dedupedRemote) {
           this.remoteSyncedIds.add(r.id);
           this.remoteSyncedIds.add(ensureValidUUID(r.id));
           if (r.slug) this.remoteSyncedIds.add(r.slug);
         }
 
         // Preserve any local-only records not yet synced to Supabase
-        const unsyncedLocal = this.records.filter(
-          (local) =>
+        const unsyncedLocal = this.records.filter((local) => {
+          const sig = `${(local.title || '').trim().toLowerCase()}::${(local.location?.city || '').trim().toLowerCase()}`;
+          return (
             !this.remoteSyncedIds.has(local.id) &&
             !this.remoteSyncedIds.has(ensureValidUUID(local.id)) &&
-            !this.remoteSyncedIds.has(local.slug)
-        );
+            !this.remoteSyncedIds.has(local.slug) &&
+            !seenRemoteSignatures.has(sig)
+          );
+        });
 
-        this.records = [...unsyncedLocal, ...mappedRecords];
+        this.records = [...unsyncedLocal, ...dedupedRemote];
         localStorage.setItem(STORAGE_LAST_SYNC_KEY, now.toString());
         this.notify();
         return true;
@@ -658,7 +671,16 @@ class PropertyService {
    * Only published listings that are active or reserved (not archived, draft, or rejected)
    */
   getPublicEligibleProperties(): AdminPropertyRecord[] {
-    return this.records.filter((p) => p.publicationStatus === 'published' && p.status !== 'sold');
+    const seenSignatures = new Set<string>();
+    const result: AdminPropertyRecord[] = [];
+    for (const p of this.records) {
+      if (p.publicationStatus !== 'published' || p.status === 'sold') continue;
+      const sig = `${(p.title || '').trim().toLowerCase()}::${(p.location?.city || '').trim().toLowerCase()}`;
+      if (seenSignatures.has(sig)) continue;
+      seenSignatures.add(sig);
+      result.push(p);
+    }
+    return result;
   }
 
   /**

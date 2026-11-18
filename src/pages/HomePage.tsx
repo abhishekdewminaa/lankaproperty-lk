@@ -98,6 +98,7 @@ export function HomePage() {
 
   // Featured Properties (Strictly balanced 6 items for 3-column grid so no orphan card ever appears)
   const featuredShowcaseProperties = useMemo(() => {
+    const normalizeTitle = (t: string) => t.trim().toLowerCase();
     const flaggedFeatured = eligibleProperties.filter((p) => p.isFeatured);
     let pool = flaggedFeatured.length > 0 ? [...flaggedFeatured] : [...eligibleProperties];
 
@@ -107,23 +108,49 @@ export function HomePage() {
           ? p.type === 'business' || p.type === 'commercial'
           : p.type === featuredCategoryFilter
       );
-    } else if (pool.length < 6) {
-      // Backfill with remaining eligible properties so the 3x2 grid is always complete and balanced
-      const existingIds = new Set(pool.map((p) => p.id));
+    }
+
+    const deduped: typeof pool = [];
+    const seenIds = new Set<string>();
+    const seenTitles = new Set<string>();
+    const seenCovers = new Set<string>();
+
+    const tryAdd = (prop: (typeof pool)[number], enforceUniqueCover: boolean) => {
+      const titleKey = normalizeTitle(prop.title);
+      const cover = prop.images?.[0] || '';
+      if (seenIds.has(prop.id) || seenTitles.has(titleKey)) return false;
+      if (enforceUniqueCover && cover && seenCovers.has(cover)) return false;
+      seenIds.add(prop.id);
+      seenTitles.add(titleKey);
+      if (cover) seenCovers.add(cover);
+      deduped.push(prop);
+      return true;
+    };
+
+    for (const prop of pool) {
+      tryAdd(prop, true);
+      if (deduped.length >= 6) break;
+    }
+
+    if (featuredCategoryFilter === 'all' && deduped.length < 6) {
       for (const prop of eligibleProperties) {
-        if (!existingIds.has(prop.id)) {
-          pool.push(prop);
-          existingIds.add(prop.id);
+        tryAdd(prop, true);
+        if (deduped.length >= 6) break;
+      }
+      if (deduped.length < 6) {
+        for (const prop of eligibleProperties) {
+          tryAdd(prop, false);
+          if (deduped.length >= 6) break;
         }
-        if (pool.length >= 6) break;
       }
     }
 
-    return pool.slice(0, 6);
+    return deduped.slice(0, 6);
   }, [eligibleProperties, featuredCategoryFilter]);
 
   // Latest & Trending Properties (Strictly balanced 6 items for 3-column grid)
   const trendingShowcaseProperties = useMemo(() => {
+    const normalizeTitle = (t: string) => t.trim().toLowerCase();
     const flaggedTrending = eligibleProperties.filter((p) => p.isTrending);
     let pool = flaggedTrending.length > 0 ? [...flaggedTrending] : [...eligibleProperties];
 
@@ -133,18 +160,44 @@ export function HomePage() {
           ? p.type === 'business' || p.type === 'commercial'
           : p.type === trendingCategoryFilter
       );
-    } else if (pool.length < 6) {
-      const existingIds = new Set(pool.map((p) => p.id));
+    }
+
+    const deduped: typeof pool = [];
+    const seenIds = new Set<string>();
+    const seenTitles = new Set<string>();
+    const seenCovers = new Set<string>();
+
+    const tryAdd = (prop: (typeof pool)[number], enforceUniqueCover: boolean) => {
+      const titleKey = normalizeTitle(prop.title);
+      const cover = prop.images?.[0] || '';
+      if (seenIds.has(prop.id) || seenTitles.has(titleKey)) return false;
+      if (enforceUniqueCover && cover && seenCovers.has(cover)) return false;
+      seenIds.add(prop.id);
+      seenTitles.add(titleKey);
+      if (cover) seenCovers.add(cover);
+      deduped.push(prop);
+      return true;
+    };
+
+    for (const prop of pool) {
+      tryAdd(prop, true);
+      if (deduped.length >= 6) break;
+    }
+
+    if (trendingCategoryFilter === 'all' && deduped.length < 6) {
       for (const prop of eligibleProperties) {
-        if (!existingIds.has(prop.id)) {
-          pool.push(prop);
-          existingIds.add(prop.id);
+        tryAdd(prop, true);
+        if (deduped.length >= 6) break;
+      }
+      if (deduped.length < 6) {
+        for (const prop of eligibleProperties) {
+          tryAdd(prop, false);
+          if (deduped.length >= 6) break;
         }
-        if (pool.length >= 6) break;
       }
     }
 
-    return pool.slice(0, 6);
+    return deduped.slice(0, 6);
   }, [eligibleProperties, trendingCategoryFilter]);
 
   // District counts
