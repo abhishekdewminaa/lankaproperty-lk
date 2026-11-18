@@ -250,7 +250,7 @@ export function parseHeuristic(
   const titleAndStart = `${sections.titleCandidate || ''} ${rawText.slice(0, 350)}`;
 
   const detectCategoryFromSegment = (seg: string): { type: 'house' | 'apartment' | 'land' | 'hotel' | 'business'; excerpt: string } | null => {
-    const landMatch = seg.match(/\b(?:bare land|residential land|commercial land|agricultural land|paddy land|tea estate|coconut estate|rubber estate|beachfront land|land|plot|plots|ඉඩම|காணி)\b/i);
+    const landMatch = seg.match(/\b(?:bare land|residential land|commercial land|agricultural land|agricultural property|paddy land|tea estate|coconut estate|rubber estate|cinnamon estate|beachfront land|plantation|estate|land|plot|plots|ඉඩම|காணி)\b|\b\d+(?:\.\d+)?[- ]?acre\b/i);
     const aptMatch = seg.match(/\b(?:apartment|condo|condominium|residencies|flat|penthouse|ඇපාර්ට්මන්ට්|அபார்ட்மெண்ட்)\b/i);
     const hotelMatch = seg.match(/\b(?:boutique hotel|guest house|guesthouse|hotel|resort|cabana|eco lodge)\b/i);
     const bizMatch = seg.match(/\b(?:commercial|office building|factory|warehouse|showroom|shop|වාණිජ)\b/i);
