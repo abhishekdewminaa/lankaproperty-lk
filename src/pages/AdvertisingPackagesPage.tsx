@@ -7,25 +7,6 @@ import {
   AdvertisedPackage,
   AdvertisingAddOn,
 } from '../services/advertisingPackageService';
-import {
-  Check,
-  Plus,
-  ShieldCheck,
-  Video,
-  Sparkles,
-  ArrowRight,
-  TrendingUp,
-  Globe,
-  Award,
-  ChevronDown,
-  Layers,
-  CheckCircle2,
-  DollarSign,
-  Radio,
-  FileCheck,
-  PhoneCall,
-  Sliders,
-} from 'lucide-react';
 
 export function AdvertisingPackagesPage() {
   const { navigate } = useRouter();
@@ -329,11 +310,10 @@ export function AdvertisingPackagesPage() {
                     </p>
                   </div>
 
-                  {/* Bullet points */}
                   <ul className="mt-6 pt-4 border-t border-[#DDE5DF] space-y-2.5 text-xs text-[#18251E]">
                     {pkg.features.map((feat, idx) => (
                       <li key={idx} className="flex items-start gap-2 leading-relaxed">
-                        <span className="text-[#176B45] font-bold mt-0.5">✓</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#176B45] mt-1.5 shrink-0" />
                         <span>{feat}</span>
                       </li>
                     ))}
@@ -344,7 +324,7 @@ export function AdvertisingPackagesPage() {
                   <button
                     type="button"
                     onClick={() => handleSelectPackageAndCustomize(pkg.id)}
-                    className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer text-center ${
+                    className={`w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer text-center ${
                       isSelected
                         ? 'bg-[#176B45] text-white shadow-xs'
                         : isHighlight
@@ -352,14 +332,14 @@ export function AdvertisingPackagesPage() {
                         : 'bg-[#103D2C] hover:bg-[#176B45] text-white shadow-xs'
                     }`}
                   >
-                    {isSelected ? '✓ Plan Selected — Customize Below' : `Select ${pkg.name} →`}
+                    {isSelected ? 'Plan Selected — Customize Below' : `Select ${pkg.name}`}
                   </button>
                   <button
                     type="button"
                     onClick={() => navigate(`/list-property?package=${pkg.id}`)}
-                    className="w-full py-1.5 text-[11px] text-[#5F6B63] hover:text-[#103D2C] hover:underline text-center font-semibold block"
+                    className="w-full py-1.5 text-[11px] text-[#5F6B63] hover:text-[#103D2C] hover:underline text-center font-semibold block cursor-pointer"
                   >
-                    Direct Publish with this tier only →
+                    Publish directly with this plan
                   </button>
                 </div>
               </div>
@@ -374,9 +354,8 @@ export function AdvertisingPackagesPage() {
       <section id="addons-studio" className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12 py-14 border-t border-[#DDE5DF]">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#E8F3EC] text-[#103D2C] text-[10px] font-black uppercase tracking-widest rounded-[2px] border border-[#176B45]/30 mb-2">
-              <span>▪</span>
-              <span>Step 2 · High-Impact Campaign Enhancements</span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#E8F3EC] text-[#103D2C] text-[10px] font-bold uppercase tracking-wider rounded-[2px] border border-[#176B45]/30 mb-2">
+              <span>Step 2 · Campaign Enhancements</span>
             </div>
             <h2 className="text-2xl sm:text-4xl font-extrabold text-[#103D2C] tracking-tight">
               Select Advertising Add-Ons
@@ -462,16 +441,16 @@ export function AdvertisingPackagesPage() {
 
                   <div className="pt-4 mt-3 border-t border-[#DDE5DF]/60 flex items-center justify-between text-xs">
                     <span className="font-bold text-[#176B45]">
-                      {isChecked ? '✓ Add-On Added' : '+ Click to Include'}
+                      {isChecked ? 'Added to Campaign' : 'Click to Include'}
                     </span>
                     <span
-                      className={`w-5 h-5 rounded-[2px] border flex items-center justify-center text-xs font-bold ${
+                      className={`px-2 py-0.5 rounded-[2px] border text-[10px] font-bold uppercase ${
                         isChecked
                           ? 'bg-[#176B45] text-white border-[#176B45]'
-                          : 'border-[#DDE5DF] bg-white text-transparent'
+                          : 'border-[#DDE5DF] bg-white text-[#5F6B63]'
                       }`}
                     >
-                      ✓
+                      {isChecked ? 'Selected' : 'Add'}
                     </span>
                   </div>
                 </div>
@@ -543,10 +522,10 @@ export function AdvertisingPackagesPage() {
                       </div>
                       <button
                         onClick={() => toggleAddOn(addon.id)}
-                        className="text-gray-400 hover:text-[#C93636] font-bold px-1"
+                        className="text-xs font-semibold text-[#5F6B63] hover:text-[#C93636] px-1.5 cursor-pointer"
                         title="Remove add-on"
                       >
-                        ✕
+                        Remove
                       </button>
                     </div>
                   ))}
@@ -587,16 +566,16 @@ export function AdvertisingPackagesPage() {
                   const bookingEl = document.getElementById('booking-desk');
                   if (bookingEl) bookingEl.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="w-full py-3 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer text-center shadow-xs"
+                className="w-full py-3 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer text-center shadow-xs"
               >
-                Book Custom Media Bundle →
+                Book Custom Media Bundle
               </button>
               <button
                 type="button"
                 onClick={() => navigate(`/list-property?package=${selectedPackageId}`)}
-                className="w-full py-2 bg-white hover:bg-[#F5F8F5] text-[#103D2C] border border-[#DDE5DF] text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer text-center"
+                className="w-full py-2 bg-white hover:bg-[#F5F8F5] text-[#103D2C] border border-[#DDE5DF] text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer text-center"
               >
-                Proceed to Self-Service Listing Portal →
+                Proceed to Listing Form
               </button>
             </div>
           </div>
@@ -625,8 +604,8 @@ export function AdvertisingPackagesPage() {
                 <th className="p-4 font-bold text-[#C93636]">Premium Pro</th>
                 <th className="p-4 font-bold">Elite Pro</th>
                 <th className="p-4 font-bold">Gold Package</th>
-                <th className="p-4 font-bold text-[#176B45]">Platinum Monograph</th>
-                <th className="p-4 font-bold text-[#C93636]">Diamond Sovereign</th>
+                <th className="p-4 font-bold text-[#176B45]">Platinum Plan</th>
+                <th className="p-4 font-bold text-[#C93636]">Diamond Plan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DDE5DF] text-[#18251E]">
@@ -669,20 +648,20 @@ export function AdvertisingPackagesPage() {
               <tr>
                 <td className="p-4 font-bold text-[#5F6B63]">Direct WhatsApp Button</td>
                 <td className="p-4 text-gray-300">—</td>
-                <td className="p-4 text-[#176B45] font-bold">✓ Included</td>
-                <td className="p-4 text-[#176B45] font-bold">✓ Included</td>
-                <td className="p-4 text-[#176B45] font-bold">✓ Included</td>
-                <td className="p-4 text-[#176B45] font-bold">✓ Included</td>
-                <td className="p-4 text-[#176B45] font-bold">✓ Included</td>
+                <td className="p-4 text-[#176B45] font-bold">Included</td>
+                <td className="p-4 text-[#176B45] font-bold">Included</td>
+                <td className="p-4 text-[#176B45] font-bold">Included</td>
+                <td className="p-4 text-[#176B45] font-bold">Included</td>
+                <td className="p-4 text-[#176B45] font-bold">Included</td>
               </tr>
               <tr>
                 <td className="p-4 font-bold text-[#5F6B63]">Verified Legal Deed Seal</td>
                 <td className="p-4 text-gray-300">—</td>
                 <td className="p-4 text-gray-300">—</td>
-                <td className="p-4 text-[#176B45] font-bold">✓ Included</td>
-                <td className="p-4 text-[#176B45] font-bold">✓ Included</td>
-                <td className="p-4 text-[#176B45] font-bold">✓ Certified Seal</td>
-                <td className="p-4 text-[#176B45] font-bold">✓ Certified Seal</td>
+                <td className="p-4 text-[#176B45] font-bold">Included</td>
+                <td className="p-4 text-[#176B45] font-bold">Included</td>
+                <td className="p-4 text-[#176B45] font-bold">Certified Seal</td>
+                <td className="p-4 text-[#176B45] font-bold">Certified Seal</td>
               </tr>
               <tr>
                 <td className="p-4 font-bold text-[#5F6B63]">Overseas Expat Broadcast</td>
@@ -716,8 +695,7 @@ export function AdvertisingPackagesPage() {
           </div>
 
           {formSubmitted ? (
-            <div className="p-8 bg-[#E8F3EC] border border-[#176B45] rounded-[3px] text-center space-y-3 animate-fadeIn">
-              <CheckCircle2 className="w-12 h-12 text-[#176B45] mx-auto" />
+            <div className="p-8 bg-[#E8F3EC] border border-[#176B45] rounded-[4px] text-center space-y-3">
               <h3 className="text-xl font-bold text-[#103D2C]">
                 Campaign Booking Request Received
               </h3>
@@ -844,9 +822,9 @@ export function AdvertisingPackagesPage() {
                 </span>
                 <button
                   type="submit"
-                  className="px-8 py-3 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer shadow-xs"
+                  className="px-8 py-3 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer"
                 >
-                  Submit Property for Advertising Review →
+                  Submit Property for Advertising Review
                 </button>
               </div>
             </form>
@@ -874,15 +852,15 @@ export function AdvertisingPackagesPage() {
             <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-end">
               <button
                 onClick={() => navigate('/auth?role=agent&mode=register')}
-                className="px-6 py-3 bg-[#176B45] hover:bg-[#115236] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors text-center cursor-pointer shadow-xs"
+                className="px-6 py-3 bg-[#176B45] hover:bg-[#115236] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors text-center cursor-pointer"
               >
-                Open Real Estate Agency Account →
+                Open Real Estate Agency Account
               </button>
               <button
                 onClick={() => navigate('/developments')}
-                className="px-6 py-3 bg-transparent hover:bg-white/10 text-white border border-[#A3B8AD] text-xs font-bold uppercase tracking-wider rounded-[2px] transition-colors text-center cursor-pointer"
+                className="px-6 py-3 bg-transparent hover:bg-white/10 text-white border border-[#A3B8AD] text-xs font-bold uppercase tracking-wider rounded-[3px] transition-colors text-center cursor-pointer"
               >
-                View Premier Masterplans →
+                View New Developments
               </button>
             </div>
           </div>

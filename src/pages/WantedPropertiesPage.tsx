@@ -167,9 +167,9 @@ export function WantedPropertiesPage() {
 
             <button
               onClick={() => setIsPostModalOpen(true)}
-              className="px-6 py-3 bg-[#C93636] hover:bg-[#B02828] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] shadow-sm transition-colors self-start md:self-auto shrink-0"
+              className="px-6 py-3 bg-[#176B45] hover:bg-[#115236] text-white text-xs font-bold uppercase tracking-wider rounded-[3px] shadow-xs transition-colors self-start md:self-auto shrink-0 cursor-pointer"
             >
-              Post Your Wanted Property Request →
+              Post Wanted Property Request
             </button>
           </div>
 
@@ -347,7 +347,7 @@ export function WantedPropertiesPage() {
                       </span>
                       {lead.verifiedBuyer && (
                         <span className="px-2 py-0.5 rounded-[2px] bg-[#E6F3EB] text-[#176B45] border border-[#176B45]/20">
-                          ✓ Verified Buyer
+                          Verified Buyer
                         </span>
                       )}
                       <span className="text-[#5F6B63] font-normal normal-case">
@@ -370,10 +370,10 @@ export function WantedPropertiesPage() {
                     </div>
                     <div className="text-[10px] text-[#5F6B63] mt-0.5">
                       {lead.urgency === 'immediate'
-                        ? '▪ Immediate closing'
+                        ? 'Immediate closing'
                         : lead.urgency === 'within_30_days'
-                        ? '▪ Ready within 30 days'
-                        : '▪ Standard timeframe'}
+                        ? 'Ready within 30 days'
+                        : 'Standard timeframe'}
                     </div>
                   </div>
                 </div>
@@ -416,7 +416,7 @@ export function WantedPropertiesPage() {
                     </div>
                     <div className="text-[11px]">
                       Contact: <span className="font-semibold text-[#103D2C]">{lead.phone}</span>
-                      {lead.email && <span className="ml-2 text-[#7A8880]">▪ {lead.email}</span>}
+                      {lead.email && <span className="ml-2 text-[#7A8880]">· {lead.email}</span>}
                     </div>
                   </div>
 
@@ -426,9 +426,9 @@ export function WantedPropertiesPage() {
                         setMatchingLead(lead);
                         setPropPriceLkr(lead.budgetMinLkr);
                       }}
-                      className="px-4 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold rounded-[2px] transition-colors"
+                      className="px-4 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold rounded-[3px] transition-colors cursor-pointer"
                     >
-                      I Have a Matching Listing →
+                      Propose Matching Property
                     </button>
                   </div>
                 </div>
@@ -444,16 +444,13 @@ export function WantedPropertiesPage() {
           <div className="bg-white border border-[#DDE5DF] rounded-[4px] max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsPostModalOpen(false)}
-              className="absolute top-4 right-4 text-sm text-[#7A8880] hover:text-[#18251E]"
+              className="absolute top-4 right-4 px-2.5 py-1 text-xs font-bold text-[#5F6B63] hover:text-[#18251E] border border-[#DDE5DF] rounded-[3px] cursor-pointer"
             >
-              ✕
+              Close
             </button>
 
             {postSuccessMessage ? (
               <div className="py-12 text-center space-y-3">
-                <div className="w-12 h-12 mx-auto rounded-full bg-[#103D2C]/10 text-[#103D2C] flex items-center justify-center text-xl font-bold">
-                  ✓
-                </div>
                 <h4 className="text-xl font-extrabold text-[#103D2C]">
                   Wanted Requirement Published
                 </h4>
@@ -680,9 +677,9 @@ export function WantedPropertiesPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold rounded-[2px] transition-colors"
+                    className="px-5 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold rounded-[3px] transition-colors cursor-pointer"
                   >
-                    Publish Wanted Requirement →
+                    Publish Wanted Requirement
                   </button>
                 </div>
               </form>
@@ -697,18 +694,15 @@ export function WantedPropertiesPage() {
           <div className="bg-white border border-[#DDE5DF] rounded-[4px] max-w-lg w-full p-6 shadow-2xl relative">
             <button
               onClick={() => setMatchingLead(null)}
-              className="absolute top-4 right-4 text-sm text-[#7A8880] hover:text-[#18251E]"
+              className="absolute top-4 right-4 px-2.5 py-1 text-xs font-bold text-[#5F6B63] hover:text-[#18251E] border border-[#DDE5DF] rounded-[3px] cursor-pointer"
             >
-              ✕
+              Close
             </button>
 
             {proposalSuccess ? (
               <div className="py-8 text-center space-y-3">
-                <div className="w-12 h-12 mx-auto rounded-full bg-[#103D2C]/10 text-[#103D2C] flex items-center justify-center text-xl font-bold">
-                  ✓
-                </div>
                 <h4 className="text-lg font-extrabold text-[#103D2C]">
-                  Listing Transmitted to Buyer
+                  Listing Sent to Buyer
                 </h4>
                 <p className="text-xs text-[#5F6B63] max-w-sm mx-auto">
                   Your property recommendation has been forwarded directly to {matchingLead.buyerName} via their preferred channel ({matchingLead.preferredContactMethod}).
@@ -849,9 +843,9 @@ export function WantedPropertiesPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold rounded-[2px] transition-colors"
+                    className="px-5 py-2 bg-[#103D2C] hover:bg-[#176B45] text-white text-xs font-bold rounded-[3px] transition-colors cursor-pointer"
                   >
-                    Send Proposal to Buyer →
+                    Send Proposal to Buyer
                   </button>
                 </div>
               </form>

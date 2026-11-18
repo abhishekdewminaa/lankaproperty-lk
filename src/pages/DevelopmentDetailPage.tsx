@@ -6,18 +6,6 @@ import { InteractiveMasterplan } from '../components/InteractiveMasterplan';
 import { GalleryLightbox } from '../components/GalleryLightbox';
 import { InquiryModal } from '../components/InquiryModal';
 import { MasterplanUnit } from '../types/property';
-import {
-  MapPin,
-  Calendar,
-  Building,
-  CheckCircle2,
-  HelpCircle,
-  ArrowLeft,
-  ArrowRight,
-  Phone,
-  MessageSquare,
-  Sparkles,
-} from 'lucide-react';
 
 interface DevelopmentDetailPageProps {
   slug: string;
@@ -42,22 +30,25 @@ export function DevelopmentDetailPage({ slug }: DevelopmentDetailPageProps) {
 
   const handleWhatsApp = () => {
     const text = encodeURIComponent(
-      `Hello, I am inquiring regarding "${project.title}" on LankaProperty.lk. Please share the masterplan documentation. URL: ${window.location.href}`
+      `Hello, I am inquiring regarding "${project.title}" on LankaProperty.lk. Please share project details. URL: ${window.location.href}`
     );
     window.open(`https://wa.me/94772345678?text=${text}`, '_blank');
   };
 
   return (
-    <div className="bg-[#FFFFFF] min-h-screen pb-20">
+    <div className="bg-white min-h-screen pb-20">
       {/* Top Breadcrumb Bar */}
-      <div className="bg-[#F5F8F5] border-b border-[#DDE5DF] py-3 text-xs text-[#5F6B63]">
-        <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-16 flex items-center justify-between">
+      <div className="bg-[#FAFBF9] border-b border-[#DDE5DF] py-3 text-xs text-[#5F6B63]">
+        <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12 flex items-center justify-between">
           <nav aria-label="Breadcrumb" className="flex items-center gap-2">
-            <button onClick={() => navigate('/')} className="hover:text-[#18251E]">
+            <button onClick={() => navigate('/')} className="hover:text-[#18251E] cursor-pointer">
               Home
             </button>
             <span>/</span>
-            <button onClick={() => navigate('/developments')} className="hover:text-[#18251E]">
+            <button
+              onClick={() => navigate('/developments')}
+              className="hover:text-[#18251E] cursor-pointer"
+            >
               Developments
             </button>
             <span>/</span>
@@ -66,16 +57,15 @@ export function DevelopmentDetailPage({ slug }: DevelopmentDetailPageProps) {
 
           <button
             onClick={() => navigate('/developments')}
-            className="inline-flex items-center gap-1 font-semibold text-[#176B45] hover:underline"
+            className="font-bold text-[#103D2C] hover:text-[#176B45] cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>All Developments</span>
+            Back to Developments
           </button>
         </div>
       </div>
 
       {/* Hero Section */}
-      <section className="relative aspect-21/9 min-h-[380px] max-h-[560px] w-full overflow-hidden bg-[#103D2C]">
+      <section className="relative aspect-21/9 min-h-[340px] max-h-[520px] w-full overflow-hidden bg-[#103D2C]">
         <img
           src={project.coverImage}
           alt={project.title}
@@ -84,18 +74,18 @@ export function DevelopmentDetailPage({ slug }: DevelopmentDetailPageProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
 
-        <div className="absolute bottom-0 inset-x-0 max-w-[1360px] mx-auto px-5 md:px-8 lg:px-16 pb-8 sm:pb-12 text-white">
-          <div className="max-w-3xl space-y-3">
+        <div className="absolute bottom-0 inset-x-0 max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12 pb-8 sm:pb-10 text-white">
+          <div className="max-w-3xl space-y-2.5">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-white text-[#103D2C] rounded-[2px]">
+              <span className="px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-white text-[#103D2C] rounded-[2px]">
                 {project.status}
               </span>
-              <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-[#176B45] text-white rounded-[2px]">
+              <span className="px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-[#176B45] text-white rounded-[2px]">
                 {project.projectType}
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
               {project.title}
             </h1>
 
@@ -107,18 +97,18 @@ export function DevelopmentDetailPage({ slug }: DevelopmentDetailPageProps) {
       </section>
 
       {/* Main Content Sections */}
-      <main className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-16 pt-10 space-y-16">
+      <main className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12 pt-8 space-y-12">
         {/* Key Metrics Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-[#F5F8F5] border border-[#DDE5DF] rounded-[3px] text-xs">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-5 bg-[#FAFBF9] border border-[#DDE5DF] rounded-[4px] text-xs">
           <div>
-            <span className="text-[#5F6B63] block">Starting Valuation</span>
+            <span className="text-[#5F6B63] block">Starting Price</span>
             <span className="text-lg sm:text-xl font-bold text-[#103D2C] block mt-0.5 tabular-nums">
               {formatPriceLkr(project.startingPriceLkr, 'total')}
             </span>
           </div>
 
           <div>
-            <span className="text-[#5F6B63] block">Target Handover</span>
+            <span className="text-[#5F6B63] block">Completion Date</span>
             <span className="text-lg sm:text-xl font-bold text-[#18251E] block mt-0.5">
               {project.completionDate}
             </span>
@@ -127,82 +117,74 @@ export function DevelopmentDetailPage({ slug }: DevelopmentDetailPageProps) {
           <div>
             <span className="text-[#5F6B63] block">Total Units</span>
             <span className="text-lg sm:text-xl font-bold text-[#18251E] block mt-0.5">
-              {project.totalUnits} Residences
+              {project.totalUnits} Units
             </span>
           </div>
 
           <div>
-            <span className="text-[#5F6B63] block">Regional Location</span>
+            <span className="text-[#5F6B63] block">Location</span>
             <span className="text-lg sm:text-xl font-bold text-[#18251E] block mt-0.5">
               {project.location.city}, {project.location.district}
             </span>
           </div>
         </div>
 
-        {/* Project Architectural Overview */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          <div className="lg:col-span-7 space-y-6">
-            <div className="space-y-2">
-              <span className="text-xs uppercase font-extrabold tracking-widest text-[#176B45]">
-                Architectural Vision
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#18251E]">
-                Tropical Modern Vernacular
-              </h2>
-            </div>
-            <p className="text-base text-[#18251E]/90 leading-relaxed">
+        {/* Project Overview */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-7 space-y-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#18251E] border-b border-[#DDE5DF] pb-3">
+              Project Overview
+            </h2>
+            <p className="text-sm sm:text-base text-[#2C3A32] leading-relaxed">
               {project.description}
             </p>
-            <div className="p-6 bg-[#F5F8F5] border-l-4 border-[#176B45] space-y-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#103D2C]">
-                Spatial & Environmental Design Strategy
-              </h3>
-              <p className="text-sm text-[#5F6B63] leading-relaxed italic">
-                "{project.architecturalStory}"
-              </p>
-            </div>
+            {project.architecturalStory && (
+              <div className="p-5 bg-[#FAFBF9] border border-[#DDE5DF] rounded-[4px] space-y-1.5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#103D2C]">
+                  Design & Construction Highlights
+                </h3>
+                <p className="text-sm text-[#5F6B63] leading-relaxed">
+                  {project.architecturalStory}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Gallery Preview Box */}
           <div className="lg:col-span-5 space-y-3">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#176B45]">
-              Project Photography ({project.gallery.length} Images)
+            <span className="text-xs uppercase font-bold tracking-wider text-[#176B45] block">
+              Project Gallery ({project.gallery.length} Photos)
             </span>
             <div
               onClick={() => {
                 setSelectedPhotoIndex(0);
                 setLightboxOpen(true);
               }}
-              className="relative aspect-16/10 rounded-[3px] overflow-hidden border border-[#DDE5DF] group cursor-pointer"
+              className="relative aspect-16/10 rounded-[4px] overflow-hidden border border-[#DDE5DF] group cursor-pointer"
             >
               <img
                 src={project.gallery[0]}
                 alt={`${project.title} gallery`}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-black/30 group-hover:bg-black/15 transition-colors flex items-center justify-center">
-                <span className="px-4 py-2 bg-white/95 text-[#103D2C] text-xs font-bold rounded-[2px] shadow-sm">
-                  View Full Gallery
+                <span className="px-4 py-2 bg-white/95 text-[#103D2C] text-xs font-bold uppercase tracking-wider rounded-[3px]">
+                  Open Gallery
                 </span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* INTERACTIVE MASTERPLAN SECTION (Mandatory Requirement) */}
+        {/* Interactive Masterplan */}
         {project.masterplan && (
           <section className="space-y-4">
-            <div className="space-y-1">
-              <span className="text-xs uppercase font-extrabold tracking-widest text-[#176B45]">
-                Masterplan Exploration
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#18251E]">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-[#18251E]">
                 {project.masterplan.title}
               </h2>
-              <p className="text-sm text-[#5F6B63]">
-                {project.masterplan.subtext}
-              </p>
+              <p className="text-sm text-[#5F6B63] mt-0.5">{project.masterplan.subtext}</p>
             </div>
 
             <InteractiveMasterplan
@@ -215,31 +197,26 @@ export function DevelopmentDetailPage({ slug }: DevelopmentDetailPageProps) {
 
         {/* Unit Types Table */}
         <section className="space-y-4">
-          <div className="space-y-1">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#176B45]">
-              Inventory Types
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#18251E]">
-              Residential Configurations
-            </h2>
-          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-[#18251E]">
+            Available Unit Types & Pricing
+          </h2>
 
-          <div className="overflow-x-auto border border-[#DDE5DF] rounded-[3px]">
+          <div className="overflow-x-auto border border-[#DDE5DF] rounded-[4px]">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="bg-[#F5F8F5] text-[#18251E] border-b border-[#DDE5DF] text-xs uppercase font-bold tracking-wider">
-                  <th className="p-4">Unit Plan</th>
+                <tr className="bg-[#FAFBF9] text-[#18251E] border-b border-[#DDE5DF] text-xs uppercase font-bold tracking-wider">
+                  <th className="p-4">Unit Type</th>
                   <th className="p-4">Bedrooms</th>
                   <th className="p-4">Bathrooms</th>
                   <th className="p-4">Floor Area</th>
                   <th className="p-4">Starting Price</th>
-                  <th className="p-4">Availability</th>
+                  <th className="p-4">Status</th>
                   <th className="p-4">Inquire</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#DDE5DF]">
                 {project.unitTypes.map((type) => (
-                  <tr key={type.name} className="hover:bg-[#F5F8F5] transition-colors">
+                  <tr key={type.name} className="hover:bg-[#FAFBF9] transition-colors">
                     <td className="p-4 font-bold text-[#103D2C]">{type.name}</td>
                     <td className="p-4">{type.bedrooms} Beds</td>
                     <td className="p-4">{type.bathrooms} Baths</td>
@@ -249,7 +226,9 @@ export function DevelopmentDetailPage({ slug }: DevelopmentDetailPageProps) {
                     </td>
                     <td className="p-4">
                       {type.availableCount > 0 ? (
-                        <span className="text-[#176B45] font-semibold">{type.availableCount} Available</span>
+                        <span className="text-[#176B45] font-semibold">
+                          {type.availableCount} Available
+                        </span>
                       ) : (
                         <span className="text-[#5F6B63]">Sold Out</span>
                       )}
@@ -260,9 +239,9 @@ export function DevelopmentDetailPage({ slug }: DevelopmentDetailPageProps) {
                           setInquiryContext(`${project.title} - ${type.name}`);
                           setInquiryModalOpen(true);
                         }}
-                        className="text-xs font-bold text-[#176B45] hover:underline"
+                        className="text-xs font-bold text-[#176B45] hover:underline cursor-pointer"
                       >
-                        Inquire Unit
+                        Inquire
                       </button>
                     </td>
                   </tr>
@@ -274,67 +253,55 @@ export function DevelopmentDetailPage({ slug }: DevelopmentDetailPageProps) {
 
         {/* Amenities Grid */}
         <section className="space-y-4">
-          <div className="space-y-1">
-            <span className="text-xs uppercase font-extrabold tracking-widest text-[#176B45]">
-              Facilities & Infrastructure
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#18251E]">
-              Master-Planned Amenities
-            </h2>
-          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-[#18251E]">
+            Project Features & Amenities
+          </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {project.amenities.map((amenity) => (
               <div
                 key={amenity}
-                className="p-4 bg-[#F5F8F5] border border-[#DDE5DF] rounded-[3px] flex items-center gap-3 text-sm text-[#18251E]"
+                className="p-3.5 bg-[#FAFBF9] border border-[#DDE5DF] rounded-[3px] flex items-center gap-2.5 text-sm text-[#18251E]"
               >
-                <CheckCircle2 className="w-5 h-5 text-[#176B45] shrink-0" />
-                <span className="font-semibold">{amenity}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#176B45] shrink-0" />
+                <span className="font-medium">{amenity}</span>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Supplied FAQs */}
+        {/* FAQs */}
         {project.faqs && project.faqs.length > 0 && (
-          <section className="space-y-6 pt-6 border-t border-[#DDE5DF]">
-            <div className="space-y-1">
-              <span className="text-xs uppercase font-extrabold tracking-widest text-[#176B45]">
-                Buyer Questions
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#18251E]">
-                Frequently Asked Inquiries
-              </h2>
-            </div>
+          <section className="space-y-4 pt-6 border-t border-[#DDE5DF]">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#18251E]">
+              Frequently Asked Questions
+            </h2>
 
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {project.faqs.map((faq, idx) => (
-                <div key={idx} className="p-6 bg-white border border-[#DDE5DF] rounded-[3px] space-y-2">
-                  <h3 className="text-base font-bold text-[#18251E] flex items-center gap-2">
-                    <HelpCircle className="w-4 h-4 text-[#176B45] shrink-0" />
-                    <span>{faq.question}</span>
-                  </h3>
-                  <p className="text-sm text-[#5F6B63] leading-relaxed pl-6">
-                    {faq.answer}
-                  </p>
+                <div
+                  key={idx}
+                  className="p-5 bg-[#FAFBF9] border border-[#DDE5DF] rounded-[4px] space-y-2"
+                >
+                  <h3 className="text-sm font-bold text-[#18251E]">{faq.question}</h3>
+                  <p className="text-xs text-[#5F6B63] leading-relaxed">{faq.answer}</p>
                 </div>
               ))}
             </div>
           </section>
         )}
 
-        {/* Development Bottom Inquiry Banner */}
-        <section className="p-8 sm:p-12 bg-[#103D2C] text-white rounded-[4px] flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
-            <span className="text-xs uppercase font-bold tracking-widest text-[#E8F3EC]/80">
-              Developer Sales Desk
+        {/* Bottom Inquiry Banner */}
+        <section className="p-6 sm:p-10 bg-[#103D2C] text-white rounded-[4px] flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-1.5 max-w-xl">
+            <span className="text-xs uppercase font-bold tracking-wider text-[#9FE3B8]">
+              Project Sales Desk
             </span>
-            <h3 className="text-2xl sm:text-3xl font-bold">
-              Schedule a Private Presentation on {project.title}
+            <h3 className="text-xl sm:text-2xl font-bold">
+              Request Floor Plans & Pricing for {project.title}
             </h3>
             <p className="text-xs sm:text-sm text-[#A3B8AD]">
-              Speak directly with our dedicated project directors for structural architectural drawings and payment milestone schedules.
+              Contact our sales team for unit availability, payment schedules, and site viewings.
             </p>
           </div>
 
@@ -344,22 +311,20 @@ export function DevelopmentDetailPage({ slug }: DevelopmentDetailPageProps) {
                 setInquiryContext(project.title);
                 setInquiryModalOpen(true);
               }}
-              className="w-full sm:w-auto px-6 py-3.5 bg-[#C93636] hover:bg-[#A92828] text-white font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors"
+              className="w-full sm:w-auto px-6 py-3 bg-white text-[#103D2C] hover:bg-[#E8F3EC] font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer"
             >
-              Request Brochure & Feasibility
+              Send Inquiry
             </button>
             <button
               onClick={handleWhatsApp}
-              className="w-full sm:w-auto px-6 py-3.5 border border-white/40 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 bg-[#128C7E] hover:bg-[#075E54] text-white font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer"
             >
-              <MessageSquare className="w-4 h-4" />
-              <span>WhatsApp Sales</span>
+              WhatsApp Sales
             </button>
           </div>
         </section>
       </main>
 
-      {/* Gallery Lightbox */}
       <GalleryLightbox
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
@@ -368,7 +333,6 @@ export function DevelopmentDetailPage({ slug }: DevelopmentDetailPageProps) {
         title={project.title}
       />
 
-      {/* Inquiry Modal */}
       <InquiryModal
         isOpen={inquiryModalOpen}
         onClose={() => setInquiryModalOpen(false)}

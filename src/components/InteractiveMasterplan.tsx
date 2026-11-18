@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { MasterplanUnit } from '../types/property';
 import { formatPriceLkr } from '../utils/formatters';
-import { Bed, Bath, Maximize2, Compass, Check, AlertCircle, Info } from 'lucide-react';
 
 interface InteractiveMasterplanProps {
   units: MasterplanUnit[];
@@ -85,10 +84,8 @@ export function InteractiveMasterplan({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* SVG Plan Canvas */}
         <div className="lg:col-span-8 bg-[#F5F8F5] border border-[#DDE5DF] rounded-[3px] p-4 relative overflow-hidden">
-          {/* Subtle architectural compass marker */}
-          <div className="absolute top-4 left-4 flex items-center gap-1.5 text-xs text-[#5F6B63] bg-white/90 px-2.5 py-1 rounded-[2px] border border-[#DDE5DF] shadow-xs">
-            <Compass className="w-3.5 h-3.5 text-[#176B45]" />
-            <span>North / Indian Ocean Shoreline</span>
+          <div className="absolute top-4 left-4 text-xs font-semibold text-[#5F6B63] bg-white/95 px-2.5 py-1 rounded-[2px] border border-[#DDE5DF] shadow-xs">
+            North / Indian Ocean Shoreline
           </div>
 
           <div className="w-full overflow-x-auto">
@@ -243,9 +240,8 @@ export function InteractiveMasterplan({
                 {selectedUnit.bedrooms !== undefined && (
                   <div className="p-2.5 bg-white border border-[#DDE5DF] rounded-[2px]">
                     <span className="text-[#5F6B63] block">Bedrooms</span>
-                    <span className="text-sm font-bold text-[#18251E] flex items-center gap-1 mt-0.5">
-                      <Bed className="w-3.5 h-3.5 text-[#176B45]" />
-                      {selectedUnit.bedrooms} Suites
+                    <span className="text-sm font-bold text-[#18251E] block mt-0.5">
+                      {selectedUnit.bedrooms} Bedrooms
                     </span>
                   </div>
                 )}
@@ -253,17 +249,15 @@ export function InteractiveMasterplan({
                 {selectedUnit.bathrooms !== undefined && (
                   <div className="p-2.5 bg-white border border-[#DDE5DF] rounded-[2px]">
                     <span className="text-[#5F6B63] block">Bathrooms</span>
-                    <span className="text-sm font-bold text-[#18251E] flex items-center gap-1 mt-0.5">
-                      <Bath className="w-3.5 h-3.5 text-[#176B45]" />
-                      {selectedUnit.bathrooms} Luxury Baths
+                    <span className="text-sm font-bold text-[#18251E] block mt-0.5">
+                      {selectedUnit.bathrooms} Bathrooms
                     </span>
                   </div>
                 )}
 
                 <div className="p-2.5 bg-white border border-[#DDE5DF] rounded-[2px]">
                   <span className="text-[#5F6B63] block">Floor Area</span>
-                  <span className="text-sm font-bold text-[#18251E] flex items-center gap-1 mt-0.5">
-                    <Maximize2 className="w-3.5 h-3.5 text-[#176B45]" />
+                  <span className="text-sm font-bold text-[#18251E] block mt-0.5">
                     {selectedUnit.floorAreaSqFt} sq ft
                   </span>
                 </div>
@@ -319,8 +313,8 @@ export function InteractiveMasterplan({
       <div className="pt-4 border-t border-[#DDE5DF]">
         <details className="text-xs text-[#5F6B63] group">
           <summary className="font-bold uppercase tracking-wider text-[#18251E] cursor-pointer hover:text-[#176B45] py-2 flex items-center justify-between">
-            <span>View Accessible Unit Registry Table ({filteredUnits.length} listings)</span>
-            <span className="text-xs text-[#176B45] group-open:rotate-180 transition-transform">▼</span>
+            <span>View Unit Registry Table ({filteredUnits.length} listings)</span>
+            <span className="text-xs font-bold text-[#176B45]">Toggle</span>
           </summary>
           <div className="overflow-x-auto mt-3">
             <table className="w-full border-collapse text-left border border-[#DDE5DF]">
