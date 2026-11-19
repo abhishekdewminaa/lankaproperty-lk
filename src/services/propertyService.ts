@@ -954,22 +954,32 @@ class PropertyService {
 
     const normalizedSlug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     const cleanRaw = decoded.toLowerCase().replace(/^\/+|\/+$/g, '').trim();
+    const isUuidQuery = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanRaw);
 
+    // Pass 1: Strict exact match (ID, exact slug, normalized slug, or exact title slug)
+    const exactMatch = this.records.find((p) => {
+      const pSlug = (p.slug || '').toLowerCase();
+      const pSlugNorm = pSlug.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const pTitleNorm = (p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const pId = (p.id || '').toLowerCase();
+
+      return (
+        pId === cleanRaw ||
+        (isUuidQuery && ensureValidUUID(p.id) === cleanRaw) ||
+        (pSlug.length > 0 && pSlug === cleanRaw) ||
+        (pSlugNorm.length > 0 && pSlugNorm === normalizedSlug) ||
+        (pTitleNorm.length > 0 && pTitleNorm === normalizedSlug)
+      );
+    });
+    if (exactMatch) return exactMatch;
+
+    // Pass 2: Partial slug fallback only if no exact match exists (guard against empty strings)
     return (
       this.records.find((p) => {
-        const pSlug = (p.slug || '').toLowerCase();
-        const pSlugNorm = pSlug.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-        const pTitleNorm = (p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-        const pId = (p.id || '').toLowerCase();
-
+        const pSlugNorm = (p.slug || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
         return (
-          pSlug === cleanRaw ||
-          pSlugNorm === normalizedSlug ||
-          pTitleNorm === normalizedSlug ||
-          (normalizedSlug.length > 5 && pSlugNorm.includes(normalizedSlug)) ||
-          (pSlugNorm.length > 5 && normalizedSlug.includes(pSlugNorm)) ||
-          pId === cleanRaw ||
-          ensureValidUUID(p.id) === ensureValidUUID(cleanRaw)
+          (normalizedSlug.length > 8 && pSlugNorm.length > 8 && pSlugNorm.includes(normalizedSlug)) ||
+          (pSlugNorm.length > 8 && normalizedSlug.length > 8 && normalizedSlug.includes(pSlugNorm))
         );
       }) || null
     );
@@ -1001,13 +1011,27 @@ class PropertyService {
           trending_velocity_text, collections, published_at, created_at, updated_at
         `;
 
-        // Single-roundtrip combined match: Exact Slug, Direct ID/UUID, Partial Slug, or Listing Reference
+        // Pass 1: Strict exact match (Exact Slug, Direct ID/UUID, or Listing Ref)
         let { data, error } = await supabase
           .from('properties')
           .select(selectFields)
-          .or(`slug.eq.${normalizedSlug},id.eq.${safeId},id.eq.${validUUID},slug.ilike.%${normalizedSlug}%,listing_ref.ilike.%${safeId}%`)
+          .or(`slug.eq.${normalizedSlug},slug.eq.${cleanRaw},id.eq.${validUUID},listing_ref.eq.${safeId}`)
           .limit(1)
           .maybeSingle();
+
+        // Pass 2: Partial slug fallback if no exact match
+        if (!data && normalizedSlug.length > 8) {
+          const partialRes = await supabase
+            .from('properties')
+            .select(selectFields)
+            .ilike('slug', `%${normalizedSlug}%`)
+            .limit(1)
+            .maybeSingle();
+          if (partialRes.data) {
+            data = partialRes.data;
+            error = partialRes.error;
+          }
+        }
 
         // Fallback: Title Keyword matching if slug was truncated
         if (!data) {

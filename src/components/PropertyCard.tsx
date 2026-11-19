@@ -55,7 +55,8 @@ export function PropertyCard({ property, priority = false, variant = 'grid' }: P
   };
 
   const handleCardClick = () => {
-    navigate(`/properties/${property.slug}`);
+    const target = (property.slug || '').trim() || property.id;
+    navigate(`/properties/${encodeURIComponent(target)}`);
   };
 
   const specItems: { value: string; label: string }[] = [];
