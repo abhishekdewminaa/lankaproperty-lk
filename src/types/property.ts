@@ -37,6 +37,12 @@ export interface PropertyAgent {
   role: string;
   phone: string;
   whatsapp: string;
+  whatsappEnabled?: boolean;
+  managingAgentId?: string;
+  managingAgentName?: string;
+  isExternalClient?: boolean;
+  contactVerificationStatus?: 'verified' | 'pending_confirmation' | 'unverified';
+  detectedPhones?: string[];
 }
 
 export interface Property {

@@ -10,6 +10,14 @@ import { compressImagesBatch, formatBytes } from '../../utils/imageCompressor';
 import { uploadBatchPropertyPhotosToHostinger } from '../../services/mediaStorageService';
 import { userPortalService } from '../../services/userPortalService';
 import {
+  REGISTERED_CONTACTS,
+  analyzeContactsInText,
+  findRegisteredContactByPhone,
+  formatSriLankaDisplayPhone,
+  isValidSriLankaPhone,
+  normalizeSriLankaPhoneKey,
+} from '../../services/contactRegistry';
+import {
   parseHeuristic,
   mergeAIResultsWithForm,
 } from '../../utils/propertyParser';
@@ -104,10 +112,16 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
       materialSpecs: '',
       amenities: [],
       agent: {
-        name: currentUser.name,
-        role: 'Broker Portfolio Representative',
-        phone: currentUser.phone || '',
-        whatsapp: currentUser.phone ? currentUser.phone.replace(/[^0-9]/g, '') : '',
+        name: REGISTERED_CONTACTS[0].name,
+        role: REGISTERED_CONTACTS[0].role,
+        phone: REGISTERED_CONTACTS[0].primaryPhone,
+        whatsapp: REGISTERED_CONTACTS[0].whatsapp,
+        whatsappEnabled: true,
+        managingAgentId: REGISTERED_CONTACTS[0].id,
+        managingAgentName: REGISTERED_CONTACTS[0].name,
+        isExternalClient: false,
+        contactVerificationStatus: 'verified',
+        detectedPhones: [],
       },
       publishedDate: new Date().toISOString().split('T')[0],
       viewCount: 0,
@@ -241,7 +255,17 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
 
     // Apply unambiguous extracted fields if autoFillEmptyFields is on OR explicitly triggered
     if (autoFillEmptyFields || forceApply) {
-      const eligibleFields = res.fields.filter((f) => f.selectedToApply && !f.isConflict);
+      const preserveExistingVerifiedContact =
+        isEditing &&
+        formData.agent.contactVerificationStatus === 'verified' &&
+        Boolean(formData.agent.phone);
+
+      const eligibleFields = res.fields.filter(
+        (f) =>
+          f.selectedToApply &&
+          !f.isConflict &&
+          (!preserveExistingVerifiedContact || !f.fieldKey.startsWith('agent.'))
+      );
       applyExtractedFields(eligibleFields);
       if (forceApply && eligibleFields.length > 0) {
         setSaveSuccessMessage(`Auto-arranged ${eligibleFields.length} extracted fields into the property form.`);
@@ -477,6 +501,13 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
 
       if (!formData.agent.phone) {
         errors['agent.phone'] = 'Primary phone number is required for prospective buyer inquiries.';
+      } else if (!isValidSriLankaPhone(formData.agent.phone)) {
+        errors['agent.phone'] = 'Enter a valid Sri Lankan phone number (e.g. 077 610 4884 or +94 77 610 4884).';
+      }
+
+      if (formData.agent.contactVerificationStatus === 'pending_confirmation') {
+        errors['agent.verification'] =
+          'Ambiguous or external client contact detected. Please confirm the contact assignment in Section 7 before publishing.';
       }
     }
 
@@ -2054,67 +2085,364 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
       </div>
 
       {/* ------------------------------------------------------------- */}
-      {/* 7. CONTACT DETAILS */}
+      {/* 7. CONTACT MANAGEMENT */}
       {/* ------------------------------------------------------------- */}
-      <div
-        className={`bg-white border ${
-          activeSection === 7 ? 'border-[#176B45]' : 'border-[#DDE5DF]'
-        } rounded-[4px] p-5 sm:p-6 shadow-xs space-y-4`}
-      >
-        <div className="pb-3 border-b border-[#DDE5DF]">
-          <h2 className="text-lg font-bold text-[#18251E]">7. Contact & Broker Desk</h2>
-          <p className="text-xs text-[#5F6B63]">
-            Direct contact credentials presented to verified inquiries.
-          </p>
-        </div>
+      {(() => {
+        const liveAnalysis = analyzeContactsInText(pastedRawText);
+        const verificationStatus = formData.agent.contactVerificationStatus || 'verified';
+        const isPendingConfirmation = verificationStatus === 'pending_confirmation';
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Agent Name */}
-          <div>
-            <label className="block text-xs font-bold text-[#18251E] mb-1.5">
-              Assigned Specialist Name <span className="text-[#C93636]">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.agent.name}
-              onChange={(e) => handleFieldChange('agent.name', e.target.value)}
-              className="w-full px-3.5 py-2.5 text-sm border border-[#DDE5DF] rounded-[3px] bg-white font-medium"
-            />
-          </div>
+        const selectRegisteredContact = (contactId: string, specificPhone?: string) => {
+          const contact = REGISTERED_CONTACTS.find((c) => c.id === contactId);
+          if (!contact) return;
+          const chosenPhone = specificPhone ? formatSriLankaDisplayPhone(specificPhone) : contact.primaryPhone;
+          const chosenWhatsapp = normalizeSriLankaPhoneKey(chosenPhone) || contact.whatsapp;
+          setFormData((prev) => ({
+            ...prev,
+            agent: {
+              ...prev.agent,
+              name: contact.name,
+              role: contact.role,
+              phone: chosenPhone,
+              whatsapp: chosenWhatsapp,
+              whatsappEnabled: contact.whatsappEnabled,
+              managingAgentId: contact.id,
+              managingAgentName: contact.name,
+              isExternalClient: false,
+              contactVerificationStatus: 'verified',
+            },
+          }));
+          setHasUnsavedChanges(true);
+          setValidationErrors((prev) => {
+            const next = { ...prev };
+            delete next['agent.phone'];
+            delete next['agent.verification'];
+            return next;
+          });
+        };
 
-          {/* Primary Phone */}
-          <div>
-            <label className="block text-xs font-bold text-[#18251E] mb-1.5">
-              Primary Phone Number <span className="text-[#C93636]">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.agent.phone}
-              onChange={(e) => handleFieldChange('agent.phone', e.target.value)}
-              placeholder="+94 77 123 4567"
-              className={`w-full px-3.5 py-2.5 text-sm border ${
-                validationErrors['agent.phone'] ? 'border-[#C93636]' : 'border-[#DDE5DF]'
-              } rounded-[3px] ${
-                highlightedFields.has('agent.phone') ? 'bg-[#E8F3EC]' : 'bg-white'
-              }`}
-            />
-          </div>
+        const assignExternalClientPhone = (rawPhone: string, extractedName?: string) => {
+          const formatted = formatSriLankaDisplayPhone(rawPhone);
+          const waKey = normalizeSriLankaPhoneKey(rawPhone);
+          setFormData((prev) => ({
+            ...prev,
+            agent: {
+              ...prev.agent,
+              name: extractedName !== undefined ? extractedName : prev.agent.isExternalClient ? prev.agent.name : '',
+              role: 'Property Owner / Client',
+              phone: formatted,
+              whatsapp: waKey,
+              whatsappEnabled: false,
+              managingAgentId: prev.agent.managingAgentId || REGISTERED_CONTACTS[0].id,
+              managingAgentName: prev.agent.managingAgentName || REGISTERED_CONTACTS[0].name,
+              isExternalClient: true,
+              contactVerificationStatus: 'pending_confirmation',
+            },
+          }));
+          setHasUnsavedChanges(true);
+        };
 
-          {/* WhatsApp Number */}
-          <div>
-            <label className="block text-xs font-bold text-[#18251E] mb-1.5">
-              WhatsApp Pre-Filled Number
-            </label>
-            <input
-              type="text"
-              value={formData.agent.whatsapp}
-              onChange={(e) => handleFieldChange('agent.whatsapp', e.target.value)}
-              placeholder="94771234567"
-              className="w-full px-3.5 py-2.5 text-sm border border-[#DDE5DF] rounded-[3px] bg-white font-medium"
-            />
+        const confirmContactAssignment = () => {
+          setFormData((prev) => ({
+            ...prev,
+            agent: {
+              ...prev.agent,
+              contactVerificationStatus: 'verified',
+            },
+          }));
+          setHasUnsavedChanges(true);
+          setValidationErrors((prev) => {
+            const next = { ...prev };
+            delete next['agent.verification'];
+            return next;
+          });
+        };
+
+        return (
+          <div
+            className={`bg-white border ${
+              activeSection === 7 ? 'border-[#176B45]' : isPendingConfirmation ? 'border-amber-400' : 'border-[#DDE5DF]'
+            } rounded-[4px] p-5 sm:p-6 shadow-xs space-y-5`}
+          >
+            <div className="pb-3 border-b border-[#DDE5DF] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-bold text-[#18251E]">7. Contact Management</h2>
+                <p className="text-xs text-[#5F6B63]">
+                  Auto-detected contacts, internal managing agent, and public-facing Call &amp; WhatsApp credentials.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-[2px] ${
+                    verificationStatus === 'verified'
+                      ? 'bg-[#E8F3EC] text-[#176B45]'
+                      : isPendingConfirmation
+                      ? 'bg-amber-50 text-amber-800 border border-amber-300'
+                      : 'bg-gray-100 text-[#5F6B63]'
+                  }`}
+                >
+                  {verificationStatus === 'verified'
+                    ? 'Contact Verified'
+                    : isPendingConfirmation
+                    ? 'Confirmation Required'
+                    : 'Unverified'}
+                </span>
+                {isPendingConfirmation && (
+                  <button
+                    type="button"
+                    onClick={confirmContactAssignment}
+                    className="px-3 py-1 bg-[#103D2C] hover:bg-[#176B45] text-white text-[11px] font-bold uppercase tracking-wider rounded-[2px] cursor-pointer"
+                  >
+                    Confirm Contact
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {validationErrors['agent.verification'] && (
+              <div className="p-3 bg-red-50 border border-[#C93636] rounded-[3px] text-xs text-[#C93636] font-semibold">
+                {validationErrors['agent.verification']}
+              </div>
+            )}
+
+            {/* Automatically Detected Phone Numbers */}
+            {(liveAnalysis.detectedPhones.length > 0 || (formData.agent.detectedPhones && formData.agent.detectedPhones.length > 0)) && (
+              <div className="p-4 bg-[#FAFBF9] border border-[#DDE5DF] rounded-[3px] space-y-2.5">
+                <span className="block text-[11px] font-bold uppercase tracking-wider text-[#5F6B63]">
+                  Automatically Detected Phone Numbers
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {liveAnalysis.detectedPhones.length > 0
+                    ? liveAnalysis.detectedPhones.map((entry) => {
+                        const isCurrentlySelected =
+                          normalizeSriLankaPhoneKey(formData.agent.phone) === entry.canonicalKey;
+                        return (
+                          <button
+                            key={entry.canonicalKey}
+                            type="button"
+                            onClick={() =>
+                              entry.matchedContact
+                                ? selectRegisteredContact(entry.matchedContact.id, entry.displayPhone)
+                                : assignExternalClientPhone(entry.displayPhone, entry.extractedNearbyName || '')
+                            }
+                            className={`px-3 py-1.5 rounded-[3px] border text-xs font-semibold transition-colors cursor-pointer flex items-center gap-2 ${
+                              isCurrentlySelected
+                                ? 'bg-[#103D2C] text-white border-[#103D2C]'
+                                : 'bg-white text-[#18251E] border-[#DDE5DF] hover:border-[#176B45]'
+                            }`}
+                          >
+                            <span>{entry.displayPhone}</span>
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded-[2px] ${
+                                isCurrentlySelected
+                                  ? 'bg-white/20 text-white'
+                                  : entry.matchedContact
+                                  ? 'bg-[#E8F3EC] text-[#176B45]'
+                                  : 'bg-amber-50 text-amber-800'
+                              }`}
+                            >
+                              {entry.matchedContact ? entry.matchedContact.name : 'External Client'}
+                            </span>
+                          </button>
+                        );
+                      })
+                    : formData.agent.detectedPhones?.map((num) => (
+                        <span
+                          key={num}
+                          className="px-2.5 py-1 bg-white border border-[#DDE5DF] rounded-[3px] text-xs font-semibold text-[#18251E]"
+                        >
+                          {num}
+                        </span>
+                      ))}
+                </div>
+              </div>
+            )}
+
+            {/* Primary Contact Quick Selection (Registered Agents) */}
+            <div className="space-y-2">
+              <span className="block text-xs font-bold text-[#18251E]">
+                Primary Contact Selection / Manual Override
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {REGISTERED_CONTACTS.map((agent) => {
+                  const isActive =
+                    !formData.agent.isExternalClient &&
+                    (findRegisteredContactByPhone(formData.agent.phone)?.id === agent.id ||
+                      formData.agent.name === agent.name);
+                  return (
+                    <button
+                      key={agent.id}
+                      type="button"
+                      onClick={() => selectRegisteredContact(agent.id)}
+                      className={`px-3 py-1.5 rounded-[3px] border text-xs font-semibold transition-colors cursor-pointer ${
+                        isActive
+                          ? 'bg-[#103D2C] text-white border-[#103D2C]'
+                          : 'bg-white text-[#18251E] border-[#DDE5DF] hover:border-[#103D2C]'
+                      }`}
+                    >
+                      {agent.name} ({agent.primaryPhone})
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() =>
+                    assignExternalClientPhone(
+                      formData.agent.isExternalClient ? formData.agent.phone : '',
+                      formData.agent.isExternalClient ? formData.agent.name : ''
+                    )
+                  }
+                  className={`px-3 py-1.5 rounded-[3px] border text-xs font-semibold transition-colors cursor-pointer ${
+                    formData.agent.isExternalClient
+                      ? 'bg-amber-600 text-white border-amber-600'
+                      : 'bg-white text-[#5F6B63] border-[#DDE5DF] hover:border-[#103D2C]'
+                  }`}
+                >
+                  External Client Contact
+                </button>
+              </div>
+            </div>
+
+            {/* Internal Managing Agent vs Public Contact Split */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {/* Internal Managing Agent */}
+              <div className="p-4 bg-[#FAFBF9] border border-[#DDE5DF] rounded-[3px] space-y-2">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-[#5F6B63]">
+                  Internal Only — Not Shown to Buyers
+                </span>
+                <label className="block text-xs font-bold text-[#18251E]">
+                  Managing Agent
+                </label>
+                <select
+                  value={formData.agent.managingAgentId || REGISTERED_CONTACTS[0].id}
+                  onChange={(e) => {
+                    const selected = REGISTERED_CONTACTS.find((c) => c.id === e.target.value);
+                    if (!selected) return;
+                    setFormData((prev) => ({
+                      ...prev,
+                      agent: {
+                        ...prev.agent,
+                        managingAgentId: selected.id,
+                        managingAgentName: selected.name,
+                      },
+                    }));
+                    setHasUnsavedChanges(true);
+                  }}
+                  className="w-full px-3 py-2 text-sm border border-[#DDE5DF] rounded-[3px] bg-white font-medium"
+                >
+                  {REGISTERED_CONTACTS.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} — {c.role}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-[#5F6B63]">
+                  Tracks who handles this listing internally when an external client number is published.
+                </p>
+              </div>
+
+              {/* Public Contact Fields */}
+              <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-white border border-[#DDE5DF] rounded-[3px]">
+                <div className="sm:col-span-2">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-[#176B45]">
+                    Public Contact (Used on Listing Page, Call &amp; WhatsApp Buttons)
+                  </span>
+                </div>
+
+                {/* Public Contact Name */}
+                <div>
+                  <label className="block text-xs font-bold text-[#18251E] mb-1.5">
+                    {formData.agent.isExternalClient ? 'Contact Name (optional — defaults to "Contact")' : 'Contact Name *'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.agent.name}
+                    onChange={(e) => handleFieldChange('agent.name', e.target.value)}
+                    placeholder={formData.agent.isExternalClient ? 'Contact' : 'Mr. Lalith Ranatunga'}
+                    className="w-full px-3.5 py-2 text-sm border border-[#DDE5DF] rounded-[3px] bg-white font-medium"
+                  />
+                </div>
+
+                {/* Public Mobile Number */}
+                <div>
+                  <label className="block text-xs font-bold text-[#18251E] mb-1.5">
+                    Public Mobile Number <span className="text-[#C93636]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.agent.phone}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const matched = findRegisteredContactByPhone(val);
+                      setFormData((prev) => ({
+                        ...prev,
+                        agent: {
+                          ...prev.agent,
+                          phone: val,
+                          whatsapp: normalizeSriLankaPhoneKey(val) || prev.agent.whatsapp,
+                          ...(matched
+                            ? {
+                                name: matched.name,
+                                role: matched.role,
+                                managingAgentId: matched.id,
+                                managingAgentName: matched.name,
+                                isExternalClient: false,
+                                whatsappEnabled: matched.whatsappEnabled,
+                                contactVerificationStatus: 'verified',
+                              }
+                            : {}),
+                        },
+                      }));
+                      setHasUnsavedChanges(true);
+                    }}
+                    placeholder="077 610 4884"
+                    className={`w-full px-3.5 py-2 text-sm border ${
+                      validationErrors['agent.phone'] ? 'border-[#C93636]' : 'border-[#DDE5DF]'
+                    } rounded-[3px] ${
+                      highlightedFields.has('agent.phone') ? 'bg-[#E8F3EC]' : 'bg-white'
+                    }`}
+                  />
+                  {validationErrors['agent.phone'] && (
+                    <p className="text-[11px] text-[#C93636] font-semibold mt-1">
+                      {validationErrors['agent.phone']}
+                    </p>
+                  )}
+                </div>
+
+                {/* WhatsApp Number */}
+                <div>
+                  <label className="block text-xs font-bold text-[#18251E] mb-1.5">
+                    WhatsApp Number (International 94...)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.agent.whatsapp}
+                    onChange={(e) => handleFieldChange('agent.whatsapp', e.target.value)}
+                    placeholder="94776104884"
+                    className="w-full px-3.5 py-2 text-sm border border-[#DDE5DF] rounded-[3px] bg-white font-medium"
+                  />
+                </div>
+
+                {/* WhatsApp Availability Toggle */}
+                <div className="flex flex-col justify-end pb-1.5 space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-[#18251E] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.agent.whatsappEnabled !== false}
+                      onChange={(e) => handleFieldChange('agent.whatsappEnabled', e.target.checked)}
+                      className="rounded-[2px] text-[#176B45]"
+                    />
+                    <span>WhatsApp Available &amp; Confirmed</span>
+                  </label>
+                  <p className="text-[11px] text-[#5F6B63]">
+                    Uncheck to hide/disable WhatsApp if this number is not confirmed on WhatsApp.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* ------------------------------------------------------------- */}
       {/* 8. PACKAGE & HOMEPAGE VISIBILITY */}

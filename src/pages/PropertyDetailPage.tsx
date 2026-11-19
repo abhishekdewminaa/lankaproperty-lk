@@ -315,23 +315,31 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
     setTimeout(() => setCompareMessage(null), 3000);
   };
 
+  const publicContactName = (property.agent.name || '').trim() || 'Contact';
   const sellerWhatsAppDigits = normalizeSriLankaWhatsApp(
     property.agent.whatsapp,
     property.agent.phone
   );
   const sellerDisplayPhone =
     property.agent.phone || property.agent.whatsapp || '';
+  const isWhatsAppAllowed =
+    property.agent.whatsappEnabled !== false &&
+    Boolean(sellerWhatsAppDigits) &&
+    (!property.agent.isExternalClient ||
+      property.agent.contactVerificationStatus === 'verified' ||
+      Boolean(property.agent.whatsappEnabled));
 
   const handleWhatsApp = () => {
-    if (!sellerWhatsAppDigits) {
+    if (!isWhatsAppAllowed || !sellerWhatsAppDigits) {
       setInquiryModalOpen(true);
       return;
     }
-    const priceText =
-      property.priceLkr > 0 ? formatPrice(property.priceLkr, false) : 'Price on Request';
-    const text = encodeURIComponent(
-      `Hello ${property.agent.name || 'Seller'},\nI am interested in your property on LankaProperty.lk:\n\n*${cleanTitle}*\nRef: ${cleanRef}\nLocation: ${formattedLocation}\nPrice: ${priceText}\n\nLink: ${window.location.href}`
-    );
+    const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const message =
+      cleanTitle && pageUrl
+        ? `Hello, I'm interested in ${cleanTitle} listed on LankaProperty.lk. Could you please share more details? ${pageUrl}`
+        : `Hello, I'm interested in the property advertised on LankaProperty.lk. Could you please share more details?`;
+    const text = encodeURIComponent(message);
     window.open(`https://wa.me/${sellerWhatsAppDigits}?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -994,18 +1002,20 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
             {/* Agent Profile Box */}
             <div className="p-4 bg-white border border-[#DDE5DF] rounded-[3px] flex items-center gap-3.5">
               <div className="w-11 h-11 rounded-full bg-[#103D2C] text-white flex items-center justify-center font-bold text-sm shrink-0">
-                {(property.agent.name || 'L').slice(0, 1).toUpperCase()}
+                {publicContactName.slice(0, 1).toUpperCase()}
               </div>
               <div className="min-w-0">
                 <span className="font-bold text-sm text-[#18251E] block truncate">
-                  {property.agent.name}
+                  {publicContactName}
                 </span>
                 <span className="text-xs text-[#5F6B63] block truncate">
-                  {property.agent.role || 'Authorized Representative'}
+                  {property.agent.isExternalClient
+                    ? 'Property Contact'
+                    : property.agent.role || 'Authorized Representative'}
                 </span>
-                {property.agent.phone && (
+                {sellerDisplayPhone && (
                   <span className="text-xs text-[#103D2C] font-bold block mt-0.5">
-                    {property.agent.phone}
+                    {sellerDisplayPhone}
                   </span>
                 )}
               </div>
@@ -1021,13 +1031,23 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
                 Send Inquiry
               </button>
 
-              <button
-                type="button"
-                onClick={handleWhatsApp}
-                className="w-full py-3 px-4 bg-[#128C7E] hover:bg-[#075E54] text-white font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer text-center"
-              >
-                {sellerWhatsAppDigits ? 'WhatsApp Seller' : 'WhatsApp Inquiry'}
-              </button>
+              {isWhatsAppAllowed ? (
+                <button
+                  type="button"
+                  onClick={handleWhatsApp}
+                  className="w-full py-3 px-4 bg-[#128C7E] hover:bg-[#075E54] text-white font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer text-center"
+                >
+                  WhatsApp {property.agent.isExternalClient ? 'Contact' : 'Agent'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setInquiryModalOpen(true)}
+                  className="w-full py-3 px-4 bg-[#F5F8F5] hover:bg-[#E8F3EC] text-[#103D2C] border border-[#DDE5DF] font-bold text-xs uppercase tracking-wider rounded-[3px] transition-colors cursor-pointer text-center"
+                >
+                  Request Details Online
+                </button>
+              )}
 
               {sellerDisplayPhone && (
                 <a
@@ -1084,13 +1104,22 @@ export function PropertyDetailPage({ slug }: PropertyDetailPageProps) {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={handleWhatsApp}
-            className="px-3.5 py-2.5 bg-[#128C7E] text-white text-xs font-bold uppercase rounded-[3px] cursor-pointer"
-          >
-            WhatsApp
-          </button>
+          {isWhatsAppAllowed ? (
+            <button
+              type="button"
+              onClick={handleWhatsApp}
+              className="px-3.5 py-2.5 bg-[#128C7E] text-white text-xs font-bold uppercase rounded-[3px] cursor-pointer"
+            >
+              WhatsApp
+            </button>
+          ) : sellerDisplayPhone ? (
+            <a
+              href={`tel:${sellerDisplayPhone.replace(/[^0-9+]/g, '')}`}
+              className="px-3.5 py-2.5 bg-[#128C7E] text-white text-xs font-bold uppercase rounded-[3px]"
+            >
+              Call
+            </a>
+          ) : null}
           <button
             type="button"
             onClick={() => setInquiryModalOpen(true)}

@@ -6,6 +6,7 @@ import {
   ExtractionConfidence,
 } from '../types/propertyParser';
 import { AdminPropertyRecord } from '../admin/types/admin';
+import { analyzeContactsInText } from '../services/contactRegistry';
 
 // Known Sri Lanka cities mapped to districts for deterministic suggestions
 const CITY_TO_DISTRICT_MAP: Record<string, string> = {};
@@ -908,7 +909,145 @@ export function parseHeuristic(
     });
   }
 
-  if (proposedPhone) {
+  const contactAnalysis = analyzeContactsInText(rawText);
+  if (contactAnalysis.detectedPhones.length > 0) {
+    const isAmbiguousOrUnknown = contactAnalysis.requiresConfirmation;
+    const verificationStatus = isAmbiguousOrUnknown ? 'pending_confirmation' : 'verified';
+    const matchedNames = contactAnalysis.matchedRegisteredContacts.map((c) => c.name).join(', ');
+    const detectedList = contactAnalysis.detectedPhones.map((d) => d.displayPhone);
+
+    fields.push({
+      fieldKey: 'agent.detectedPhones',
+      fieldLabel: 'Detected Phone Numbers',
+      category: 'contact',
+      currentValue: (currentForm.agent?.detectedPhones || []).join(', '),
+      proposedValue: detectedList,
+      sourceExcerpt: detectedList.join(', '),
+      method: 'heuristic',
+      confidence: 'high',
+      selectedToApply: true,
+    });
+
+    fields.push({
+      fieldKey: 'agent.managingAgentId',
+      fieldLabel: 'Managing Agent ID',
+      category: 'contact',
+      currentValue: currentForm.agent?.managingAgentId || '',
+      proposedValue: contactAnalysis.recommendedManagingAgent.id,
+      sourceExcerpt: contactAnalysis.recommendedManagingAgent.name,
+      method: 'heuristic',
+      confidence: 'high',
+      selectedToApply: true,
+    });
+
+    fields.push({
+      fieldKey: 'agent.managingAgentName',
+      fieldLabel: 'Managing Agent',
+      category: 'contact',
+      currentValue: currentForm.agent?.managingAgentName || '',
+      proposedValue: contactAnalysis.recommendedManagingAgent.name,
+      sourceExcerpt: contactAnalysis.recommendedManagingAgent.name,
+      method: 'heuristic',
+      confidence: 'high',
+      selectedToApply: true,
+    });
+
+    fields.push({
+      fieldKey: 'agent.isExternalClient',
+      fieldLabel: 'External Client Contact',
+      category: 'contact',
+      currentValue: Boolean(currentForm.agent?.isExternalClient),
+      proposedValue: contactAnalysis.isExternalClient,
+      sourceExcerpt: contactAnalysis.isExternalClient ? 'External client mobile retained' : 'Registered agent',
+      method: 'heuristic',
+      confidence: 'high',
+      selectedToApply: true,
+    });
+
+    fields.push({
+      fieldKey: 'agent.contactVerificationStatus',
+      fieldLabel: 'Contact Verification Status',
+      category: 'contact',
+      currentValue: currentForm.agent?.contactVerificationStatus || 'unverified',
+      proposedValue: verificationStatus,
+      sourceExcerpt: isAmbiguousOrUnknown ? 'Admin confirmation required' : `Verified (${matchedNames})`,
+      method: 'heuristic',
+      confidence: isAmbiguousOrUnknown ? 'medium' : 'high',
+      selectedToApply: true,
+    });
+
+    fields.push({
+      fieldKey: 'agent.name',
+      fieldLabel: 'Public Contact Name',
+      category: 'contact',
+      currentValue: currentForm.agent?.name || '',
+      proposedValue: contactAnalysis.recommendedPublicName,
+      sourceExcerpt: contactAnalysis.isExternalClient
+        ? contactAnalysis.recommendedPublicName || 'Client contact (editable)'
+        : contactAnalysis.recommendedPublicName,
+      method: 'heuristic',
+      confidence: contactAnalysis.isExternalClient && !contactAnalysis.recommendedPublicName ? 'low' : 'high',
+      selectedToApply: true,
+    });
+
+    fields.push({
+      fieldKey: 'agent.role',
+      fieldLabel: 'Public Contact Role',
+      category: 'contact',
+      currentValue: currentForm.agent?.role || '',
+      proposedValue: contactAnalysis.isExternalClient
+        ? 'Property Owner / Client'
+        : contactAnalysis.recommendedManagingAgent.role,
+      sourceExcerpt: contactAnalysis.isExternalClient
+        ? 'Client contact'
+        : contactAnalysis.recommendedManagingAgent.role,
+      method: 'heuristic',
+      confidence: 'high',
+      selectedToApply: true,
+    });
+
+    fields.push({
+      fieldKey: 'agent.phone',
+      fieldLabel: 'Public Mobile Number',
+      category: 'contact',
+      currentValue: currentForm.agent?.phone || '',
+      proposedValue: contactAnalysis.recommendedPublicPhone,
+      sourceExcerpt: contactAnalysis.detectedPhones.map((d) => d.rawMatch).join(', '),
+      method: 'heuristic',
+      confidence: isAmbiguousOrUnknown ? 'medium' : 'high',
+      conflictOrAmbiguity:
+        contactAnalysis.scenario === 'multiple_registered'
+          ? `Multiple registered contacts detected (${matchedNames}). Please confirm Primary Contact in Section 7.`
+          : contactAnalysis.isExternalClient
+          ? `External client number (${contactAnalysis.recommendedPublicPhone}) detected. Confirm in Section 7.`
+          : undefined,
+      selectedToApply: true,
+    });
+
+    fields.push({
+      fieldKey: 'agent.whatsapp',
+      fieldLabel: 'WhatsApp Number',
+      category: 'contact',
+      currentValue: currentForm.agent?.whatsapp || '',
+      proposedValue: contactAnalysis.recommendedPublicWhatsapp,
+      sourceExcerpt: contactAnalysis.recommendedPublicWhatsapp,
+      method: 'heuristic',
+      confidence: contactAnalysis.isExternalClient ? 'medium' : 'high',
+      selectedToApply: true,
+    });
+
+    fields.push({
+      fieldKey: 'agent.whatsappEnabled',
+      fieldLabel: 'WhatsApp Availability',
+      category: 'contact',
+      currentValue: currentForm.agent?.whatsappEnabled ?? true,
+      proposedValue: contactAnalysis.recommendedWhatsappEnabled,
+      sourceExcerpt: contactAnalysis.recommendedWhatsappEnabled ? 'WhatsApp confirmed' : 'Unverified external number',
+      method: 'heuristic',
+      confidence: 'high',
+      selectedToApply: true,
+    });
+  } else if (proposedPhone) {
     fields.push({
       fieldKey: 'agent.phone',
       fieldLabel: 'Primary Phone',

@@ -4,6 +4,78 @@ import { AdminPropertyRecord, PublicationStatus } from '../admin/types/admin';
 import { calculateHaversineDistanceKm, DEFAULT_COLOMBO_COORDINATES } from '../data/landmarks';
 import { supabase } from '../lib/supabase';
 import { uploadBatchPropertyPhotosToSupabase } from './mediaStorageService';
+import {
+  findRegisteredContactByName,
+  findRegisteredContactByPhone,
+  REGISTERED_CONTACTS,
+} from './contactRegistry';
+
+const CONTACT_META_MARKER_REGEX = /\n?<!--LP_CONTACT_META:([\s\S]*?)-->/;
+
+function serializeStaffNotesWithContact(r: AdminPropertyRecord): string | null {
+  const cleanNotes = (r.privateStaffNotes || '').replace(CONTACT_META_MARKER_REGEX, '').trim();
+  const meta = {
+    name: r.agent?.name ?? '',
+    role: r.agent?.role ?? '',
+    phone: r.agent?.phone ?? '',
+    whatsapp: r.agent?.whatsapp ?? '',
+    whatsappEnabled: r.agent?.whatsappEnabled ?? true,
+    managingAgentId: r.agent?.managingAgentId ?? '',
+    managingAgentName: r.agent?.managingAgentName ?? '',
+    isExternalClient: Boolean(r.agent?.isExternalClient),
+    contactVerificationStatus: r.agent?.contactVerificationStatus ?? 'verified',
+  };
+  const block = `<!--LP_CONTACT_META:${JSON.stringify(meta)}-->`;
+  return cleanNotes ? `${cleanNotes}\n${block}` : block;
+}
+
+function hydrateAgentFromSupabaseRow(row: any) {
+  const rawNotes = typeof row.private_staff_notes === 'string' ? row.private_staff_notes : '';
+  const match = rawNotes.match(CONTACT_META_MARKER_REGEX);
+  const cleanStaffNotes = rawNotes.replace(CONTACT_META_MARKER_REGEX, '').trim();
+
+  if (match && match[1]) {
+    try {
+      const meta = JSON.parse(match[1]);
+      return {
+        privateStaffNotes: cleanStaffNotes || undefined,
+        agent: {
+          name: meta.name ?? '',
+          role: meta.role || (meta.isExternalClient ? 'Property Owner / Client' : 'Property Advisor'),
+          phone: meta.phone || '',
+          whatsapp: meta.whatsapp || '',
+          whatsappEnabled: meta.whatsappEnabled !== undefined ? Boolean(meta.whatsappEnabled) : true,
+          managingAgentId: meta.managingAgentId || undefined,
+          managingAgentName: meta.managingAgentName || row.assigned_agent_name || undefined,
+          isExternalClient: Boolean(meta.isExternalClient),
+          contactVerificationStatus: meta.contactVerificationStatus || 'verified',
+        },
+      };
+    } catch {
+      // Fallback to registered agent lookup below
+    }
+  }
+
+  const fallbackAgent =
+    findRegisteredContactByName(row.assigned_agent_name) ||
+    findRegisteredContactByPhone(row.assigned_agent_name) ||
+    REGISTERED_CONTACTS[0];
+
+  return {
+    privateStaffNotes: cleanStaffNotes || undefined,
+    agent: {
+      name: row.assigned_agent_name || fallbackAgent.name,
+      role: fallbackAgent.role,
+      phone: fallbackAgent.primaryPhone,
+      whatsapp: fallbackAgent.whatsapp,
+      whatsappEnabled: fallbackAgent.whatsappEnabled,
+      managingAgentId: fallbackAgent.id,
+      managingAgentName: fallbackAgent.name,
+      isExternalClient: false,
+      contactVerificationStatus: 'verified' as const,
+    },
+  };
+}
 
 const STORAGE_KEY = 'lankaproperty_authoritative_properties_v3';
 const LEGACY_STORAGE_KEYS = ['lankaproperty_authoritative_properties', 'lankaproperty_authoritative_properties_v2'];
@@ -223,6 +295,7 @@ class PropertyService {
           price_on_request, city, district, address, latitude, longitude,
           bedrooms, bathrooms, sqft, land_perches, floors, parking_spaces,
           hero_image, images, floor_plans, amenities, author_id, assigned_agent_name,
+          private_staff_notes,
           view_count, inquiry_count, save_count, is_featured, is_trending,
           trending_velocity_text, collections, published_at, created_at, updated_at
         `)
@@ -235,7 +308,9 @@ class PropertyService {
       }
 
       if (Array.isArray(data) && data.length > 0) {
-        const mappedRecords: AdminPropertyRecord[] = data.map((row: any) => ({
+        const mappedRecords: AdminPropertyRecord[] = data.map((row: any) => {
+          const hydrated = hydrateAgentFromSupabaseRow(row);
+          return {
           id: row.id,
           listingRef: row.listing_ref || row.id,
           slug: row.slug,
@@ -276,12 +351,8 @@ class PropertyService {
           images: Array.isArray(row.images) && row.images.length > 0 ? row.images : (row.hero_image ? [row.hero_image] : []),
           floorPlans: Array.isArray(row.floor_plans) ? row.floor_plans : [],
           amenities: Array.isArray(row.amenities) ? row.amenities : [],
-          agent: {
-            name: row.assigned_agent_name || 'Mr Lalith Ranatunga',
-            role: 'Managing Director & Super Admin',
-            phone: '+94 11 234 5678',
-            whatsapp: '+94 77 123 4567',
-          },
+          privateStaffNotes: hydrated.privateStaffNotes,
+          agent: hydrated.agent,
           publishedDate: row.published_at ? row.published_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
           isFeatured: Boolean(row.is_featured),
           isTrending: Boolean(row.is_trending),
@@ -290,10 +361,11 @@ class PropertyService {
           viewCount: row.view_count || 0,
           inquiryCount: row.inquiry_count || 0,
           saveCount: row.save_count || 0,
-          lastModifiedBy: row.assigned_agent_name || 'Mr Lalith Ranatunga',
+          lastModifiedBy: row.assigned_agent_name || hydrated.agent.managingAgentName || 'Mr. Lalith Ranatunga',
           lastModifiedAt: row.updated_at ? new Date(row.updated_at).toLocaleString() : new Date().toLocaleString(),
           recordVersion: 1,
-        }));
+        };
+        });
 
         // Deduplicate remote records by normalized title + city so duplicate submissions never surface twice
         const seenRemoteSignatures = new Set<string>();
@@ -367,7 +439,8 @@ class PropertyService {
         images: r.images || [],
         floor_plans: r.floorPlans || [],
         amenities: r.amenities || [],
-        assigned_agent_name: r.agent?.name || 'Mr Lalith Ranatunga',
+        assigned_agent_name: r.agent?.managingAgentName || r.agent?.name || 'Mr. Lalith Ranatunga',
+        private_staff_notes: serializeStaffNotesWithContact(r),
         is_featured: Boolean(r.isFeatured),
         is_trending: Boolean(r.isTrending),
         trending_velocity_text: r.trendingVelocityText || null,
@@ -428,7 +501,8 @@ class PropertyService {
         images: resolvedImages,
         floor_plans: r.floorPlans || [],
         amenities: r.amenities || [],
-        assigned_agent_name: r.agent?.name || 'Mr Lalith Ranatunga',
+        assigned_agent_name: r.agent?.managingAgentName || r.agent?.name || 'Mr. Lalith Ranatunga',
+        private_staff_notes: serializeStaffNotesWithContact(r),
         is_featured: Boolean(r.isFeatured),
         is_trending: Boolean(r.isTrending),
         trending_velocity_text: r.trendingVelocityText || null,
@@ -922,6 +996,7 @@ class PropertyService {
           price_on_request, city, district, address, latitude, longitude,
           bedrooms, bathrooms, sqft, land_perches, floors, parking_spaces,
           hero_image, images, floor_plans, amenities, assigned_agent_name,
+          private_staff_notes,
           view_count, inquiry_count, save_count, is_featured, is_trending,
           trending_velocity_text, collections, published_at, created_at, updated_at
         `;
@@ -953,6 +1028,7 @@ class PropertyService {
         }
 
         if (data && !error) {
+          const hydrated = hydrateAgentFromSupabaseRow(data);
           const mapped: AdminPropertyRecord = {
             id: data.id,
             listingRef: data.listing_ref || data.id,
@@ -1003,14 +1079,10 @@ class PropertyService {
             viewCount: data.view_count || 0,
             inquiryCount: data.inquiry_count || 0,
             saveCount: data.save_count || 0,
-            agent: {
-              name: data.assigned_agent_name || 'Mr Lalith Ranatunga',
-              phone: '+94 77 712 3456',
-              whatsapp: '+94 77 712 3456',
-              role: 'Senior Portfolio Partner',
-            },
+            privateStaffNotes: hydrated.privateStaffNotes,
+            agent: hydrated.agent,
             recordVersion: 1,
-            lastModifiedBy: 'Super Admin',
+            lastModifiedBy: data.assigned_agent_name || hydrated.agent.managingAgentName || 'Super Admin',
             lastModifiedAt: new Date().toLocaleString(),
           };
           this.records = [mapped, ...this.records.filter((p) => p.id !== mapped.id)];
