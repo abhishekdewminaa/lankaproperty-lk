@@ -15,6 +15,9 @@ export interface CompressionResult {
   compressedSize: number;
   percentSaved: number;
   name: string;
+  format: 'WebP' | 'JPEG';
+  width: number;
+  height: number;
 }
 
 export interface BatchCompressionSummary {
@@ -112,6 +115,9 @@ export async function compressImage(
           compressedSize,
           percentSaved,
           name: file.name,
+          format: mimeType === 'image/webp' ? 'WebP' : 'JPEG',
+          width,
+          height,
         });
       };
 

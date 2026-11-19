@@ -173,6 +173,19 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
     compressed: string;
     percentSaved: number;
   } | null>(null);
+  const [imageCompressionMeta, setImageCompressionMeta] = useState<
+    Record<
+      string,
+      {
+        originalSize: number;
+        compressedSize: number;
+        percentSaved: number;
+        format: string;
+        width: number;
+        height: number;
+      }
+    >
+  >({});
 
   // Synchronize if existing record updates from storage
   useEffect(() => {
@@ -636,6 +649,24 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
       const summary = await compressImagesBatch(selectedFiles, 1280, 0.65);
       const rawUrls = summary.results.map((r) => r.dataUrl);
       const hostedUrls = await uploadBatchPropertyPhotosToHostinger(rawUrls);
+
+      setImageCompressionMeta((prev) => {
+        const next = { ...prev };
+        hostedUrls.forEach((url, i) => {
+          const r = summary.results[i];
+          if (r) {
+            next[url] = {
+              originalSize: r.originalSize,
+              compressedSize: r.compressedSize,
+              percentSaved: r.percentSaved,
+              format: r.format,
+              width: r.width,
+              height: r.height,
+            };
+          }
+        });
+        return next;
+      });
 
       handleFieldChange('images', [...formData.images, ...hostedUrls]);
       setAdminCompressionStats({
@@ -1930,7 +1961,17 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
 
         {/* Selected Image Thumbnails Gallery (Click, Hold & Drag to Reorder) */}
         {formData.images.length > 0 ? (
-          <div className="space-y-2 pt-2">
+          <div className="space-y-3 pt-2">
+            {adminCompressionStats && (
+              <div className="px-3.5 py-2.5 bg-[#E8F3EC] border border-[#176B45]/25 rounded-[3px] flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="font-semibold text-[#103D2C]">
+                  {adminCompressionStats.count} {adminCompressionStats.count === 1 ? 'photo' : 'photos'} compressed to WebP: <strong>{adminCompressionStats.original}</strong> &rarr; <strong>{adminCompressionStats.compressed}</strong>
+                </span>
+                <span className="px-2 py-0.5 bg-[#176B45] text-white text-[11px] font-bold rounded-[2px]">
+                  {adminCompressionStats.percentSaved}% Saved
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-[11px] text-[#5F6B63] font-semibold">
               <span>Click & hold any photo to drag it to Position #1 (Main Cover) or reorder your gallery.</span>
               <span>Drag-and-Drop Reordering Active</span>
@@ -1940,6 +1981,8 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
                 const isCover = idx === 0;
                 const isDragging = draggedImageIndex === idx;
                 const isDragOver = dragOverImageIndex === idx && draggedImageIndex !== idx;
+                const comp = imageCompressionMeta[imgUrl];
+                const isWebpUrl = /\.webp(\?|$)/i.test(imgUrl) || imgUrl.startsWith('data:image/webp');
                 return (
                   <div
                     key={`${idx}-${imgUrl.slice(-24)}`}
@@ -1974,7 +2017,7 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
                       setDraggedImageIndex(null);
                       setDragOverImageIndex(null);
                     }}
-                    className={`group relative aspect-4/3 rounded-[3px] overflow-hidden border transition-all cursor-grab active:cursor-grabbing select-none ${
+                    className={`group flex flex-col rounded-[3px] overflow-hidden border transition-all cursor-grab active:cursor-grabbing select-none ${
                       isDragging
                         ? 'opacity-45 scale-95 border-dashed border-[#103D2C]'
                         : isDragOver
@@ -1982,81 +2025,118 @@ export function AdminPropertyEditor({ propertyId }: AdminPropertyEditorProps) {
                         : isCover
                         ? 'border-2 border-[#176B45] ring-2 ring-[#176B45]/20'
                         : 'border-[#DDE5DF] hover:border-[#103D2C]'
-                    } bg-[#F5F8F5] shadow-xs`}
+                    } bg-white shadow-xs`}
                   >
-                    <img
-                      src={imgUrl}
-                      alt={`Listing photo ${idx + 1}`}
-                      draggable={false}
-                      className="w-full h-full object-cover pointer-events-none"
-                    />
+                    <div className="relative aspect-4/3 bg-[#F5F8F5] overflow-hidden">
+                      <img
+                        src={imgUrl}
+                        alt={`Listing photo ${idx + 1}`}
+                        draggable={false}
+                        className="w-full h-full object-cover pointer-events-none"
+                      />
 
-                    {/* Position / Cover Badge */}
-                    <div
-                      className={`absolute top-2 left-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-[2px] shadow-xs ${
-                        isCover ? 'bg-[#176B45] text-white' : 'bg-[#103D2C]/85 text-white'
-                      }`}
-                    >
-                      {isCover ? 'Main Cover (#1)' : `#${idx + 1}`}
-                    </div>
-
-                    {/* Actions overlay */}
-                    <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                      <div className="flex justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveImage(idx);
-                          }}
-                          className="p-1 bg-red-600 hover:bg-red-700 text-white rounded-[2px] cursor-pointer"
-                          title="Remove photo"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      {/* Position / Cover Badge */}
+                      <div
+                        className={`absolute top-2 left-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-[2px] shadow-xs ${
+                          isCover ? 'bg-[#176B45] text-white' : 'bg-[#103D2C]/85 text-white'
+                        }`}
+                      >
+                        {isCover ? 'Main Cover (#1)' : `#${idx + 1}`}
                       </div>
 
-                      <div className="flex items-center justify-between gap-1 text-white">
-                        {!isCover && (
+                      {/* Actions overlay */}
+                      <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                        <div className="flex justify-end gap-1">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleSetCoverPhoto(idx);
+                              handleRemoveImage(idx);
                             }}
-                            className="px-2 py-1 bg-white text-[#18251E] hover:bg-[#E8F3EC] text-[10px] font-bold uppercase tracking-wider rounded-[2px] cursor-pointer"
+                            className="p-1 bg-red-600 hover:bg-red-700 text-white rounded-[2px] cursor-pointer"
+                            title="Remove photo"
                           >
-                            Set Cover
-                          </button>
-                        )}
-
-                        <div className="flex items-center gap-1 ml-auto">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMoveImage(idx, idx - 1);
-                            }}
-                            disabled={idx === 0}
-                            className="p-1 bg-white/20 hover:bg-white/40 rounded-[2px] disabled:opacity-30 cursor-pointer"
-                            title="Move Left"
-                          >
-                            <ArrowUp className="w-3 h-3 rotate-[-90deg]" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMoveImage(idx, idx + 1);
-                            }}
-                            disabled={idx === formData.images.length - 1}
-                            className="p-1 bg-white/20 hover:bg-white/40 rounded-[2px] disabled:opacity-30 cursor-pointer"
-                            title="Move Right"
-                          >
-                            <ArrowDown className="w-3 h-3 rotate-[-90deg]" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
+
+                        <div className="flex items-center justify-between gap-1 text-white">
+                          {!isCover && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSetCoverPhoto(idx);
+                              }}
+                              className="px-2 py-1 bg-white text-[#18251E] hover:bg-[#E8F3EC] text-[10px] font-bold uppercase tracking-wider rounded-[2px] cursor-pointer"
+                            >
+                              Set Cover
+                            </button>
+                          )}
+
+                          <div className="flex items-center gap-1 ml-auto">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMoveImage(idx, idx - 1);
+                              }}
+                              disabled={idx === 0}
+                              className="p-1 bg-white/20 hover:bg-white/40 rounded-[2px] disabled:opacity-30 cursor-pointer"
+                              title="Move Left"
+                            >
+                              <ArrowUp className="w-3 h-3 rotate-[-90deg]" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMoveImage(idx, idx + 1);
+                              }}
+                              disabled={idx === formData.images.length - 1}
+                              className="p-1 bg-white/20 hover:bg-white/40 rounded-[2px] disabled:opacity-30 cursor-pointer"
+                              title="Move Right"
+                            >
+                              <ArrowDown className="w-3 h-3 rotate-[-90deg]" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
+                    </div>
+
+                    {/* Per-Image Compression Stats Footer */}
+                    <div className="px-2.5 py-2 bg-[#FAFBF9] border-t border-[#DDE5DF] space-y-1">
+                      {comp ? (
+                        <>
+                          <div className="flex items-center justify-between gap-1.5 text-[11px]">
+                            <span className="font-semibold text-[#18251E] tabular-nums truncate">
+                              {formatBytes(comp.originalSize)} &rarr; <strong className="text-[#176B45]">{formatBytes(comp.compressedSize)}</strong>
+                            </span>
+                            <span className="px-1.5 py-0.5 bg-[#E8F3EC] text-[#176B45] font-bold text-[10px] rounded-[2px] shrink-0 tabular-nums">
+                              -{comp.percentSaved}%
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-[#5F6B63]">
+                            <span>{comp.format} · {comp.width}&times;{comp.height}</span>
+                            <span>Compressed</span>
+                          </div>
+                          <div className="w-full h-1 bg-[#DDE5DF] rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-[#176B45] transition-all"
+                              style={{ width: `${Math.max(8, Math.min(100, comp.percentSaved))}%` }}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center justify-between text-[10px] text-[#5F6B63]">
+                          <span className="font-semibold text-[#18251E]">
+                            {isWebpUrl ? 'WebP Optimized' : 'External Image URL'}
+                          </span>
+                          <span className="px-1.5 py-0.5 bg-[#E8F3EC] text-[#176B45] font-bold rounded-[2px]">
+                            {isWebpUrl ? 'Hosted' : 'Linked'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
