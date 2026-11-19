@@ -98,11 +98,11 @@ export function DistrictCadastralExplorer({
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             <button
               type="button"
               onClick={() => setActiveProvince('all')}
-              className={`px-3.5 py-2 text-xs font-bold rounded-[3px] border transition-colors cursor-pointer ${
+              className={`w-full px-3 py-2 text-xs font-bold rounded-[3px] border transition-colors cursor-pointer text-center truncate ${
                 activeProvince === 'all'
                   ? 'bg-[#103D2C] text-white border-[#103D2C]'
                   : 'bg-white text-[#18251E] border-[#DDE5DF] hover:border-[#103D2C]'
@@ -121,7 +121,7 @@ export function DistrictCadastralExplorer({
                   key={prov}
                   type="button"
                   onClick={() => setActiveProvince(prov)}
-                  className={`px-3.5 py-2 text-xs font-semibold rounded-[3px] border transition-colors cursor-pointer ${
+                  className={`w-full px-3 py-2 text-xs font-semibold rounded-[3px] border transition-colors cursor-pointer text-center truncate ${
                     isSelected
                       ? 'bg-[#176B45] text-white border-[#176B45]'
                       : 'bg-white text-[#5F6B63] border-[#DDE5DF] hover:border-[#103D2C] hover:text-[#18251E]'
