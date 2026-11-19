@@ -266,7 +266,7 @@ export function PropertiesPage() {
     .join(' ');
 
   return (
-    <div className="bg-white min-h-screen pb-20">
+    <div className="bg-white min-h-screen pb-20 max-sm:[zoom:0.9]">
       <SeoHead
         title={`${dynamicSeoTitle} | LankaProperty.lk`}
         description={`Browse ${filteredProperties.length} verified ${dynamicSeoTitle.toLowerCase()} across Sri Lanka with direct owner and agent contact.`}
