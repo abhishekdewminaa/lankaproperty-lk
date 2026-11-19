@@ -476,7 +476,7 @@ export function ListPropertyPage() {
   // ==========================================
   if (publishedProperty) {
     return (
-      <div className="bg-[#FAFBF9] min-h-screen py-16">
+      <div className="bg-[#FAFBF9] min-h-screen py-16 max-sm:[zoom:0.9]">
         <div className="max-w-3xl mx-auto px-5">
           <div className="bg-white border-2 border-[#176B45] rounded-[2px] p-8 md:p-12 shadow-lg text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#E8F3EC] text-[#103D2C] text-xs font-bold uppercase tracking-widest rounded-[2px] border border-[#176B45]">
@@ -557,7 +557,7 @@ export function ListPropertyPage() {
   // MAIN LISTING FORM
   // ==========================================
   return (
-    <div className="bg-[#FAFBF9] min-h-screen text-[#18251E] pb-24">
+    <div className="bg-[#FAFBF9] min-h-screen text-[#18251E] pb-24 max-sm:[zoom:0.9]">
       {/* Header Stepper Navigation */}
       <div className="w-full bg-white border-b border-[#DDE5DF] py-4 sticky top-[72px] z-30 shadow-xs">
         <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

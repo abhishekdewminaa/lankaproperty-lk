@@ -293,7 +293,7 @@ export function HomePage() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-white text-[#18251E]">
+    <div className="flex flex-col min-h-screen bg-white text-[#18251E] max-sm:[zoom:0.9]">
       <SeoHead
         title="LankaProperty.lk — Sri Lanka Real Estate: Land, Houses, Apartments, Hotels & Business Properties"
         description="Buy, sell, or rent verified land, houses, apartments, hotels, and commercial properties across all 25 districts of Sri Lanka."

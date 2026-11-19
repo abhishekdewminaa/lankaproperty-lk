@@ -120,7 +120,7 @@ export function OwnerDashboardPage() {
   };
 
   return (
-    <div className="bg-[#FAFBF9] min-h-screen text-[#18251E] pb-24">
+    <div className="bg-[#FAFBF9] min-h-screen text-[#18251E] pb-24 max-sm:[zoom:0.9]">
       {/* Top Banner Bar */}
       <div className="bg-white border-b border-[#DDE5DF] py-6">
         <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -109,7 +109,7 @@ export function AdvertisingPackagesPage() {
   };
 
   return (
-    <div className="bg-[#FAFBF9] min-h-screen text-[#18251E] pb-20">
+    <div className="bg-[#FAFBF9] min-h-screen text-[#18251E] pb-20 max-sm:[zoom:0.9]">
       {/* Top Breadcrumb Bar */}
       <div className="w-full bg-white border-b border-[#DDE5DF] py-3">
         <div className="max-w-[1360px] mx-auto px-5 md:px-8 lg:px-12 flex items-center justify-between gap-4 text-xs text-[#5F6B63]">
